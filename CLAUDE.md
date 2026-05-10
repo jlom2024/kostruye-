@@ -1,0 +1,290 @@
+# Kostruye+ — Contexto del Proyecto
+
+## ¿Qué es Kostruye+?
+
+ERP de gestión integral para empresas constructoras peruanas. SaaS multi-tenant donde cada constructora es una **organización** con sus propios proyectos, usuarios y datos aislados por RLS en Supabase.
+
+Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Router + React 19 + Supabase + Tailwind v4.
+
+---
+
+## Stack Técnico
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | Next.js 16, React 19, Tailwind CSS v4, Lucide icons |
+| Data fetching | TanStack React Query v5, Supabase JS v2 |
+| Backend/DB | Supabase (PostgreSQL + Auth + RLS) |
+| Forms | react-hook-form + Zod |
+| Tablas | TanStack React Table v8 |
+| Charts | Recharts |
+| Toasts | Sonner |
+| Deploy local | `npm run dev` → localhost:3000 |
+| Deploy prod | Docker + Nginx en VPS Hostinger |
+
+---
+
+## Estructura de Archivos
+
+```
+kostruye-plus/
+├── app/
+│   ├── layout.tsx                    # Root layout (QueryProvider + Sonner)
+│   ├── page.tsx                      # → redirect a /proyectos
+│   ├── globals.css
+│   ├── (auth)/
+│   │   ├── layout.tsx
+│   │   └── login/page.tsx            # Login email+password Supabase
+│   └── (dashboard)/
+│       ├── layout.tsx                # Layout con sidebar
+│       ├── proveedores/
+│       │   ├── page.tsx
+│       │   └── suppliers-client.tsx
+│       └── proyectos/
+│           ├── page.tsx              # Lista de proyectos
+│           ├── (list)/layout.tsx
+│           ├── nuevo/page.tsx        # Crear proyecto
+│           ├── projects-grid.tsx
+│           └── [id]/
+│               ├── layout.tsx
+│               ├── dashboard/        # Dashboard del proyecto + KPIs
+│               ├── presupuesto/      # APU + presupuesto venta/meta
+│               ├── compras/          # OC y OS — órdenes de compra/servicio
+│               ├── almacen/          # Stock, ingresos, vales de salida
+│               ├── nominas/          # Tareo diario, planillón
+│               ├── valorizaciones/   # Avance físico + reajuste polinómico
+│               ├── lean/             # Last Planner System, PPC
+│               ├── contabilidad/     # Tesorería, facturas, reportes
+│               └── configuracion/    # Config del proyecto
+├── components/
+│   ├── layout/
+│   │   ├── sidebar.tsx
+│   │   └── topbar.tsx
+│   └── providers/
+│       └── query-provider.tsx
+├── lib/
+│   ├── utils.ts                      # cn, formatCurrency, formatNumber, getInitials
+│   └── supabase/
+│       ├── client.ts                 # Browser client
+│       └── server.ts                 # Server component client
+├── types/
+│   └── database.ts                   # Tipos TS espejo del schema SQL
+├── supabase/
+│   └── migrations/
+│       ├── 001_core_schema.sql       # Org, proyectos, presupuesto, APU
+│       ├── 003_compras.sql           # Módulo compras/procura
+│       ├── 004_nominas.sql           # Módulo nóminas/tareo
+│       └── 005_valorizaciones.sql    # Módulo valorizaciones
+├── scripts/                          # Scripts utilitarios (seed, etc.)
+├── nginx/nginx.conf                  # Configuración Nginx para VPS
+├── Dockerfile
+├── docker-compose.yml
+├── .env.local                        # Variables locales (NO commitear)
+└── .env.local.example                # Plantilla de variables
+```
+
+---
+
+## Multi-tenancy y Roles
+
+### Jerarquía
+```
+Organization (constructora)
+  └── Projects (obras)
+        └── Modules (presupuesto, compras, almacen, ...)
+```
+
+### Roles de usuario (`user_role` enum)
+| Rol | Acceso |
+|-----|--------|
+| `admin` | Todo — gestión org + todos los proyectos |
+| `project_manager` | Proyectos asignados, escritura en módulos core |
+| `field_engineer` | Lectura + tareo/almacén en campo |
+| `purchasing` | Módulo compras, catálogo de recursos |
+| `warehouse` | Módulo almacén |
+| `hr` | Módulo nóminas |
+| `readonly` | Solo lectura |
+
+Los roles existen en 2 niveles: **organization_members** (global) y **project_members** (por proyecto). El rol de proyecto tiene precedencia.
+
+---
+
+## Schema de Base de Datos (Supabase)
+
+### Migración 001 — Core
+- `organizations` — root de multi-tenancy, tiene RUC y plan
+- `organization_members` — users en una org (con rol)
+- `projects` — obras: código, cliente, ubicación, moneda, estado, fechas
+- `project_members` — users en un proyecto (con rol específico)
+- `resource_catalog` — catálogo de insumos (equivalente S10): mano de obra, materiales, equipos, subcontratos
+- `budgets` — presupuesto por proyecto (tipo: `venta` | `meta`)
+- `budget_chapters` — capítulos jerárquicos del presupuesto (código "01", "01.02")
+- `budget_items` — partidas: cantidad × precio_unitario = total (columna generada)
+- `apu_lines` — líneas del APU por partida: cuadrilla, rendimiento, cantidad/unidad
+- `reajuste_formulas` + `reajuste_monomios` — fórmulas polinómicas con índices INEI
+
+### Migraciones adicionales
+- **003** — Compras: requerimientos, OC (materiales), OS (subcontratos/alquileres), flujos de aprobación
+- **004** — Nóminas: personal, tareo diario (estándar / por actividades / multiproyecto), planillón
+- **005** — Valorizaciones: avance físico, reajuste automático, amortización de adelantos
+
+### RLS (Row Level Security)
+Todas las tablas tienen RLS habilitado. Las políticas se basan en `auth.uid()` cruzado con `organization_members` o `project_members`. Nunca exponer `SUPABASE_SERVICE_ROLE_KEY` al cliente.
+
+---
+
+## Variables de Entorno
+
+```bash
+# .env.local (nunca commitear)
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # solo server-side
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+El `SUPABASE_SERVICE_ROLE_KEY` solo se usa en server components / API routes. **Jamás se pasa al cliente.**
+
+---
+
+## Módulos — Estado Actual
+_Última actualización: 2026-05-08_
+
+| Módulo | Ruta | Estado |
+|--------|------|--------|
+| Auth / Login | `/login` | ✅ Funcional |
+| Lista de proyectos | `/proyectos` | ✅ Funcional |
+| Crear proyecto | `/proyectos/nuevo` | ✅ Funcional |
+| Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ **Actualizado 2026-05-08** — RO + Curva S 3 líneas |
+| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ Schema + UI básica |
+| Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
+| Almacén | `/proyectos/[id]/almacen` | 🔨 En desarrollo |
+| Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
+| Valorizaciones | `/proyectos/[id]/valorizaciones` | ✅ Schema + UI cliente |
+| Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo |
+| Contabilidad | `/proyectos/[id]/contabilidad` | 🔨 En desarrollo |
+| Proveedores | `/proveedores` | ✅ UI cliente |
+| Configuración | `/proyectos/[id]/configuracion` | 🔨 En desarrollo |
+
+## Cambios recientes
+
+### 2026-05-08 — Dashboard S10 (Resultado Operativo)
+- **`app/(dashboard)/proyectos/[id]/dashboard/page.tsx`** — Nuevas queries: `payroll_periods` (costo MO) + `issue_date` en OCs + `ocTimeline` para Curva S comprometida
+- **`app/(dashboard)/proyectos/[id]/dashboard/dashboard-client.tsx`** — Nuevo componente `ResultadoOperativo`: KPIs de Ingreso/CostoMO/CostoOCs/RO + barra de desglose. Curva S actualizada a 3 líneas (planificado/real/comprometido)
+- **`proxy.ts`** — Fusionado con `middleware.ts` eliminado (conflicto Next.js 16 `proxy` vs `middleware`)
+- Deploy automático a `kreo-crm.site` via Docker en VPS 187.77.54.30
+
+### Pendiente para completar RO
+- Costo de materiales real → requiere módulo almacén (`inventory_movements`)
+- Costo subcontratos/equipos → requiere módulo órdenes de servicio
+
+---
+
+## Módulos — Descripción Funcional
+
+### Presupuesto
+- Dos tipos de presupuesto por proyecto: **venta** (ofertado al cliente) y **meta** (presupuesto interno)
+- Estructura: Capítulos → Partidas → APU (Análisis de Precios Unitarios)
+- APU: líneas por tipo de recurso (mano de obra, material, equipo, subcontrato) con cuadrilla y rendimiento
+- Catálogo de recursos centralizado por organización (equivalente S10)
+
+### Compras / Procura
+- Requerimientos vinculados a techo presupuestal por partida de control
+- Flujos de aprobación → Órdenes de Compra (materiales) y Órdenes de Servicio (subcontratos/alquileres)
+- Evita paralizaciones y compras a sobreprecio
+
+### Almacén
+- Stock en tiempo real por proyecto
+- Ingresos y vales de salida obligatoriamente vinculados a partida de control
+- Reportes de consumos por frente de trabajo
+- Alertas de stock mínimo
+
+### Nóminas / Tareo
+- Registro de personal (obreros y staff)
+- Tareo diario: estándar, por actividades o multiproyecto
+- Cálculo de costos de MO → alimenta el Resultado Operativo
+
+### Valorizaciones
+- Cuantificación económica del avance físico para cobro periódico al cliente
+- Reajuste automático con fórmulas polinómicas e índices unificados INEI
+- Control de deducciones y amortización de adelantos (efectivo o materiales)
+
+### Lean (Last Planner System)
+- Lookahead (planificación intermedia)
+- Identificación y eliminación de restricciones
+- Plan de trabajo semanal
+- PPC (Porcentaje de Plan Completado)
+
+### Contabilidad / Administración
+- Tesorería (caja y bancos)
+- Facturas de proveedores
+- Consolidación de operaciones sin doble registro
+
+---
+
+## Comandos de Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Dev server
+npm run dev          # → http://localhost:3000
+
+# Build producción
+npm run build
+npm run start
+
+# Lint
+npm run lint
+```
+
+---
+
+## Deploy en VPS (Hostinger)
+
+```bash
+# Build y levantar
+docker compose up -d --build
+
+# Ver estado
+docker compose ps
+docker compose logs app --tail=50
+
+# Actualizar tras git pull
+git pull origin main
+docker compose up -d --build
+```
+
+**Nginx** actúa como reverse proxy con SSL (certificados Certbot/Let's Encrypt en `/nginx/certs/`).
+
+---
+
+## Convenciones de Código
+
+- **Server vs Client components**: páginas principales son Server components que fetchen datos → pasan props a `*-client.tsx` (client components con estado e interactividad)
+- **Auth**: Supabase SSR con cookies (`@supabase/ssr`) — `lib/supabase/client.ts` para browser, `lib/supabase/server.ts` para server
+- **Tipos**: siempre importar de `types/database.ts`, nunca redefinir inline
+- **Moneda**: usar `formatCurrency(amount, currency)` de `lib/utils.ts`
+- **Toasts**: usar `sonner` (ya configurado en root layout)
+- **Estilos**: Tailwind v4, usar `cn()` de `lib/utils.ts` para clases condicionales
+- Commits en inglés, conventional commits (`feat:`, `fix:`, `data:`, etc.)
+- `.env.local` nunca se commitea
+
+---
+
+## Supabase — Referencia del Proyecto
+
+- **Project ref**: `wyaugtdgmcesoryhyois`
+- **URL**: `https://wyaugtdgmcesoryhyois.supabase.co`
+- Dashboard: https://supabase.com/dashboard/project/wyaugtdgmcesoryhyois
+- SQL Editor para correr migraciones manualmente
+
+---
+
+## Documento Técnico de Arquitectura
+
+Existe un documento Word completo en:
+`D:\Empresas\KREO Studio\Kostruye+\Kostruye+ - Documento Tecnico de Arquitectura v1.0.docx`
+
+Contiene la especificación detallada de todos los módulos con fuentes académicas y referencias del sector construcción peruano.
