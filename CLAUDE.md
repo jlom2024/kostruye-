@@ -148,25 +148,37 @@ El `SUPABASE_SERVICE_ROLE_KEY` solo se usa en server components / API routes. **
 ---
 
 ## Módulos — Estado Actual
-_Última actualización: 2026-05-08_
+_Última actualización: 2026-05-13_
 
 | Módulo | Ruta | Estado |
 |--------|------|--------|
 | Auth / Login | `/login` | ✅ Funcional |
 | Lista de proyectos | `/proyectos` | ✅ Funcional |
 | Crear proyecto | `/proyectos/nuevo` | ✅ Funcional |
-| Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ **Actualizado 2026-05-08** — RO + Curva S 3 líneas |
-| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ Schema + UI básica |
+| Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO + Curva S 3 líneas (2026-05-08) |
+| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ Schema + UI + import OCR |
 | Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
-| Almacén | `/proyectos/[id]/almacen` | 🔨 En desarrollo |
+| Almacén | `/proyectos/[id]/almacen` | 🔨 En desarrollo (835 líneas) |
 | Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
-| Valorizaciones | `/proyectos/[id]/valorizaciones` | ✅ Schema + UI cliente |
-| Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo |
-| Contabilidad | `/proyectos/[id]/contabilidad` | 🔨 En desarrollo |
+| Valorizaciones | `/proyectos/[id]/valorizaciones` | ✅ Schema + UI cliente + print |
+| Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo (670 líneas) |
+| Contabilidad | `/proyectos/[id]/contabilidad` | 🔨 En desarrollo (430 líneas) |
+| Servicios / Subcontratos | `/proyectos/[id]/servicios` | ✅ UI cliente (604 líneas) |
+| Clientes de obra | `/clientes` | ✅ UI cliente (352 líneas) |
 | Proveedores | `/proveedores` | ✅ UI cliente |
 | Configuración | `/proyectos/[id]/configuracion` | 🔨 En desarrollo |
+| Admin multi-tenant | `/admin` | ✅ Panel activo en producción |
 
 ## Cambios recientes
+
+### 2026-05-13 — SEO + Google Search Console
+- **`app/sitemap.ts`** — Genera `/sitemap.xml` automáticamente (landing + login)
+- **`app/robots.ts`** — Genera `/robots.txt` (bloquea `/proyectos/`, `/admin/`, `/api/`)
+- **`app/layout.tsx`** — Metadata completa: OG, Twitter cards, JSON keywords, canonical, `verification.google: "YznhFBzkOtji68yPoDtZPgFYD9wv-kYNl4fuFyhFH8I"`
+- **`app/page.tsx`** — Title SEO optimizado + JSON-LD `SoftwareApplication` con planes de precios
+- **`public/og-image.png`** — Imagen OG 1200×630px para previews en redes sociales
+- **`public/google37a6e954bdc08d6a.html`** — Archivo verificación GSC (método alternativo, no activo)
+- Google Search Console: propiedad verificada ✅, sitemap enviado ✅, indexación solicitada ✅
 
 ### 2026-05-08 — Dashboard S10 (Resultado Operativo)
 - **`app/(dashboard)/proyectos/[id]/dashboard/page.tsx`** — Nuevas queries: `payroll_periods` (costo MO) + `issue_date` en OCs + `ocTimeline` para Curva S comprometida
