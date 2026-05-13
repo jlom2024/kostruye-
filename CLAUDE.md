@@ -171,6 +171,38 @@ _Última actualización: 2026-05-13_
 
 ## Cambios recientes
 
+### 2026-05-13 — ⚠️ DEPLOY PENDIENTE: Importador S10 (ACCIÓN REQUERIDA)
+
+**El build de Docker falla.** Causa: el sandbox de Cowork corrompió `app/page.tsx` al hacer git commit via filesystem montado en Linux.
+
+**Para arreglar desde Claude Code:**
+```bash
+# 1. Verificar qué hay en git
+git show HEAD:app/page.tsx | tail -20
+
+# 2. Re-commitear los archivos correctos desde el working tree local
+git add app/page.tsx app/layout.tsx app/sitemap.ts app/robots.ts package.json
+git add "app/(dashboard)/proyectos/[id]/presupuesto/import-s10-modal.tsx"
+git add "app/(dashboard)/proyectos/[id]/presupuesto/import-s10-button.tsx"
+git add "app/(dashboard)/proyectos/[id]/presupuesto/page.tsx"
+git add app/api/import-budget-s10/route.ts
+git commit -m "fix: recommit S10 importer - fix corrupted page.tsx"
+git push origin master
+
+# 3. Deploy en VPS
+ssh root@187.77.54.30 "cd /opt/kostruye-plus && git pull && docker compose up -d --build"
+```
+
+**Archivos nuevos que deben estar en el repo:**
+- `app/api/import-budget-s10/route.ts` — parser Excel S10 con SheetJS
+- `app/(dashboard)/proyectos/[id]/presupuesto/import-s10-modal.tsx` — modal upload→preview→import
+- `app/(dashboard)/proyectos/[id]/presupuesto/import-s10-button.tsx` — botón "Importar S10"
+- `package.json` — agrega `"xlsx": "^0.18.5"`
+
+**IMPORTANTE:** No volver a hacer `git commit` desde Cowork/sandbox. Solo editar archivos — los commits hacerlos desde Claude Code o PowerShell del usuario.
+
+---
+
 ### 2026-05-13 — SEO + Google Search Console
 - **`app/sitemap.ts`** — Genera `/sitemap.xml` automáticamente (landing + login)
 - **`app/robots.ts`** — Genera `/robots.txt` (bloquea `/proyectos/`, `/admin/`, `/api/`)
