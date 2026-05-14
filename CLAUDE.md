@@ -172,6 +172,13 @@ _Última actualización: 2026-05-14_
 
 ## Cambios recientes
 
+### 2026-05-14 — ✅ Sprint 1.3: Estabilidad RLS, Multi-tenant y KIA AI
+- **Bug Fix Multi-tenant**: Se corrigió un error crítico 500 en `/configuracion`, `/proyectos/nuevo` y en el endpoint de KIA (`/api/ai/chat/route.ts`). Ocurría porque se usaba `.single()` al consultar `organization_members` filtrando solo por `user_id`. Al pertenecer un usuario a múltiples orgs, colapsaba. Se reemplazó por `.limit(1).single()` o validaciones seguras de `organization_id`.
+- **Inteligencia Artificial (KIA)**: El asistente de obra se actualizó al modelo `gpt-4o-mini` (había un typo `o4-mini`) y ahora es plenamente **Context-Aware**, inyectando el ID del proyecto activo en el System Prompt para aislar respuestas y herramientas.
+- **Limpieza de Datos Global**: Se purgó la base de datos de proveedores duplicados (originados al correr seeds repetidamente porque `suppliers` y `clients` se comparten a nivel org, no a nivel proyecto).
+- **Data Dummy Nóminas**: Se inyectaron 3 trabajadores base y entradas de pago en las semanas de enero para los proyectos KREO Vivienda y PRJ-RO-01, habilitando la vista real del tareo.
+- **Deploy SSH Automatizado**: Se configuró el VPS (187.77.54.30) para aceptar `git pull` y `docker compose up -d` vía llave SSH local (`id_ed25519`), permitiendo deploys sin contraseña ni scripts bloqueantes.
+
 ### 2026-05-14 — ✅ Sprint 1.2.2: Gestión de Equipo
 - **UI de Equipo**: Tabla de miembros con gestión de roles y eliminación.
 - **Invitaciones**: Panel para añadir usuarios de la organización al proyecto.
