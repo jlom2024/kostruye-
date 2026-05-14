@@ -148,17 +148,17 @@ El `SUPABASE_SERVICE_ROLE_KEY` solo se usa en server components / API routes. **
 ---
 
 ## Módulos — Estado Actual
-_Última actualización: 2026-05-13_
+_Última actualización: 2026-05-14_
 
 | Módulo | Ruta | Estado |
 |--------|------|--------|
 | Auth / Login | `/login` | ✅ Funcional |
 | Lista de proyectos | `/proyectos` | ✅ Funcional |
 | Crear proyecto | `/proyectos/nuevo` | ✅ Funcional |
-| Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO + Curva S 3 líneas (2026-05-08) |
-| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ Schema + UI + import OCR |
+| Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO real (Kardex PPP) + Curva S 3 líneas |
+| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + **import S10** |
 | Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
-| Almacén | `/proyectos/[id]/almacen` | 🔨 En desarrollo (835 líneas) |
+| Almacén | `/proyectos/[id]/almacen` | ✅ UI completa (836 líneas) — Kardex PPP activo |
 | Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
 | Valorizaciones | `/proyectos/[id]/valorizaciones` | ✅ Schema + UI cliente + print |
 | Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo (670 líneas) |
@@ -171,35 +171,28 @@ _Última actualización: 2026-05-13_
 
 ## Cambios recientes
 
-### 2026-05-13 — ⚠️ DEPLOY PENDIENTE: Importador S10 (ACCIÓN REQUERIDA)
+### 2026-05-14 — ✅ Deploy reparado + Migración 009 aplicada
 
-**El build de Docker falla.** Causa: el sandbox de Cowork corrompió `app/page.tsx` al hacer git commit via filesystem montado en Linux.
+**Deploy arreglado:**
+- `page.tsx` corrupto por commit desde Cowork/sandbox → reparado en commit `cf9cf47`
+- Push a `origin/master` + `docker compose up -d --build` en VPS
+- Contenedor `kostruye-plus-app-1` corriendo en producción
 
-**Para arreglar desde Claude Code:**
-```bash
-# 1. Verificar qué hay en git
-git show HEAD:app/page.tsx | tail -20
+**Migración `009_ro_real.sql` aplicada en Supabase producción:**
+- `stock_withdrawals` — columnas `unit_cost` + `total_cost` (PPP)
+- `fn_ppp_unit_cost()` — función Precio Promedio Ponderado
+- `trg_assign_ppp` — trigger automático al emitir vale de salida
+- `stock_levels` — vista actualizada con `ppp_unit_cost` y `stock_value`
+- `service_order_advances` — tabla para avances de subcontratos + RLS
+- `project_material_cost` — vista de costo real de materiales por proyecto
+- `project_service_cost` — vista de costo real de servicios por proyecto
 
-# 2. Re-commitear los archivos correctos desde el working tree local
-git add app/page.tsx app/layout.tsx app/sitemap.ts app/robots.ts package.json
-git add "app/(dashboard)/proyectos/[id]/presupuesto/import-s10-modal.tsx"
-git add "app/(dashboard)/proyectos/[id]/presupuesto/import-s10-button.tsx"
-git add "app/(dashboard)/proyectos/[id]/presupuesto/page.tsx"
-git add app/api/import-budget-s10/route.ts
-git commit -m "fix: recommit S10 importer - fix corrupted page.tsx"
-git push origin master
-
-# 3. Deploy en VPS
-ssh root@187.77.54.30 "cd /opt/kostruye-plus && git pull && docker compose up -d --build"
-```
-
-**Archivos nuevos que deben estar en el repo:**
+**Importador S10 en producción:**
 - `app/api/import-budget-s10/route.ts` — parser Excel S10 con SheetJS
-- `app/(dashboard)/proyectos/[id]/presupuesto/import-s10-modal.tsx` — modal upload→preview→import
-- `app/(dashboard)/proyectos/[id]/presupuesto/import-s10-button.tsx` — botón "Importar S10"
-- `package.json` — agrega `"xlsx": "^0.18.5"`
+- `import-s10-modal.tsx` + `import-s10-button.tsx` — UI de upload→preview→import
+- Dependencia `xlsx: ^0.18.5` en `package.json`
 
-**IMPORTANTE:** No volver a hacer `git commit` desde Cowork/sandbox. Solo editar archivos — los commits hacerlos desde Claude Code o PowerShell del usuario.
+**⚠️ REGLA:** No volver a hacer `git commit` desde Cowork/sandbox. Solo desde PowerShell local.
 
 ---
 
@@ -208,19 +201,18 @@ ssh root@187.77.54.30 "cd /opt/kostruye-plus && git pull && docker compose up -d
 - **`app/robots.ts`** — Genera `/robots.txt` (bloquea `/proyectos/`, `/admin/`, `/api/`)
 - **`app/layout.tsx`** — Metadata completa: OG, Twitter cards, JSON keywords, canonical, `verification.google: "YznhFBzkOtji68yPoDtZPgFYD9wv-kYNl4fuFyhFH8I"`
 - **`app/page.tsx`** — Title SEO optimizado + JSON-LD `SoftwareApplication` con planes de precios
-- **`public/og-image.png`** — Imagen OG 1200×630px para previews en redes sociales
-- **`public/google37a6e954bdc08d6a.html`** — Archivo verificación GSC (método alternativo, no activo)
 - Google Search Console: propiedad verificada ✅, sitemap enviado ✅, indexación solicitada ✅
 
 ### 2026-05-08 — Dashboard S10 (Resultado Operativo)
-- **`app/(dashboard)/proyectos/[id]/dashboard/page.tsx`** — Nuevas queries: `payroll_periods` (costo MO) + `issue_date` en OCs + `ocTimeline` para Curva S comprometida
-- **`app/(dashboard)/proyectos/[id]/dashboard/dashboard-client.tsx`** — Nuevo componente `ResultadoOperativo`: KPIs de Ingreso/CostoMO/CostoOCs/RO + barra de desglose. Curva S actualizada a 3 líneas (planificado/real/comprometido)
-- **`proxy.ts`** — Fusionado con `middleware.ts` eliminado (conflicto Next.js 16 `proxy` vs `middleware`)
+- **`dashboard/page.tsx`** — Queries: `payroll_periods` (costo MO) + `issue_date` en OCs + `ocTimeline` para Curva S comprometida
+- **`dashboard-client.tsx`** — Componente `ResultadoOperativo`: KPIs + barra desglose + Curva S 3 líneas
 - Deploy automático a `kreo-crm.site` via Docker en VPS 187.77.54.30
 
-### Pendiente para completar RO
-- Costo de materiales real → requiere módulo almacén (`inventory_movements`)
-- Costo subcontratos/equipos → requiere módulo órdenes de servicio
+### Estado del RO en producción
+- ✅ Ingreso valorizado → `valorizaciones` aprobadas
+- ✅ Costo MO → `payroll_periods` cerradas
+- ✅ Costo materiales → `stock_withdrawals` × PPP (Kardex) — **migración 009 aplicada**
+- ✅ Costo subcontratos → `service_order_advances` — **migración 009 aplicada**
 
 ---
 
