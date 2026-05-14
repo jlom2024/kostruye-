@@ -13,7 +13,8 @@ const DB_CONFIG = {
 async function main() {
   const client = new Client(DB_CONFIG);
   await client.connect();
-  const res = await client.query("SELECT id, name FROM organizations");
+  const res = await client.query("SELECT * FROM organization_members");
+  console.log('Miembros Org: ', JSON.stringify(res.rows, null, 2));
   console.log(JSON.stringify(res.rows, null, 2));
   console.log(JSON.stringify(res.rows, null, 2));
   await client.end();

@@ -10,23 +10,34 @@ const DB_CONFIG = {
   ssl     : { rejectUnauthorized: false },
 };
 
-// IDs de proyectos a eliminar (duplicados o basura)
-const PROJECT_IDS = [
-  '14ae7935-dfbd-4aeb-b33d-ba11994b0ee2', // KREO-VIV-01 (Org equivocada)
-  'ffa39e7d-5ace-4e03-89de-337260b32218', // PRJ-RO-01 (Org equivocada)
-  'e88a845b-38a4-481f-81f9-971b946e9863', // OB-003 (Duplicado)
-  '347ac655-22a9-4d0b-abe9-531e507720c9'  // OB-001 (Basura antigua)
+// Códigos de proyectos a eliminar (para que funcione dinámicamente sin importar el ID)
+const PROJECT_CODES = [
+  'KREO-VIV-01',
+  'PRJ-RO-01',
+  'OB-003',
+  'OB-001'
 ];
 
 async function main() {
   const client = new Client(DB_CONFIG);
   await client.connect();
-  console.log(`🧹 Iniciando limpieza masiva de proyectos duplicados...`);
+  console.log(`🧹 Iniciando limpieza masiva de proyectos...`);
 
   try {
     await client.query('BEGIN');
+    
+    // Obtener los IDs actuales de los proyectos
+    const res = await client.query('SELECT id, code FROM projects WHERE code = ANY($1)', [PROJECT_CODES]);
+    const projectIds = res.rows.map(r => r.id);
+    
+    if (projectIds.length === 0) {
+      console.log('✅ No hay proyectos para limpiar.');
+      await client.query('ROLLBACK');
+      await client.end();
+      return;
+    }
 
-    for (const pid of PROJECT_IDS) {
+    for (const pid of projectIds) {
       console.log(`   - Limpiando proyecto: ${pid}`);
       
       // 1. Lean
