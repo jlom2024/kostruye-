@@ -156,7 +156,7 @@ _Última actualización: 2026-05-14_
 | Lista de proyectos | `/proyectos` | ✅ Funcional |
 | Crear proyecto | `/proyectos/nuevo` | ✅ Funcional |
 | Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO real (Kardex PPP) + Curva S 3 líneas |
-| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + **import S10** |
+| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + import S10 |
 | Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
 | Almacén | `/proyectos/[id]/almacen` | ✅ UI completa (836 líneas) — Kardex PPP activo |
 | Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
@@ -166,10 +166,26 @@ _Última actualización: 2026-05-14_
 | Servicios / Subcontratos | `/proyectos/[id]/servicios` | ✅ UI cliente (604 líneas) |
 | Clientes de obra | `/clientes` | ✅ UI cliente (352 líneas) |
 | Proveedores | `/proveedores` | ✅ UI cliente |
-| Configuración | `/proyectos/[id]/configuracion` | 🔨 En desarrollo |
+| Configuración | `/proyectos/[id]/configuracion` | ✅ Completo (Fase 1) |
+| Demo KREO Vivienda | `sql_seed` | 🧪 Inyectando data coherente |
 | Admin multi-tenant | `/admin` | ✅ Panel activo en producción |
 
 ## Cambios recientes
+
+### 2026-05-14 — ✅ Sprint 1.2.2: Gestión de Equipo
+- **UI de Equipo**: Tabla de miembros con gestión de roles y eliminación.
+- **Invitaciones**: Panel para añadir usuarios de la organización al proyecto.
+- **Data Fetching**: Optimizado en Server Component con joins de perfiles.
+
+### 2026-05-14 — ✅ Sprint 1.2.1: Configuración Base + Tabs
+
+### 2026-05-14 — ✅ Sprint 1.1: RO Real Conectado
+- **Dashboard**: `page.tsx` conectado a las vistas SQL reales.
+- **Tipos**: `types/database.ts` actualizado con vistas de costo y tablas de avance.
+- **Lógica de Costos**: Implementado fallback OCs → Kardex PPP según disponibilidad de datos.
+- **UI**: Badge dinámico "Kardex PPP ✓" activo.
+
+---
 
 ### 2026-05-14 — ✅ Deploy reparado + Migración 009 aplicada
 
