@@ -172,6 +172,11 @@ _Última actualización: 2026-05-14_
 
 ## Cambios recientes
 
+### 2026-05-14 — ✅ Sprint 1.5: Fix Auth & Nav Links
+- **Enlaces Directos**: Se corrigieron los botones de la landing para que apunten directamente a sus respectivos logins (`/login` para clientes y `/admin/login` para administración), eliminando redirecciones confusas.
+- **Robustez Admin Auth**: Se añadió una comprobación de sesión (`useEffect`) en la página de login de administración para redirigir automáticamente al panel si el token ya es válido.
+- **API Auth**: Se agregó el método `GET` a `/api/admin/auth` para permitir validaciones de sesión desde el cliente.
+
 ### 2026-05-14 — ✅ Sprint 1.4: Onboarding y Administración Pro
 - **Aprovisionamiento Automático**: Se actualizó el panel de administración (`/admin`) para que al crear un cliente se cree automáticamente su **Organización** real, el **Usuario de Auth** con la contraseña definida y se vinculen como **Admin**. Esto asegura un entorno funcional y aislado desde el primer segundo.
 - **Onboarding de Proyectos**: Se rediseñó el estado vacío de la lista de proyectos (`/proyectos`). Ahora los nuevos clientes ven una pantalla de bienvenida con una guía de 2 pasos para crear su primera obra.
