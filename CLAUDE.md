@@ -172,6 +172,12 @@ _Última actualización: 2026-05-14_
 
 ## Cambios recientes
 
+### 2026-05-14 — ✅ Sprint 1.4: Onboarding y Administración Pro
+- **Aprovisionamiento Automático**: Se actualizó el panel de administración (`/admin`) para que al crear un cliente se cree automáticamente su **Organización** real, el **Usuario de Auth** con la contraseña definida y se vinculen como **Admin**. Esto asegura un entorno funcional y aislado desde el primer segundo.
+- **Onboarding de Proyectos**: Se rediseñó el estado vacío de la lista de proyectos (`/proyectos`). Ahora los nuevos clientes ven una pantalla de bienvenida con una guía de 2 pasos para crear su primera obra.
+- **Acceso para Clientes**: Se añadió un botón de **"Acceso Clientes"** en la navegación de la landing page para facilitar el ingreso de las constructoras a sus plataformas personalizadas.
+- **Gestión de Passwords**: Se añadió el campo de contraseña en el formulario de creación de clientes y se validó que los clientes puedan cambiarla desde su panel de configuración.
+
 ### 2026-05-14 — ✅ Sprint 1.3: Estabilidad RLS, Multi-tenant y KIA AI
 - **Bug Fix Multi-tenant**: Se corrigió un error crítico 500 en `/configuracion`, `/proyectos/nuevo` y en el endpoint de KIA (`/api/ai/chat/route.ts`). Ocurría porque se usaba `.single()` al consultar `organization_members` filtrando solo por `user_id`. Al pertenecer un usuario a múltiples orgs, colapsaba. Se reemplazó por `.limit(1).single()` o validaciones seguras de `organization_id`.
 - **Inteligencia Artificial (KIA)**: El asistente de obra se actualizó al modelo `gpt-4o-mini` (había un typo `o4-mini`) y ahora es plenamente **Context-Aware**, inyectando el ID del proyecto activo en el System Prompt para aislar respuestas y herramientas.
