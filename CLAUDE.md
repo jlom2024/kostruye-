@@ -148,7 +148,7 @@ El `SUPABASE_SERVICE_ROLE_KEY` solo se usa en server components / API routes. **
 ---
 
 ## Módulos — Estado Actual
-_Última actualización: 2026-05-14_
+_Última actualización: 2026-05-15_
 
 | Módulo | Ruta | Estado |
 |--------|------|--------|
@@ -156,7 +156,7 @@ _Última actualización: 2026-05-14_
 | Lista de proyectos | `/proyectos` | ✅ Funcional |
 | Crear proyecto | `/proyectos/nuevo` | ✅ Funcional |
 | Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO real (Kardex PPP) + Curva S 3 líneas |
-| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + import S10 |
+| Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + import Excel S10 |
 | Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
 | Almacén | `/proyectos/[id]/almacen` | ✅ UI completa (836 líneas) — Kardex PPP activo |
 | Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
@@ -171,6 +171,34 @@ _Última actualización: 2026-05-14_
 | Admin multi-tenant | `/admin` | ✅ Panel activo en producción |
 
 ## Cambios recientes
+
+### 2026-05-15 — ✅ Sprint 1.7: Landing, SEO crítico y UX fixes
+
+**Landing page (`app/page.tsx`):**
+- **Nav**: eliminado "Panel admin", reemplazado por "Solicitar demo" → WhatsApp y "Acceso Clientes" → `/login`
+- **Precios**: Enterprise S/ 1,299 → **S/ 1,999** (validado vs mercado: Procore $1,400+/mes, BrickControl $194/mes/3 usuarios)
+- **Módulos**: colores unificados a `#f59e0b` (antes mezclados blue/purple/green/cyan)
+- **KIA chat**: respuesta completada con datos reales (OC mes actual, proveedor mayor, 3 OC pendientes); texto "Powered by o4-mini" → **"Powered by Claude"**
+- **JSON-LD**: descripción Enterprise actualizada con "proyectos ilimitados, usuarios ilimitados, KIA IA incluido"
+- **Hero background**: 3 orbs de luz animados (amber/purple/blue) + grid sutil con pulse + sweep diagonal de luz — todo CSS puro, sin JS extra
+- **Botones demo**: nav y hero apuntan a WhatsApp (`wa.me/51907130225`) — `mailto:` no funciona en navegadores sin cliente de email configurado
+
+**Importador S10 (`import-s10-modal.tsx` + `import-s10-button.tsx`):**
+- Título del modal: "Importar desde S10" → **"Importar Excel de S10"**
+- Botón: "Importar S10" → **"Importar Excel S10"**
+- Instrucción: aclaración explícita "no el archivo nativo .s10" — el parser solo lee `.xlsx`/`.xls` exportados desde S10 via Archivo → Exportar → Excel
+
+**SEO — 4 bugs críticos resueltos:**
+1. **`app/robots.ts`**: agregado `Disallow: /*/` para bloquear rutas de tenants (`/{slug}/`) del índice de Google
+2. **`nginx/vhost.d/www.kreo-crm.site`** (VPS): redirect 301 `www` → `kreo-crm.site` (canónico); nginx.conf actualizado en repositorio
+3. **`proxy.ts` (middleware)**: `/robots.txt` y `/sitemap.xml` eran redirigidos a `/login` porque el middleware de auth los trataba como rutas protegidas. Agregados a `isPublicRoute`. **Root cause**: Next.js 16 + Turbopack compila `proxy.ts` como middleware (tiene `config.matcher`) aunque no se llame `middleware.ts` — confirmar con `_clientMiddlewareManifest.js`
+4. **Logout**: `sidebar.tsx` y `admin/page.tsx` redirigían a `/login` y `/admin/login` al cerrar sesión → cambiado a `/` (landing)
+
+**Infra / Deploy:**
+- Commits desde PowerShell local → `git push origin master` → SSH al VPS → `git pull && docker compose up -d --build`
+- nginx-proxy (`nginxproxy/nginx-proxy:1.6`) gestiona SSL con `acme-companion` — el `nginx.conf` del repo NO aplica en producción; la config real está en el volumen `traefik_vhost`
+
+---
 
 ### 2026-05-14 — ✅ Sprint 1.5: Fix Auth & Nav Links
 - **Enlaces Directos**: Se corrigieron los botones de la landing para que apunten directamente a sus respectivos logins (`/login` para clientes y `/admin/login` para administración), eliminando redirecciones confusas.
