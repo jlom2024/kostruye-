@@ -172,6 +172,35 @@ _Última actualización: 2026-05-15_
 
 ## Cambios recientes
 
+### 2026-05-16 — ✅ Sprint 1.8: Página de pagos + control de suscripciones
+
+**Página de pagos (`app/pagar/page.tsx`):**
+- Nueva ruta `/pagar?plan=pro|piloto|enterprise` — `robots: noindex`
+- Muestra resumen del plan elegido + métodos de pago peruanos
+- QR Yape (`public/qr-yape.jpg`) + QR Plin (`public/qr-plin.jpg`) — imágenes reales, ocupan todo el recuadro
+- Datos de transferencia Interbank: cuenta 084 3161549763 / CCI 00308401316154976316 / Titular Jorge Ordoñez
+- Botón WhatsApp pre-cargado con mensaje del plan → `wa.me/51907130225`
+
+**Landing (`app/page.tsx`):**
+- Card "Piloto / Gratis" eliminada — pricing queda en 2 columnas centradas (Pro + Enterprise)
+- "Empezar ahora" (Pro) → `/pagar?plan=pro`
+- "Contactar ventas" (Enterprise) → WhatsApp directo
+- Grid responsive actualizado a `repeat(2,1fr)` max-width 760px
+
+**Admin dashboard (`app/admin/page.tsx`):**
+- Campo `subscription_start` — date picker inline por cliente, se guarda automáticamente vía PATCH
+- Columna "Próx. cobro" — calcula próxima fecha de renovación (ciclos de 30 días)
+- Badge de estado: 🟢 `Xd restantes` / 🟡 `Vence en Xd` (≤5 días) / 🔴 `Vencido`
+
+**API (`app/api/admin/clients/[id]/route.ts`):**
+- `subscription_start` agregado a campos permitidos en PATCH
+
+**Migración 012 (`supabase/migrations/012_subscription_start.sql`):**
+- `ALTER TABLE app_clients ADD COLUMN IF NOT EXISTS subscription_start DATE`
+- Aplicada en producción vía MCP Supabase
+
+---
+
 ### 2026-05-15 — ✅ Sprint 1.7: Landing, SEO crítico y UX fixes
 
 **Landing page (`app/page.tsx`):**
