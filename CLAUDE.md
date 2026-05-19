@@ -172,6 +172,19 @@ _Última actualización: 2026-05-15_
 
 ## Cambios recientes
 
+### 2026-05-19 — ✅ Manual corregido: sección Importar Excel S10
+
+**Archivo:** `D:\Empresas\KREO Studio\Kostruye+\Manual-Kostruye-Plus.docx`
+
+- El manual no tenía ninguna mención del importador de S10/Excel — solo describía "Importar PDF (OCR)"
+- Insertada nueva sección **"Importar presupuesto desde Excel S10"** en el Capítulo 4 (Presupuesto), entre "Importar desde PDF" y "Exportar a Excel"
+- Deja claro que **no se lee el archivo nativo `.s10`** — se lee el `.xlsx`/`.xls` exportado desde S10 via Archivo → Exportar → Excel
+- Incluye pasos numerados y nota de advertencia al pie
+- Modificación hecha con python-docx clonando estilos existentes del documento (Heading 2, List Paragraph, Normal)
+- PDF pendiente de regenerar manualmente (LibreOffice no disponible en el equipo) — abrir el .docx y Guardar como PDF
+
+---
+
 ### 2026-05-16 — ✅ Sprint 1.8: Página de pagos + control de suscripciones
 
 **Página de pagos (`app/pagar/page.tsx`):**
