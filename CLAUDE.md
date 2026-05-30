@@ -147,8 +147,68 @@ El `SUPABASE_SERVICE_ROLE_KEY` solo se usa en server components / API routes. **
 
 ---
 
+## Integración CORFID / DH Consultores (2026-05-24)
+
+### Concepto
+Konstruye+ sirve como puerta de entrada al servicio de fideicomiso de HD Consultores.
+Solo las constructoras explícitamente habilitadas como "clientes fideicomiso" pueden autorizar acceso.
+
+### Campo clave: `app_clients.fideicomiso_enabled`
+- Lo activa el **admin de Kostruye+** en `/admin` al crear o editar una constructora
+- Toggle visual en el formulario: "Cliente Fideicomiso (DH Consultores)"
+- Column en la tabla con mini-toggle por fila (inline PATCH)
+- **Si `false`**: la constructora es un cliente normal de Kostruye+, sin vínculo a CORFID
+- **Si `true`**: aparece el widget `FideicomisoWidget` en el dashboard del cliente
+
+### Campo `app_clients.fideicomiso_authorized_at`
+- `NULL` = aún no autorizó
+- Filled = click ya registrado, widget muestra "Autorizado ✓" en verde
+- Migración: `supabase/migrations/013_fideicomiso.sql`
+
+### Archivos implementados
+| Archivo | Función |
+|---------|---------|
+| `supabase/migrations/013_fideicomiso.sql` | Añade los dos campos a `app_clients` |
+| `app/api/admin/clients/route.ts` | POST persiste `fideicomiso_enabled` |
+| `app/api/admin/clients/[id]/route.ts` | PATCH permite actualizar `fideicomiso_enabled` |
+| `app/api/fideicomiso/autorizar/route.ts` | Valida sesión → llama CORFID webhook → guarda timestamp |
+| `app/(dashboard)/layout.tsx` | Lee flag del usuario logueado y renderiza el widget |
+| `components/fideicomiso/fideicomiso-widget.tsx` | Banner flotante + modal con RUC + declaración legal |
+| `docker-compose.yml` | Vars `CORFID_API_URL`, `CORFID_TENANT_SLUG`, `CORFID_WEBHOOK_SECRET` |
+| `.env.local` | Valores locales de las vars CORFID |
+
+### Variables de entorno para integración CORFID
+```
+CORFID_API_URL=http://localhost:3001        # En prod: URL del backend CORFID
+CORFID_TENANT_SLUG=hd-consultores
+CORFID_WEBHOOK_SECRET=***REMOVED***  # Debe coincidir con KONSTRUYE_WEBHOOK_SECRET en CORFID
+```
+
+### Flujo completo
+```
+Admin crea constructora con fideicomiso_enabled = true
+→ Constructora se loguea a Kostruye+
+→ Dashboard layout lee fideicomiso_enabled del app_client
+→ Muestra FideicomisoWidget (banner flotante azul)
+→ Cliente hace click "Autorizar acceso"
+→ Modal: ingresa RUC + acepta declaración legal
+→ POST /api/fideicomiso/autorizar
+  → valida sesión + fideicomiso_enabled = true + no autorizado antes
+  → POST CORFID /authorizations/webhook/hd-consultores
+    → CORFID crea Trust PENDING_AUTH
+    → WS emite authorization:received → toast en dashboard DH Consultores
+  → guarda fideicomiso_authorized_at en Supabase
+→ Widget cambia a "Fideicomiso autorizado ✓" (verde)
+```
+
+### Pendiente
+- Correr migración `013_fideicomiso.sql` en SQL Editor de Supabase
+- En prod: apuntar `CORFID_API_URL` a la URL real del backend CORFID en VPS
+
+---
+
 ## Módulos — Estado Actual
-_Última actualización: 2026-05-15_
+_Última actualización: 2026-05-29_
 
 | Módulo | Ruta | Estado |
 |--------|------|--------|
@@ -158,19 +218,81 @@ _Última actualización: 2026-05-15_
 | Dashboard S10 | `/proyectos/[id]/dashboard` | ✅ RO real (Kardex PPP) + Curva S 3 líneas |
 | Presupuesto + APU | `/proyectos/[id]/presupuesto` | ✅ UI + import OCR + import Excel S10 |
 | Compras (OC/OS) | `/proyectos/[id]/compras` | ✅ Schema + UI cliente |
-| Almacén | `/proyectos/[id]/almacen` | ✅ UI completa (836 líneas) — Kardex PPP activo |
+| Almacén | `/proyectos/[id]/almacen` | ✅ UI completa — Kardex PPP activo |
 | Nóminas / Tareo | `/proyectos/[id]/nominas` | ✅ Schema + UI cliente |
 | Valorizaciones | `/proyectos/[id]/valorizaciones` | ✅ Schema + UI cliente + print |
-| Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo (670 líneas) |
-| Contabilidad | `/proyectos/[id]/contabilidad` | 🔨 En desarrollo (430 líneas) |
-| Servicios / Subcontratos | `/proyectos/[id]/servicios` | ✅ UI cliente (604 líneas) |
-| Clientes de obra | `/clientes` | ✅ UI cliente (352 líneas) |
+| Lean / LPS | `/proyectos/[id]/lean` | 🔨 En desarrollo |
+| Contabilidad | `/proyectos/[id]/contabilidad` | ✅ Gastos + Facturación Electrónica SUNAT |
+| Servicios / Subcontratos | `/proyectos/[id]/servicios` | ✅ UI cliente |
+| Clientes de obra | `/clientes` | ✅ UI cliente |
 | Proveedores | `/proveedores` | ✅ UI cliente |
 | Configuración | `/proyectos/[id]/configuracion` | ✅ Completo (Fase 1) |
 | Demo KREO Vivienda | `sql_seed` | 🧪 Inyectando data coherente |
 | Admin multi-tenant | `/admin` | ✅ Panel activo en producción |
 
+## Variables de entorno adicionales
+
+```bash
+# KREO-SUNAT (server-side only)
+KREO_SUNAT_URL=http://2.24.72.21:3020
+KREO_SUNAT_API_KEY=              # api_key de la empresa en KREO-SUNAT
+KREO_SUNAT_API_SECRET=           # api_secret (solo visible al crear empresa)
+
+# Para links PDF/XML descargables desde el browser
+NEXT_PUBLIC_SUNAT_URL=http://2.24.72.21:3020
+```
+
+---
+
+## Integración Facturación Electrónica SUNAT (2026-05-29)
+
+### Concepto
+Konstruye+ delega toda la lógica SUNAT al microservicio **KREO-SUNAT** (PHP 8.3 + PhalconPHP en VPS HD 2.24.72.21:3020). Konstruye+ solo guarda metadata en Supabase; los XML firmados y CDR viven en KREO-SUNAT.
+
+### Tabla: `electronic_invoices` (migración 014)
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `comprobante_tipo` | TEXT | 01=Factura, 03=Boleta, 07=NC, 08=ND, 09=GRE |
+| `numero_formateado` | TEXT | "F001-00000001" |
+| `estado_sunat` | TEXT | pendiente → enviado → aceptado/rechazado |
+| `sunat_comprobante_id` | INT | ID en KREO-SUNAT para descargar XML/PDF |
+| `sunat_job_id` | TEXT | Job de la cola async |
+
+### API Routes
+| Ruta | Método | Función |
+|---|---|---|
+| `/api/invoices` | GET | Lista comprobantes por `project_id` |
+| `/api/invoices` | POST | Emite comprobante → proxy a KREO-SUNAT |
+| `/api/invoices/[id]` | GET | Consulta estado SUNAT y sincroniza |
+| `/api/invoices/[id]` | DELETE | Anula comprobante en KREO-SUNAT |
+
+### Archivos implementados
+| Archivo | Función |
+|---|---|
+| `supabase/migrations/014_facturacion_electronica.sql` | Tabla `electronic_invoices` con RLS |
+| `app/api/invoices/route.ts` | Proxy GET+POST con JWT cacheado |
+| `app/api/invoices/[id]/route.ts` | Estado SUNAT + anulación |
+| `app/(dashboard)/proyectos/[id]/contabilidad/facturacion-tab.tsx` | Tab lista comprobantes + KPIs |
+| `app/(dashboard)/proyectos/[id]/contabilidad/invoice-form.tsx` | Form emisión con cálculo IGV live |
+
+### JWT KREO-SUNAT
+El proxy cachea el JWT 1 hora (`sunatToken` + `sunatTokenExp` en memoria del proceso). Se autentica con `KREO_SUNAT_API_KEY` + `KREO_SUNAT_API_SECRET` contra `POST /api/auth/login` en KREO-SUNAT.
+
+### Pendiente para activar
+1. Levantar KREO-SUNAT en Docker en VPS HD → crear empresa → obtener api_key y api_secret
+2. Pegar credenciales en `.env.local` (vars `KREO_SUNAT_*`)
+3. Correr migration 014 en SQL Editor de Supabase
+4. El tab aparece automáticamente en Contabilidad de cualquier proyecto
+
+---
+
 ## Cambios recientes
+
+### 2026-05-29 — ✅ Facturación Electrónica SUNAT integrada
+
+Ver sección "Integración Facturación Electrónica SUNAT" arriba.
+
+---
 
 ### 2026-05-19 — ✅ Manual corregido: sección Importar Excel S10
 
