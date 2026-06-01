@@ -15,12 +15,17 @@ const { Client } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Conexión directa a Supabase PostgreSQL ────────────────────
+if (!process.env.DB_PASSWORD) {
+  console.error('❌  Falta DB_PASSWORD. Ejemplo: DB_PASSWORD=xxx node scripts/run-migrations.mjs');
+  process.exit(1);
+}
+
 const DB_CONFIG = {
-  host    : 'aws-1-us-east-2.pooler.supabase.com',
-  port    : 5432,
-  user    : 'postgres.wyaugtdgmcesoryhyois',
-  password: '***REMOVED***',
-  database: 'postgres',
+  host    : process.env.DB_HOST     || 'aws-1-us-east-2.pooler.supabase.com',
+  port    : Number(process.env.DB_PORT) || 5432,
+  user    : process.env.DB_USER     || 'postgres.wyaugtdgmcesoryhyois',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME     || 'postgres',
   ssl     : { rejectUnauthorized: false },
   connectionTimeoutMillis: 20000,
 };

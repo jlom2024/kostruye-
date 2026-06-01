@@ -181,7 +181,7 @@ Solo las constructoras explícitamente habilitadas como "clientes fideicomiso" p
 ```
 CORFID_API_URL=http://localhost:3001        # En prod: URL del backend CORFID
 CORFID_TENANT_SLUG=hd-consultores
-CORFID_WEBHOOK_SECRET=***REMOVED***  # Debe coincidir con KONSTRUYE_WEBHOOK_SECRET en CORFID
+CORFID_WEBHOOK_SECRET=<tu-webhook-secret>  # Debe coincidir con KONSTRUYE_WEBHOOK_SECRET en CORFID
 ```
 
 ### Flujo completo
