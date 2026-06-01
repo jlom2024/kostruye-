@@ -11,12 +11,15 @@ export async function proxy(request: NextRequest) {
     pathname === "/" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
+    pathname.startsWith("/pagar") ||        // Página de pago — pública
+    pathname.startsWith("/login") ||        // Login — público
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/admin/auth") || // Permitir verificar sesión
+    pathname.startsWith("/api/admin/auth") ||
     pathname.includes("favicon.ico") ||
     pathname.includes(".svg") ||
     pathname.includes(".png") ||
-    pathname.includes(".jpg");
+    pathname.includes(".jpg") ||
+    pathname.includes(".pdf");
 
   if (isPublicRoute) return NextResponse.next();
 
