@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- K shape — dark navy -->
+  <g fill="#1B2E4B">
+    <!-- Vertical stroke of K -->
+    <rect x="38" y="30" width="22" height="120" rx="2"/>
+    <!-- Upper diagonal arm -->
+    <polygon points="60,30 60,95 120,30"/>
+    <!-- Lower diagonal arm -->
+    <polygon points="60,105 60,150 120,150 78,105"/>
+  </g>
+  <!-- Plus sign — blue -->
+  <g fill="#2563EB">
+    <rect x="96" y="42" width="16" height="48" rx="2"/>
+    <rect x="80" y="58" width="48" height="16" rx="2"/>
+  </g>
+</svg>
