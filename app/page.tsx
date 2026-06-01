@@ -408,7 +408,7 @@ export default function Landing() {
           ))}
         </ul>
         <div style={{ display: "flex", gap: 10 }}>
-          <a href="/Manual-Kostruye-Plus.pdf" target="_blank" rel="noopener noreferrer" className="nav-cta-alt">Descargar Manual</a>
+          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="nav-cta-alt">Descargar Manual</a>
           <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="nav-cta">Solicitar demo</a>
         </div>
       </nav>
