@@ -274,7 +274,7 @@ export default function Landing() {
         .plan-features { list-style:none; display:flex; flex-direction:column; gap:9px; margin-bottom:28px; }
         .plan-features li { display:flex; align-items:center; gap:8px; font-size:13px; color:#d1d5db; }
         .check { font-weight:700; }
-        .plan-btn { display:block; text-align:center; padding:13px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none; transition:opacity .2s,transform .2s; }
+        .plan-btn { display:block; text-align:center; padding:13px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none; transition:opacity .2s,transform .2s; touch-action:manipulation; cursor:pointer; }
         .plan-btn:hover { opacity:.9; transform:translateY(-1px); }
 
         /* ── TESTIMONIAL ── */
@@ -368,13 +368,19 @@ export default function Landing() {
       <script dangerouslySetInnerHTML={{ __html: `
         (function(){
           // IntersectionObserver para reveal
+          var isMobile = window.innerWidth < 768;
           var io = new IntersectionObserver(function(entries){
             entries.forEach(function(e){
               if(e.isIntersecting){ e.target.classList.add('up'); io.unobserve(e.target); }
             });
-          },{ threshold: 0.10, rootMargin:'0px 0px -40px 0px' });
+          },{ threshold: isMobile ? 0.01 : 0.10, rootMargin: isMobile ? '0px' : '0px 0px -40px 0px' });
           function init(){
-            document.querySelectorAll('.reveal,.reveal-left,.reveal-scale').forEach(function(el){ io.observe(el); });
+            var els = document.querySelectorAll('.reveal,.reveal-left,.reveal-scale');
+            els.forEach(function(el){ io.observe(el); });
+            // Fallback: si el observer no disparó en 2s, revelar todo
+            setTimeout(function(){
+              els.forEach(function(el){ el.classList.add('up'); });
+            }, 2000);
             // Parallax en el mockup de fondo
             var bg = document.getElementById('hero-bg-mockup');
             if(bg){
