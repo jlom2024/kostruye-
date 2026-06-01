@@ -27,14 +27,14 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "Plan Pro",
-      price: "599",
+      price: "1099",
       priceCurrency: "PEN",
       description: "Proyectos ilimitados, usuarios ilimitados, todos los módulos, KIA IA incluido",
     },
     {
       "@type": "Offer",
       name: "Plan Enterprise",
-      price: "1999",
+      price: "3699",
       priceCurrency: "PEN",
       description: "Multi-empresa, gerente de cuenta dedicado, onboarding, integraciones a medida, SLA 99.9%",
     },
@@ -741,7 +741,7 @@ export default function Landing() {
               <div className="popular-tag">MÁS POPULAR</div>
               <div className="plan-name" style={{ color:"#f59e0b" }}>Pro</div>
               <div className="plan-price-row">
-                <span className="plan-price">S/ 599</span>
+                <span className="plan-price">S/ 1,099</span>
                 <span className="plan-period">/mes</span>
               </div>
               <p className="plan-desc">La solución completa para constructoras en crecimiento.</p>
@@ -772,7 +772,7 @@ export default function Landing() {
             <div className="price-card reveal-scale d2">
               <div className="plan-name" style={{ color:"#8b5cf6" }}>Enterprise</div>
               <div className="plan-price-row">
-                <span className="plan-price">S/ 1,999</span>
+                <span className="plan-price">S/ 3,699</span>
                 <span className="plan-period">/mes</span>
               </div>
               <p className="plan-desc">Para grupos constructores con múltiples empresas.</p>
