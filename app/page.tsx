@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Software ERP para Constructoras Peruanas | Kostruye+",
+  title: "KOSTRUYE+",
   description:
     "Gestiona presupuestos S10, valorizaciones, almacén, planilla y compras de todas tus obras desde una sola plataforma. ERP de construcción hecho en Perú.",
   alternates: { canonical: "https://kreo-crm.site" },
