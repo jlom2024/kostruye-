@@ -230,59 +230,74 @@ _Última actualización: 2026-05-29_
 | Demo KREO Vivienda | `sql_seed` | 🧪 Inyectando data coherente |
 | Admin multi-tenant | `/admin` | ✅ Panel activo en producción |
 
-## Variables de entorno adicionales
+## Variables de entorno SUNAT
 
 ```bash
-# KREO-SUNAT (server-side only)
+# Solo la URL del microservicio — NO api_key/api_secret aquí
 KREO_SUNAT_URL=http://2.24.72.21:3020
-KREO_SUNAT_API_KEY=              # api_key de la empresa en KREO-SUNAT
-KREO_SUNAT_API_SECRET=           # api_secret (solo visible al crear empresa)
-
-# Para links PDF/XML descargables desde el browser
 NEXT_PUBLIC_SUNAT_URL=http://2.24.72.21:3020
 ```
 
+**⚠️ DECISIÓN 2026-06-02:** Las credenciales SOL (`api_key` + `api_secret`) ya **NO van en `.env`**. Cada organización las ingresa ella misma desde la pantalla de Configuración → SUNAT. Se guardan en Supabase por organización.
+
 ---
 
-## Integración Facturación Electrónica SUNAT (2026-05-29)
+## Integración Facturación Electrónica SUNAT
 
-### Concepto
-Konstruye+ delega toda la lógica SUNAT al microservicio **KREO-SUNAT** (PHP 8.3 + PhalconPHP en VPS HD 2.24.72.21:3020). Konstruye+ solo guarda metadata en Supabase; los XML firmados y CDR viven en KREO-SUNAT.
+### Arquitectura (actualizada 2026-06-02)
+
+```
+Cliente ingresa api_key + api_secret en /configuracion → SUNAT
+              ↓ guardado en organizations.sunat_api_key / sunat_api_secret (Supabase)
+              ↓
+API route /api/invoices lee credenciales de la org del usuario
+              ↓
+POST http://2.24.72.21:3020/api/auth/login → JWT (cacheado 1h)
+              ↓
+POST /api/emisiones → comprobante emitido
+```
+
+**Por qué:** Eliminamos la necesidad de que KREO configure las credenciales para cada cliente. Cada constructora ingresa su propio RUC+SOL directamente.
+
+### Columnas en organizations (migración pendiente)
+```sql
+ALTER TABLE organizations ADD COLUMN sunat_api_key TEXT;
+ALTER TABLE organizations ADD COLUMN sunat_api_secret TEXT;
+ALTER TABLE organizations ADD COLUMN sunat_configurado BOOLEAN DEFAULT false;
+ALTER TABLE organizations ADD COLUMN sunat_ruc TEXT;
+```
+
+### UI — Pantalla de configuración SUNAT
+- Ruta: `/configuracion` → tab "SUNAT / Facturación"
+- Campos: RUC, api_key (de KREO-SUNAT), api_secret
+- Al guardar: `PATCH /api/org/sunat` → guarda en Supabase
+- Botón "Verificar conexión" → `POST /api/org/sunat/test`
+
+### API Routes (pendiente implementar)
+| Ruta | Método | Función |
+|---|---|---|
+| `/api/org/sunat` | GET/PATCH | Leer/guardar credenciales SUNAT de la org |
+| `/api/org/sunat/test` | POST | Verificar que las credenciales funcionan |
+| `/api/invoices` | GET | Lista comprobantes por `project_id` |
+| `/api/invoices` | POST | Emite comprobante → proxy a KREO-SUNAT con creds de la org |
+| `/api/invoices/[id]` | GET | Consulta estado SUNAT |
+| `/api/invoices/[id]` | DELETE | Anula comprobante |
 
 ### Tabla: `electronic_invoices` (migración 014)
 | Columna | Tipo | Descripción |
 |---|---|---|
-| `comprobante_tipo` | TEXT | 01=Factura, 03=Boleta, 07=NC, 08=ND, 09=GRE |
+| `comprobante_tipo` | TEXT | 01=Factura, 03=Boleta, 07=NC, 08=ND |
 | `numero_formateado` | TEXT | "F001-00000001" |
 | `estado_sunat` | TEXT | pendiente → enviado → aceptado/rechazado |
 | `sunat_comprobante_id` | INT | ID en KREO-SUNAT para descargar XML/PDF |
-| `sunat_job_id` | TEXT | Job de la cola async |
 
-### API Routes
-| Ruta | Método | Función |
-|---|---|---|
-| `/api/invoices` | GET | Lista comprobantes por `project_id` |
-| `/api/invoices` | POST | Emite comprobante → proxy a KREO-SUNAT |
-| `/api/invoices/[id]` | GET | Consulta estado SUNAT y sincroniza |
-| `/api/invoices/[id]` | DELETE | Anula comprobante en KREO-SUNAT |
-
-### Archivos implementados
-| Archivo | Función |
-|---|---|
-| `supabase/migrations/014_facturacion_electronica.sql` | Tabla `electronic_invoices` con RLS |
-| `app/api/invoices/route.ts` | Proxy GET+POST con JWT cacheado |
-| `app/api/invoices/[id]/route.ts` | Estado SUNAT + anulación |
-| `app/(dashboard)/proyectos/[id]/contabilidad/facturacion-tab.tsx` | Tab lista comprobantes + KPIs |
-| `app/(dashboard)/proyectos/[id]/contabilidad/invoice-form.tsx` | Form emisión con cálculo IGV live |
-
-### JWT KREO-SUNAT
-El proxy cachea el JWT 1 hora (`sunatToken` + `sunatTokenExp` en memoria del proceso). Se autentica con `KREO_SUNAT_API_KEY` + `KREO_SUNAT_API_SECRET` contra `POST /api/auth/login` en KREO-SUNAT.
-
-### Pendiente para activar
-1. Levantar KREO-SUNAT en Docker en VPS HD → crear empresa → obtener api_key y api_secret
-2. Pegar credenciales en `.env.local` (vars `KREO_SUNAT_*`)
-3. Correr migration 014 en SQL Editor de Supabase
-4. El tab aparece automáticamente en Contabilidad de cualquier proyecto
+### Estado actual (2026-06-02)
+- ❌ `app/api/invoices/` — **NO existe en el repo**, pendiente crear
+- ❌ `app/api/org/sunat` — pendiente crear
+- ❌ Migración columnas `organizations.sunat_*` — pendiente
+- ❌ UI de configuración SUNAT — pendiente
+- ✅ `app/api/org/sunat-sol/route.ts` — existe (revisar si reutilizable)
+- ✅ KREO-SUNAT microservicio corriendo en `2.24.72.21:3020`
 
 ---
 
