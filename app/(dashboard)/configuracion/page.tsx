@@ -235,7 +235,7 @@ export default function ConfiguracionPage() {
                       const newPwd = (e.currentTarget.elements.namedItem('newPassword') as HTMLInputElement).value;
                       if (!newPwd) return toast.error('Nueva contraseña requerida');
                       setSaving(true);
-                      const res = await fetch('/api/auth/password', {
+                      const res = await fetch('/api/org/members/password', {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd }),
