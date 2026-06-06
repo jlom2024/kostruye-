@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { toast } from "sonner";
-import { Loader2, Building2, Users, Copy, Check, UserPlus, Trash2, Shield, BookOpen, User, Key } from "lucide-react";
+import { Loader2, Building2, Users, Copy, Check, UserPlus, Trash2, Shield, BookOpen, User, Key, FileText, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface OrgData { id: string; name: string }
 interface Member {
@@ -41,7 +41,16 @@ export default function ConfiguracionPage() {
   const [myRole, setMyRole] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"org" | "members">("org");
+  const [tab, setTab] = useState<"org" | "members" | "sunat">("org");
+
+  // SUNAT state
+  const [sunatRuc, setSunatRuc] = useState("");
+  const [sunatApiKey, setSunatApiKey] = useState("");
+  const [sunatApiSecret, setSunatApiSecret] = useState("");
+  const [sunatConfigurado, setSunatConfigurado] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [savingSunat, setSavingSunat] = useState(false);
+  const [testingSunat, setTestingSunat] = useState(false);
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
@@ -85,6 +94,17 @@ export default function ConfiguracionPage() {
       if (orgData) { setOrg(orgData); setOrgName(orgData.name); }
 
       await loadMembers();
+
+      // Load SUNAT credentials
+      const sunatRes = await fetch("/api/org/sunat");
+      if (sunatRes.ok) {
+        const s = await sunatRes.json();
+        setSunatRuc(s.sunat_ruc ?? "");
+        setSunatApiKey(s.sunat_api_key ?? "");
+        setSunatApiSecret(s.sunat_api_secret ?? "");
+        setSunatConfigurado(s.sunat_configurado ?? false);
+      }
+
       setLoading(false);
     }
     load();
@@ -178,6 +198,38 @@ export default function ConfiguracionPage() {
     }
   }
 
+  async function saveSunat(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingSunat(true);
+    const res = await fetch("/api/org/sunat", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sunat_ruc: sunatRuc,
+        sunat_api_key: sunatApiKey,
+        sunat_api_secret: sunatApiSecret,
+      }),
+    });
+    setSavingSunat(false);
+    if (res.ok) {
+      const d = await res.json();
+      setSunatConfigurado(d.sunat_configurado);
+      toast.success("Credenciales SUNAT guardadas");
+    } else {
+      const d = await res.json();
+      toast.error(d.error ?? "Error al guardar");
+    }
+  }
+
+  async function testSunat() {
+    setTestingSunat(true);
+    const res = await fetch("/api/org/sunat/test", { method: "POST" });
+    setTestingSunat(false);
+    const d = await res.json();
+    if (res.ok) toast.success(d.message ?? "Conexión verificada");
+    else toast.error(d.error ?? "Error al verificar");
+  }
+
   const isAdmin = myRole === "admin";
 
   if (loading) return (
@@ -199,12 +251,15 @@ export default function ConfiguracionPage() {
           <div className="max-w-2xl mx-auto space-y-5">
 
             {/* Tabs */}
-            <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-              {([["org", Building2, "Organización"], ["members", Users, "Miembros"]] as const).map(([key, Icon, label]) => (
+            <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit flex-wrap">
+              {([["org", Building2, "Organización"], ["members", Users, "Miembros"], ["sunat", FileText, "SUNAT"]] as const).map(([key, Icon, label]) => (
                 <button key={key} onClick={() => setTab(key)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === key ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                     }`}>
                   <Icon className="h-4 w-4" />{label}
+                  {key === "sunat" && sunatConfigurado && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 ml-0.5" />
+                  )}
                 </button>
               ))}
             </div>
@@ -314,6 +369,92 @@ export default function ConfiguracionPage() {
                   </div>
                 </section>
               </>
+            )}
+
+            {tab === "sunat" && (
+              <section className="rounded-xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
+                    <FileText className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Facturación Electrónica SUNAT</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Credenciales SOL de tu empresa en KREO-SUNAT</p>
+                  </div>
+                  {sunatConfigurado ? (
+                    <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5">
+                      <CheckCircle2 className="h-3 w-3" />Configurado
+                    </span>
+                  ) : (
+                    <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                      <AlertCircle className="h-3 w-3" />Pendiente
+                    </span>
+                  )}
+                </div>
+
+                {!isAdmin ? (
+                  <div className="rounded-lg border border-dashed border-slate-300 p-4 text-center">
+                    <p className="text-sm text-slate-500">Solo el administrador puede configurar las credenciales SUNAT.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={saveSunat} className="space-y-4">
+                    <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700">
+                      Ingresa las credenciales que KREO te proporcionó para tu empresa. Se guardan cifradas por organización y nunca se comparten.
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 block mb-1.5">RUC de la empresa</label>
+                      <input
+                        value={sunatRuc}
+                        onChange={(e) => setSunatRuc(e.target.value)}
+                        placeholder="20XXXXXXXXX"
+                        maxLength={11}
+                        className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 block mb-1.5">API Key (proporcionada por KREO)</label>
+                      <input
+                        value={sunatApiKey}
+                        onChange={(e) => setSunatApiKey(e.target.value)}
+                        placeholder="kreo_xxxxxxxxxxxxxxxx"
+                        className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 block mb-1.5">API Secret</label>
+                      <div className="relative">
+                        <input
+                          type={showSecret ? "text" : "password"}
+                          value={sunatApiSecret}
+                          onChange={(e) => setSunatApiSecret(e.target.value)}
+                          placeholder="••••••••••••••••"
+                          className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
+                        />
+                        <button type="button" onClick={() => setShowSecret(!showSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                          {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button type="submit" disabled={savingSunat}
+                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                        {savingSunat && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        Guardar credenciales
+                      </button>
+                      <button type="button" onClick={testSunat} disabled={testingSunat || !sunatConfigurado}
+                        className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition-colors">
+                        {testingSunat ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                        Verificar conexión
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </section>
             )}
 
             {tab === "members" && (
