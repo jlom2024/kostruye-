@@ -399,7 +399,7 @@ export default function ConfiguracionPage() {
                 ) : (
                   <form onSubmit={saveSunat} className="space-y-4">
                     <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-700">
-                      Ingresa las credenciales que KREO te proporcionó para tu empresa. Se guardan cifradas por organización y nunca se comparten.
+                      Ingresa las credenciales SOL de tu empresa. Se guardan cifradas por organización y nunca se comparten. El RUC y Usuario SOL los encuentras en <strong>SUNAT SOL → Mi RUC y otros registros</strong>.
                     </div>
 
                     <div>
@@ -414,23 +414,24 @@ export default function ConfiguracionPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-600 block mb-1.5">API Key (proporcionada por KREO)</label>
+                      <label className="text-xs font-medium text-slate-600 block mb-1.5">Usuario SOL <span className="text-slate-400 font-normal">(RUC + código de usuario, ej: 20601234567JLOM)</span></label>
                       <input
                         value={sunatApiKey}
-                        onChange={(e) => setSunatApiKey(e.target.value)}
-                        placeholder="kreo_xxxxxxxxxxxxxxxx"
+                        onChange={(e) => setSunatApiKey(e.target.value.toUpperCase())}
+                        placeholder="20601234567USUARIO"
+                        autoComplete="off"
                         className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-600 block mb-1.5">API Secret</label>
+                      <label className="text-xs font-medium text-slate-600 block mb-1.5">Clave SOL</label>
                       <div className="relative">
                         <input
                           type={showSecret ? "text" : "password"}
                           value={sunatApiSecret}
                           onChange={(e) => setSunatApiSecret(e.target.value)}
-                          placeholder="••••••••••••••••"
+                          placeholder="Clave SOL"
                           className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
                         />
                         <button type="button" onClick={() => setShowSecret(!showSecret)}
