@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import PasswordInput from "./password-input";
 
 function serviceClient() {
   return createClient(
@@ -35,24 +36,20 @@ export default async function TenantPage({
         body { background: #0a0f1e; margin: 0; }
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .tenant-card { animation: fadeUp 0.6s ease forwards; }
+        .tenant-card  { animation: fadeUp 0.6s ease forwards; }
         .tenant-input:focus { border-color: #f59e0b !important; outline: none; }
-        .tenant-btn:hover { opacity: 0.9; }
+        .tenant-btn:hover   { opacity: 0.9; }
       `}</style>
 
       <div style={{
         minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "system-ui, -apple-system, sans-serif",
-        position: "relative",
-        overflow: "hidden",
-        padding: "24px",
+        position: "relative", overflow: "hidden", padding: "24px",
       }}>
-        {/* Background glow */}
+        {/* Background glows */}
         <div style={{ position: "fixed", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,158,11,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "fixed", bottom: -200, left: "50%", transform: "translateX(-50%)", width: 600, height: 600, background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
@@ -60,11 +57,10 @@ export default async function TenantPage({
           width: "100%", maxWidth: 420, padding: "48px 40px",
           background: "rgba(255,255,255,0.03)",
           border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 20,
-          backdropFilter: "blur(20px)",
-          position: "relative",
-          zIndex: 1,
+          borderRadius: 20, backdropFilter: "blur(20px)",
+          position: "relative", zIndex: 1,
         }}>
+          {/* Logo + nombre */}
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div style={{
               width: 72, height: 72, borderRadius: 16,
@@ -87,8 +83,9 @@ export default async function TenantPage({
             </p>
           </div>
 
-          {/* Login form */}
+          {/* Form */}
           <form action={`/${tenant}/auth`} method="POST">
+            {/* Email */}
             <div style={{ marginBottom: 14 }}>
               <label style={{ color: "#9ca3af", fontSize: 13, display: "block", marginBottom: 6 }}>
                 Correo electrónico
@@ -102,24 +99,21 @@ export default async function TenantPage({
                 style={{ width: "100%", padding: "11px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, color: "#fff", fontSize: 15, transition: "border-color 0.2s", boxSizing: "border-box" }}
               />
             </div>
+
+            {/* Password con toggle */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ color: "#9ca3af", fontSize: 13, display: "block", marginBottom: 6 }}>
                 Contraseña
               </label>
-              <input
-                name="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                className="tenant-input"
-                style={{ width: "100%", padding: "11px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, color: "#fff", fontSize: 15, transition: "border-color 0.2s", boxSizing: "border-box" }}
-              />
+              <PasswordInput />
             </div>
+
             {authError && (
               <p style={{ color: "#f87171", fontSize: 13, textAlign: "center", marginBottom: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "8px 12px" }}>
                 Correo o contraseña incorrectos
               </p>
             )}
+
             <button
               type="submit"
               className="tenant-btn"
