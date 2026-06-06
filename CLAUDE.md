@@ -303,6 +303,38 @@ ALTER TABLE organizations ADD COLUMN sunat_ruc TEXT;
 
 ## Cambios recientes
 
+### 2026-06-06 — ✅ Fixes de UX, precios y deploy
+
+**Toggle contraseña en login de cliente (`app/[tenant]/`):**
+- Nuevo componente `app/[tenant]/password-input.tsx` (`"use client"`) con ícono `Eye`/`EyeOff` de Lucide
+- `page.tsx` del tenant sigue siendo Server Component — solo el campo contraseña es client
+- Ícono se pone amarillo `#f59e0b` cuando la contraseña está visible
+
+**Sincronización de precios (`app/pagar/page.tsx`):**
+- Precios actualizados para coincidir con `PLAN_PRICES` del admin:
+  - Pro: S/ 599 → **S/ 1,099/mes**
+  - Enterprise: S/ 1,999 → **S/ 3,699/mes**
+- Causa raíz: `pagar/page.tsx` tenía precios desactualizados vs `admin/page.tsx`
+
+**Campos SUNAT en Configuración (`app/(dashboard)/configuracion/page.tsx`):**
+- Campo "API Key (proporcionada por KREO)" → **"Usuario SOL"** (RUC + código de usuario, ej: `20601234567JLOM`)
+- Campo "API Secret" → **"Clave SOL"**
+- Input de Usuario SOL convierte a mayúsculas automáticamente (`toUpperCase()`)
+- Texto informativo actualizado: ya no menciona credenciales de KREO, sino credenciales SOL directas
+- Alineado con el flujo de KREO-ERP (`http://2.24.72.21:3061`) que usa `sunat_usuario_sol` / `sunat_clave_sol`
+
+**Fix precio en Supabase:**
+- `app_clients.monthly_price` de SEATEK actualizado directamente vía API REST: S/ 599 → **S/ 1,099**
+- El admin lee `monthly_price` de la BD — no lo recalcula a menos que se cambie el plan desde el dropdown
+
+**Infraestructura VPS:**
+- IP del VPS actualizada en todo el repo: `187.77.54.30` → **`2.24.72.21`** (Hostinger srv1685599.hstgr.cloud)
+- Proyecto en VPS: `/opt/kostruye-plus`
+- Llave SSH de Manus (`manus-kostruye`) registrada en Hostinger SSH Keys para deploys automáticos
+- Deploy ejecutado: `git pull origin master && docker compose up -d --build`
+
+---
+
 ### 2026-05-29 — ✅ Facturación Electrónica SUNAT integrada
 
 Ver sección "Integración Facturación Electrónica SUNAT" arriba.
