@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   if (!targetUser) {
     const { data: created, error } = await svc.auth.admin.createUser({
       email,
-      password: password || "***REDACTED***",
+      password: password || Math.random().toString(36).slice(-10) + "K!",
       email_confirm: true,
     });
     if (error || !created.user)

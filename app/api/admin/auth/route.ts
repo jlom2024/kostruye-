@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    ?? "admin@kreoiastudio.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "***REDACTED***";
-const ADMIN_TOKEN    = process.env.ADMIN_TOKEN    ?? "***REDACTED***";
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_TOKEN    = process.env.ADMIN_TOKEN;
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_TOKEN) {
+  console.error("[admin/auth] Missing env vars: ADMIN_EMAIL, ADMIN_PASSWORD or ADMIN_TOKEN");
+}
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get("kostruye_admin")?.value;
@@ -12,6 +16,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
+
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_TOKEN) {
+    return NextResponse.json({ error: "Servidor mal configurado" }, { status: 500 });
+  }
 
   if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 });

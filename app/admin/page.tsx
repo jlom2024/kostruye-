@@ -62,8 +62,8 @@ const PLAN_COLORS: Record<Plan, string> = {
 
 const PLAN_PRICES: Record<Plan, number> = {
   pilot: 0,
-  pro: 599,
-  enterprise: 1299,
+  pro: 1099,
+  enterprise: 3699,
 };
 
 export default function AdminDashboard() {
@@ -405,7 +405,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setForm({ ...form, plan: e.target.value as Plan, monthly_price: PLAN_PRICES[e.target.value as Plan] })}
                   >
                     <option value="pilot">Piloto — Gratis</option>
-                    <option value="pro">Pro — S/ 599/mes</option>
+                    <option value="pro">Pro — S/ 1,099/mes</option>
                     <option value="enterprise">Enterprise — S/ 1,299/mes</option>
                   </select>
                 </div>
