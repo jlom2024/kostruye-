@@ -40,3 +40,11 @@ next-env.d.ts
 # Misc
 *.pem
 .vercel
+
+# VPS / SSH keys — NEVER commit
+VPS/
+*.pem
+id_rsa
+id_ed25519
+id_ecdsa
+*.key

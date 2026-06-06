@@ -16,6 +16,10 @@ services:
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - KREO_SUNAT_URL=${KREO_SUNAT_URL:-http://2.24.72.21:3020}
+      - CORFID_API_URL=${CORFID_API_URL:-}
+      - CORFID_TENANT_SLUG=${CORFID_TENANT_SLUG:-hd-consultores}
+      - CORFID_WEBHOOK_SECRET=${CORFID_WEBHOOK_SECRET:-}
       # nginx-proxy routing
       - VIRTUAL_HOST=kreo-crm.site,www.kreo-crm.site
       - VIRTUAL_PORT=3000
