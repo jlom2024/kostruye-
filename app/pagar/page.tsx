@@ -15,13 +15,13 @@ const PLANS = {
   },
   pro: {
     name: "Pro",
-    price: "S/ 599/mes",
+    price: "S/ 1,099/mes",
     color: "#f59e0b",
     features: ["Proyectos ilimitados", "Todos los módulos", "KIA asistente IA", "Soporte 24/7"],
   },
   enterprise: {
     name: "Enterprise",
-    price: "S/ 1,999/mes",
+    price: "S/ 3,699/mes",
     color: "#8b5cf6",
     features: ["Todo en Pro", "Multi-empresa", "Gerente de cuenta dedicado", "SLA 99.9%"],
   },
