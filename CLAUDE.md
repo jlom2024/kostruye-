@@ -20,7 +20,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Charts | Recharts |
 | Toasts | Sonner |
 | Deploy local | `npm run dev` → localhost:3000 |
-| Deploy prod | Docker + Nginx en VPS Hostinger |
+| Deploy prod | Docker + Nginx en VPS (IP: 2.24.72.21) |
 
 ---
 
@@ -395,7 +395,7 @@ Ver sección "Integración Facturación Electrónica SUNAT" arriba.
 - **Inteligencia Artificial (KIA)**: El asistente de obra se actualizó al modelo `gpt-4o-mini` (había un typo `o4-mini`) y ahora es plenamente **Context-Aware**, inyectando el ID del proyecto activo en el System Prompt para aislar respuestas y herramientas.
 - **Limpieza de Datos Global**: Se purgó la base de datos de proveedores duplicados (originados al correr seeds repetidamente porque `suppliers` y `clients` se comparten a nivel org, no a nivel proyecto).
 - **Data Dummy Nóminas**: Se inyectaron 3 trabajadores base y entradas de pago en las semanas de enero para los proyectos KREO Vivienda y PRJ-RO-01, habilitando la vista real del tareo.
-- **Deploy SSH Automatizado**: Se configuró el VPS (187.77.54.30) para aceptar `git pull` y `docker compose up -d` vía llave SSH local (`id_ed25519`), permitiendo deploys sin contraseña ni scripts bloqueantes.
+- **Deploy SSH Automatizado**: Se configuró el VPS (2.24.72.21) para aceptar `git pull` y `docker compose up -d` vía llave SSH local (`id_ed25519`), permitiendo deploys sin contraseña ni scripts bloqueantes.
 
 ### 2026-05-14 — ✅ Sprint 1.2.2: Gestión de Equipo
 - **UI de Equipo**: Tabla de miembros con gestión de roles y eliminación.
@@ -447,7 +447,7 @@ Ver sección "Integración Facturación Electrónica SUNAT" arriba.
 ### 2026-05-08 — Dashboard S10 (Resultado Operativo)
 - **`dashboard/page.tsx`** — Queries: `payroll_periods` (costo MO) + `issue_date` en OCs + `ocTimeline` para Curva S comprometida
 - **`dashboard-client.tsx`** — Componente `ResultadoOperativo`: KPIs + barra desglose + Curva S 3 líneas
-- Deploy automático a `kreo-crm.site` via Docker en VPS 187.77.54.30
+- Deploy automático a `kreo-crm.site` via Docker en VPS 2.24.72.21
 
 ### Estado del RO en producción
 - ✅ Ingreso valorizado → `valorizaciones` aprobadas
