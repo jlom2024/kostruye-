@@ -15,7 +15,6 @@ declare global {
         "custom-active-height"?: string;
         "show-minimize-button"?: string;
         "initial-state"?: string;
-        "hide-ui"?: boolean;
       };
     }
   }
@@ -32,7 +31,6 @@ export function JoshyWidget() {
         custom-active-height="377"
         show-minimize-button="true"
         initial-state="minimized"
-        hide-ui
       />
       <Script
         type="module"
