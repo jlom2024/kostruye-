@@ -24,7 +24,7 @@ export function JoshyWidget() {
   return (
     <>
       <lemon-slice-widget
-        agent-id="agent_d0c784422b69f5f4"
+        agent-id="agent_07cc9bf1bd0a14f3"
         custom-minimized-width="144"
         custom-minimized-height="216"
         custom-active-width="252"
