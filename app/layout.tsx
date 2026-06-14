@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { JoshyWidget } from "@/components/joshy-widget";
 
 const APP_URL = "https://kreo-crm.site";
 
@@ -85,6 +86,7 @@ export default function RootLayout({
         <QueryProvider>
           {children}
           <Toaster richColors position="top-right" />
+          <JoshyWidget />
         </QueryProvider>
       </body>
     </html>
