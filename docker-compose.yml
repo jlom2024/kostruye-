@@ -21,9 +21,9 @@ services:
       - CORFID_TENANT_SLUG=${CORFID_TENANT_SLUG:-hd-consultores}
       - CORFID_WEBHOOK_SECRET=${CORFID_WEBHOOK_SECRET:-}
       # nginx-proxy routing
-      - VIRTUAL_HOST=kreo-crm.site,www.kreo-crm.site
+      - VIRTUAL_HOST=kreo-crm.site,www.kreo-crm.site,konstruye.site,www.konstruye.site
       - VIRTUAL_PORT=3000
-      - LETSENCRYPT_HOST=kreo-crm.site,www.kreo-crm.site
+      - LETSENCRYPT_HOST=kreo-crm.site,www.kreo-crm.site,konstruye.site,www.konstruye.site
       - LETSENCRYPT_EMAIL=admin@kreoiastudio.com
     restart: unless-stopped
     networks:
