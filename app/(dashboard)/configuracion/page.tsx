@@ -7,7 +7,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { toast } from "sonner";
 import { Loader2, Building2, Users, Copy, Check, UserPlus, Trash2, Shield, BookOpen, User, Key, FileText, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 
-interface OrgData { id: string; name: string }
+interface OrgData { id: string; name: string; ruc?: string }
 interface Member {
   user_id: string;
   role: string;
@@ -45,8 +45,8 @@ export default function ConfiguracionPage() {
 
   // SUNAT state
   const [sunatRuc, setSunatRuc] = useState("");
-  const [sunatApiKey, setSunatApiKey] = useState("");
-  const [sunatApiSecret, setSunatApiSecret] = useState("");
+  const [solUsuario, setSolUsuario] = useState("");
+  const [solClave, setSolClave] = useState("");
   const [sunatConfigurado, setSunatConfigurado] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [savingSunat, setSavingSunat] = useState(false);
@@ -88,20 +88,17 @@ export default function ConfiguracionPage() {
 
       const { data: orgData } = await supabase
         .from("organizations")
-        .select("id, name")
+        .select("id, name, ruc")
         .eq("id", membership.organization_id)
         .single();
-      if (orgData) { setOrg(orgData); setOrgName(orgData.name); }
+      if (orgData) { setOrg(orgData); setOrgName(orgData.name); setSunatRuc(orgData.ruc ?? ""); }
 
       await loadMembers();
 
-      // Load SUNAT credentials
-      const sunatRes = await fetch("/api/org/sunat");
+      // Load SUNAT status (credentials are encrypted in kreo-sunat, no reversal)
+      const sunatRes = await fetch("/api/org/sunat-sol");
       if (sunatRes.ok) {
         const s = await sunatRes.json();
-        setSunatRuc(s.sunat_ruc ?? "");
-        setSunatApiKey(s.sunat_api_key ?? "");
-        setSunatApiSecret(s.sunat_api_secret ?? "");
         setSunatConfigurado(s.sunat_configurado ?? false);
       }
 
@@ -200,21 +197,23 @@ export default function ConfiguracionPage() {
 
   async function saveSunat(e: React.FormEvent) {
     e.preventDefault();
+    if (!org) return;
     setSavingSunat(true);
-    const res = await fetch("/api/org/sunat", {
-      method: "PATCH",
+    // 1. Guardar RUC en la org
+    if (sunatRuc.trim()) {
+      await supabase.from("organizations").update({ ruc: sunatRuc.trim() }).eq("id", org.id);
+    }
+    // 2. Enviar credenciales SOL cifradas a kreo-sunat
+    const res = await fetch("/api/org/sunat-sol", {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sunat_ruc: sunatRuc,
-        sunat_api_key: sunatApiKey,
-        sunat_api_secret: sunatApiSecret,
-      }),
+      body: JSON.stringify({ sol_usuario: solUsuario.trim().toUpperCase(), sol_clave: solClave.trim() }),
     });
     setSavingSunat(false);
     if (res.ok) {
-      const d = await res.json();
-      setSunatConfigurado(d.sunat_configurado);
-      toast.success("Credenciales SUNAT guardadas");
+      setSunatConfigurado(true);
+      setSolClave("");
+      toast.success("Credenciales SOL guardadas de forma segura");
     } else {
       const d = await res.json();
       toast.error(d.error ?? "Error al guardar");
@@ -416,10 +415,11 @@ export default function ConfiguracionPage() {
                     <div>
                       <label className="text-xs font-medium text-slate-600 block mb-1.5">Usuario SOL <span className="text-slate-400 font-normal">(RUC + código de usuario, ej: 20601234567JLOM)</span></label>
                       <input
-                        value={sunatApiKey}
-                        onChange={(e) => setSunatApiKey(e.target.value.toUpperCase())}
+                        value={solUsuario}
+                        onChange={(e) => setSolUsuario(e.target.value.toUpperCase())}
                         placeholder="20601234567USUARIO"
                         autoComplete="off"
+                        required
                         className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
                       />
                     </div>
@@ -429,9 +429,10 @@ export default function ConfiguracionPage() {
                       <div className="relative">
                         <input
                           type={showSecret ? "text" : "password"}
-                          value={sunatApiSecret}
-                          onChange={(e) => setSunatApiSecret(e.target.value)}
+                          value={solClave}
+                          onChange={(e) => setSolClave(e.target.value)}
                           placeholder="Clave SOL"
+                          required
                           className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors font-mono"
                         />
                         <button type="button" onClick={() => setShowSecret(!showSecret)}
