@@ -1,6 +1,18 @@
 # Bitácora del Equipo — Kostruye+
 
-Registro cronológico de cambios realizados por **cualquier agente o miembro del equipo** (Claude, Manus, Houston/Gemini, Antu).
+Registro cronológico de cambios realizados por **cualquier agente o miembro del equipo**.
+
+## Equipo de agentes
+
+| Nombre | Motor | Función |
+|--------|-------|---------|
+| **Antu** | Claude / Anthropic | Desarrollo principal, arquitectura, deploy |
+| **Manus** | Manus | Automatización, tareas autónomas |
+| **Houston** | Gemini / Google | Análisis, revisión de código |
+| **Plexy** | Perplexity | Investigación, búsqueda y documentación |
+| **Kia** | OpenAI / GPT | Asistente IA dentro del dashboard de Kostruye+ |
+
+**Comando:** Koko (fundador, KREO IA Studio)
 El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qué estado quedó y quién hizo qué.
 
 **Formato de entrada:**
