@@ -1,7 +1,7 @@
 # Roadmap — Cierre de Brecha Konstruye+ vs ObraCore
 
 **Fuente:** `konstruye_vs_obracore.pdf` (análisis de brecha)
-**Última actualización:** 2026-06-16
+**Última actualización:** 2026-06-16 (sesión tarde)
 
 Seguimiento del avance de Konstruye+ frente al benchmark ObraCore. La columna **Δ 2026-06-16** refleja el progreso tras las migraciones 016–019 y la integración de permisos en la app.
 
@@ -26,11 +26,22 @@ Seguimiento del avance de Konstruye+ frente al benchmark ObraCore. La columna **
 - ✅ **B — Catálogos:** `capeco_units`.
 - ✅ **H — Stack:** matriz `role_module_permissions` + `fn_user_can`/`fn_user_can_project`, permisos integrados en la app (ver [`docs/permissions.md`](permissions.md)), realtime, hardening RLS/search_path.
 
+## Hecho (sesión tarde 2026-06-16)
+
+- ✅ **Alanis** movida de root layout → solo landing (`app/page.tsx`)
+- ✅ **KIA** permanece en dashboard layout — context-aware (sin cambios)
+- ✅ **Tab Fideicomiso** en `/proyectos/[id]/configuracion` → autorización CORFID por proyecto
+- ✅ **Migración 022** — columnas `fideicomiso_*` en `projects`
+- ✅ **Dominio** actualizado: `konstruye.site` en toda la metadata/docker-compose
+- ✅ **`docs/BITACORA.md`** — bitácora de equipo creada (Claude/Manus/Houston/Antu)
+- ✅ **CLAUDE.md** reescrito con estado actual completo
+
 ## Siguiente (orden sugerido por impacto)
 
-1. **App Móvil** (G) — la brecha más grande (0%). Expo/React Native sobre el mismo Supabase. Foco: tareo de campo, almacén, avance físico. _(planificado para la tarde)_
-2. **Imputar OC y servicios a partida** (F) — agregar `budget_item_id` a OC/servicios para que el control de costos incluya todo el costo real por partida, no solo materiales.
-3. **Extender audit log** a más módulos (compras, valorizaciones, nóminas) añadiendo el trigger `fn_audit`.
+1. **App Móvil** (G) — la brecha más grande (0%). Expo/React Native sobre el mismo Supabase. Foco: tareo de campo, almacén, avance físico.
+2. **Imputar OC y servicios a partida** (F) — agregar `budget_item_id` a OC/servicios para control de costos completo.
+3. **Crear archivos .sql 019–021** — reproducibilidad de migraciones ya aplicadas.
+4. **Extender audit log** a más módulos (compras, valorizaciones, nóminas).
 
 ## Backlog de datos (no-código)
 
