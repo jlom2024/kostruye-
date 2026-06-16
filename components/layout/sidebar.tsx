@@ -14,6 +14,7 @@ import {
   TrendingUp,
   BookOpen,
   Settings,
+  Settings2,
   LogOut,
   ChevronRight,
   Building2,
@@ -51,6 +52,7 @@ const allProjectNav = [
   { href: "lean",           icon: TrendingUp,      label: "Lean",           roles: ["admin", "user"] },
   { href: "contabilidad",   icon: BookOpen,        label: "Contabilidad",   roles: ["admin", "contador"] },
   { href: "auditoria",      icon: ShieldCheck,     label: "Auditoría",      roles: ["admin", "contador"] },
+  { href: "configuracion",  icon: Settings2,       label: "Configuración",  roles: ["admin"] },
 ];
 
 interface SidebarProps {
