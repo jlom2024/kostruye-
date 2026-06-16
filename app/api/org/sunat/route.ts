@@ -1,9 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { userCan } from "@/lib/permissions";
 
-function serverClient() {
-  const cookieStore = cookies();
+async function serverClient() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -11,7 +12,7 @@ function serverClient() {
   );
 }
 
-async function getOrgId(supabase: ReturnType<typeof serverClient>) {
+async function getOrgId(supabase: Awaited<ReturnType<typeof serverClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase
@@ -24,7 +25,7 @@ async function getOrgId(supabase: ReturnType<typeof serverClient>) {
 }
 
 export async function GET() {
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -39,19 +40,12 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  // Only admin can update SUNAT credentials
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: membership } = await supabase
-    .from("organization_members")
-    .select("role")
-    .eq("user_id", user!.id)
-    .eq("organization_id", orgId)
-    .single();
-  if (membership?.role !== "admin") {
+  // Permiso por matriz: editar configuración (solo admin lo tiene)
+  if (!(await userCan(supabase, orgId, "configuracion", "edit"))) {
     return NextResponse.json({ error: "Solo administradores pueden configurar SUNAT" }, { status: 403 });
   }
 

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Plus, X, Loader2, ChevronDown, ChevronRight,
-  TrendingUp, Trash2, FileCheck, FileText, CheckCircle2,
+  TrendingUp, Trash2, FileCheck, FileText, CheckCircle2, Sigma, RefreshCw,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -22,6 +22,15 @@ interface Valorizacion {
   status: ValStatus;
   total_amount: number;
   notes: string | null;
+  reajuste_formula_id: string | null;
+  factor_k: number;
+  monto_reajuste: number;
+}
+
+interface FormulaLite {
+  id: string;
+  name: string;
+  contract_date: string | null;
 }
 
 interface BudgetItemRaw {
@@ -64,6 +73,10 @@ interface Props {
   budgetId: string | null;
   ventaTotal: number;
   initialValorizaciones: Valorizacion[];
+  /** ¿El usuario puede aprobar valorizaciones? (permiso valorizaciones.approve) */
+  canApprove: boolean;
+  /** Fórmulas polinómicas del proyecto (para reajuste por factor K) */
+  formulas: FormulaLite[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -74,6 +87,8 @@ export function ValorizacionesClient({
   budgetId,
   ventaTotal,
   initialValorizaciones,
+  canApprove,
+  formulas,
 }: Props) {
   const supabase = createClient();
   const sym = currency === "PEN" ? "S/" : "$";
@@ -312,6 +327,12 @@ export function ValorizacionesClient({
   // ── Change status ──────────────────────────────────────────────────────────
 
   async function changeStatus(val: Valorizacion, status: ValStatus) {
+    // Guard de UI: aprobar requiere permiso valorizaciones.approve.
+    // La RLS de la BD es la barrera definitiva; esto evita el intento inútil.
+    if (status === "approved" && !canApprove) {
+      toast.error("No tienes permiso para aprobar valorizaciones");
+      return;
+    }
     const { error } = await supabase
       .from("valorizaciones")
       .update({ status })
@@ -319,6 +340,51 @@ export function ValorizacionesClient({
     if (error) { toast.error(error.message); return; }
     toast.success(STATUS_CFG[status].label);
     setVals((p) => p.map((v) => v.id === val.id ? { ...v, status } : v));
+  }
+
+  // ── Reajuste polinómico (factor K) ───────────────────────────────────────────
+  // K se calcula en BD vía fn_calc_factor_k usando:
+  //   período base (Io) = fecha de contrato de la fórmula
+  //   período valorización (Ir) = mes del end_date de la valorización
+  // monto_reajuste = (K − 1) × monto valorizado
+  async function calcReajuste(val: Valorizacion, formulaId: string) {
+    const formula = formulas.find((f) => f.id === formulaId);
+    if (!formula) { toast.error("Fórmula no encontrada"); return; }
+    if (!formula.contract_date) {
+      toast.error("La fórmula necesita una fecha base (contrato) para calcular K");
+      return;
+    }
+    if (!val.end_date) { toast.error("La valorización necesita fecha de fin de período"); return; }
+
+    const base = new Date(formula.contract_date);
+    const period = new Date(val.end_date);
+
+    const { data, error } = await supabase.rpc("fn_calc_factor_k", {
+      p_formula_id: formulaId,
+      p_base_year:  base.getUTCFullYear(),
+      p_base_month: base.getUTCMonth() + 1,
+      p_val_year:   period.getUTCFullYear(),
+      p_val_month:  period.getUTCMonth() + 1,
+    });
+    if (error) { toast.error(error.message); return; }
+
+    const k = Number(data ?? 1);
+    const montoReajuste = (k - 1) * Number(val.total_amount);
+
+    const { error: upErr } = await supabase
+      .from("valorizaciones")
+      .update({ reajuste_formula_id: formulaId, factor_k: k, monto_reajuste: montoReajuste })
+      .eq("id", val.id);
+    if (upErr) { toast.error(upErr.message); return; }
+
+    setVals((p) =>
+      p.map((v) =>
+        v.id === val.id
+          ? { ...v, reajuste_formula_id: formulaId, factor_k: k, monto_reajuste: montoReajuste }
+          : v
+      )
+    );
+    toast.success(`Factor K = ${k.toFixed(4)} aplicado`);
   }
 
   async function deleteVal(val: Valorizacion) {
@@ -489,12 +555,14 @@ export function ValorizacionesClient({
                           >
                             Borrador
                           </button>
-                          <button
-                            onClick={() => changeStatus(val, "approved")}
-                            className="inline-flex items-center gap-1 rounded-lg border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
-                          >
-                            <CheckCircle2 className="h-3 w-3" /> Aprobar
-                          </button>
+                          {canApprove && (
+                            <button
+                              onClick={() => changeStatus(val, "approved")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
+                            >
+                              <CheckCircle2 className="h-3 w-3" /> Aprobar
+                            </button>
+                          )}
                         </>
                       )}
                       {val.status === "approved" && (
@@ -532,6 +600,51 @@ export function ValorizacionesClient({
                         />
                       )}
 
+                      {/* Reajuste polinómico (factor K) */}
+                      {formulas.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 bg-blue-50/40 px-5 py-3">
+                          <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                            <Sigma className="h-3.5 w-3.5 text-blue-600" /> Reajuste polinómico
+                          </span>
+                          <select
+                            value={val.reajuste_formula_id ?? ""}
+                            disabled={val.status === "approved"}
+                            onChange={(e) => { if (e.target.value) calcReajuste(val, e.target.value); }}
+                            className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:bg-slate-100"
+                          >
+                            <option value="">— Sin fórmula —</option>
+                            {formulas.map((f) => (
+                              <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                          </select>
+                          {val.reajuste_formula_id && val.status !== "approved" && (
+                            <button
+                              onClick={() => calcReajuste(val, val.reajuste_formula_id!)}
+                              className="flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                              title="Recalcular con índices actuales"
+                            >
+                              <RefreshCw className="h-3 w-3" /> Recalcular
+                            </button>
+                          )}
+                          {val.reajuste_formula_id && (
+                            <span className="ml-auto flex items-center gap-3 text-xs">
+                              <span className="text-slate-500">
+                                K = <span className="font-mono font-semibold text-slate-700">{Number(val.factor_k).toFixed(4)}</span>
+                              </span>
+                              <span className={cn(
+                                "font-medium",
+                                Number(val.monto_reajuste) >= 0 ? "text-green-700" : "text-red-600"
+                              )}>
+                                Reajuste: {fmt(Number(val.monto_reajuste))}
+                              </span>
+                              <span className="text-slate-400">
+                                Total c/reajuste: {fmt(Number(val.total_amount) + Number(val.monto_reajuste))}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Actions */}
                       <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
                         <div className="flex gap-2">
@@ -551,12 +664,14 @@ export function ValorizacionesClient({
                               >
                                 Devolver a borrador
                               </button>
-                              <button
-                                onClick={() => changeStatus(val, "approved")}
-                                className="flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
-                              >
-                                <CheckCircle2 className="h-3.5 w-3.5" /> Aprobar
-                              </button>
+                              {canApprove && (
+                                <button
+                                  onClick={() => changeStatus(val, "approved")}
+                                  className="flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Aprobar
+                                </button>
+                              )}
                             </>
                           )}
                           {val.status === "approved" && (

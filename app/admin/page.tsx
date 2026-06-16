@@ -221,9 +221,14 @@ export default function AdminDashboard() {
           <span>🏗️</span>
           <span>Kostruye+ <span style={{ color: "#f59e0b" }}>Admin</span></span>
         </div>
-        <button onClick={logout} style={{ ...s.btn, background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
-          Cerrar sesión
-        </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => router.push("/admin/inei")} style={{ ...s.btn, background: "rgba(37,99,235,0.15)", color: "#93c5fd", border: "1px solid rgba(37,99,235,0.3)" }}>
+            Índices INEI
+          </button>
+          <button onClick={logout} style={{ ...s.btn, background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <div style={s.content}>

@@ -16,6 +16,19 @@ export type UserRole =
   | "hr"
   | "readonly";
 
+export type ModuleName =
+  | "presupuesto"
+  | "apu"
+  | "compras"
+  | "almacen"
+  | "valorizaciones"
+  | "nominas"
+  | "reportes"
+  | "configuracion";
+
+export type AuditOperation = "INSERT" | "UPDATE" | "DELETE";
+export type ValorizacionStatus = "draft" | "submitted" | "approved";
+
 // ── Tablas ────────────────────────────────────────────────────
 
 export interface Organization {
@@ -100,7 +113,7 @@ export interface BudgetItem {
   unit: string;
   quantity: number;
   unit_price: number;
-  total: number;
+  total: number; // GENERATED ALWAYS AS (quantity * unit_price)
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -117,7 +130,7 @@ export interface ApuLine {
   yield_rate: number | null;
   quantity_per_unit: number | null;
   unit_price: number;
-  subtotal: number;
+  subtotal: number; // GENERATED ALWAYS AS (crew_size * COALESCE(quantity_per_unit,0) * unit_price)
   sort_order: number;
 }
 
@@ -125,6 +138,9 @@ export interface ReajusteFormula {
   id: string;
   project_id: string;
   name: string;
+  budget_id: string | null;
+  contract_date: string | null;
+  notes: string | null;
   created_at: string;
 }
 
@@ -134,6 +150,62 @@ export interface ReajusteMonomio {
   coefficient: number;
   index_code: string;
   description: string | null;
+  symbol: string | null;
+  sort_order: number;
+}
+
+export interface IneiIndex {
+  id: string;
+  index_code: string;
+  index_name: string;
+  period_year: number;
+  period_month: number;
+  index_value: number;
+  source: string;
+  created_at: string;
+}
+
+export interface Valorizacion {
+  id: string;
+  project_id: string;
+  val_number: number;
+  period_name: string;
+  start_date: string;
+  end_date: string;
+  status: ValorizacionStatus;
+  total_amount: number;
+  notes: string | null;
+  reajuste_formula_id: string | null;
+  factor_k: number;
+  monto_reajuste: number;
+}
+
+export interface CapecoPunit {
+  id: number;
+  code: string;
+  name: string;
+  category: string | null;
+}
+
+export interface RoleModulePermission {
+  id: string;
+  role: UserRole;
+  module: ModuleName;
+  can_view: boolean;
+  can_edit: boolean;
+  can_approve: boolean;
+  can_delete: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  table_name: string;
+  record_id: string;
+  operation: AuditOperation;
+  changed_by: string | null;
+  changed_at: string;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
 }
 
 // ── Almacén y Servicios ───────────────────────────────────────
@@ -213,13 +285,13 @@ export type Database = {
       };
       budget_items: {
         Row: BudgetItem;
-        Insert: Omit<BudgetItem, "id" | "created_at" | "updated_at">;
-        Update: Partial<Omit<BudgetItem, "id" | "created_at">>;
+        Insert: Omit<BudgetItem, "id" | "created_at" | "updated_at" | "total">;
+        Update: Partial<Omit<BudgetItem, "id" | "created_at" | "total">>;
       };
       apu_lines: {
         Row: ApuLine;
-        Insert: Omit<ApuLine, "id">;
-        Update: Partial<Omit<ApuLine, "id">>;
+        Insert: Omit<ApuLine, "id" | "subtotal">;
+        Update: Partial<Omit<ApuLine, "id" | "subtotal">>;
       };
       reajuste_formulas: {
         Row: ReajusteFormula;
@@ -230,6 +302,31 @@ export type Database = {
         Row: ReajusteMonomio;
         Insert: Omit<ReajusteMonomio, "id">;
         Update: Partial<Omit<ReajusteMonomio, "id">>;
+      };
+      inei_indices: {
+        Row: IneiIndex;
+        Insert: Omit<IneiIndex, "id" | "created_at">;
+        Update: Partial<Omit<IneiIndex, "id" | "created_at">>;
+      };
+      valorizaciones: {
+        Row: Valorizacion;
+        Insert: Omit<Valorizacion, "id">;
+        Update: Partial<Omit<Valorizacion, "id">>;
+      };
+      capeco_units: {
+        Row: CapecoPunit;
+        Insert: Omit<CapecoPunit, "id">;
+        Update: Partial<Omit<CapecoPunit, "id">>;
+      };
+      role_module_permissions: {
+        Row: RoleModulePermission;
+        Insert: Omit<RoleModulePermission, "id">;
+        Update: Partial<Omit<RoleModulePermission, "id">>;
+      };
+      audit_logs: {
+        Row: AuditLog;
+        Insert: never;
+        Update: never;
       };
       stock_withdrawals: {
         Row: StockWithdrawal;
@@ -250,7 +347,27 @@ export type Database = {
         Row: ProjectServiceCost;
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      fn_calc_factor_k: {
+        Args: {
+          p_formula_id: string;
+          p_base_year: number;
+          p_base_month: number;
+          p_val_year: number;
+          p_val_month: number;
+        };
+        Returns: number;
+      };
+      fn_user_can: {
+        Args: {
+          p_user_id: string;
+          p_org_id: string;
+          p_module: string;
+          p_action: string;
+        };
+        Returns: boolean;
+      };
+    };
     Enums: {
       resource_type: ResourceType;
       project_status: ProjectStatus;

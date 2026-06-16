@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Building2,
   Wrench,
+  ShieldCheck,
+  Scale,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -45,8 +47,10 @@ const allProjectNav = [
   { href: "almacen",        icon: Warehouse,       label: "Almacén",        roles: ["admin", "user"] },
   { href: "nominas",        icon: Users,           label: "Nóminas",        roles: ["admin", "contador"] },
   { href: "valorizaciones", icon: FileText,        label: "Valorizaciones", roles: ["admin", "contador"] },
+  { href: "control-costos", icon: Scale,           label: "Control de Costos", roles: ["admin", "contador"] },
   { href: "lean",           icon: TrendingUp,      label: "Lean",           roles: ["admin", "user"] },
   { href: "contabilidad",   icon: BookOpen,        label: "Contabilidad",   roles: ["admin", "contador"] },
+  { href: "auditoria",      icon: ShieldCheck,     label: "Auditoría",      roles: ["admin", "contador"] },
 ];
 
 interface SidebarProps {

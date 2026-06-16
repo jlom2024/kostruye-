@@ -55,6 +55,12 @@ export default async function ValorizacionPrintPage({
     new Date(d + "T00:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const ventaTotal = Number(budget?.total ?? 0);
 
+  // Reajuste polinómico (si se aplicó un factor K a esta valorización)
+  const factorK       = Number(val.factor_k ?? 1);
+  const montoReajuste = Number(val.monto_reajuste ?? 0);
+  const hasReajuste   = montoReajuste !== 0 || (factorK !== 1 && val.reajuste_formula_id);
+  const subtotal      = Number(val.total_amount) + montoReajuste;
+
   return (
     <>
       {/* Print styles — oculta el sidebar y topbar al imprimir */}
@@ -207,13 +213,25 @@ export default async function ValorizacionPrintPage({
                 <td>Monto período</td>
                 <td className="r">{money(Number(val.total_amount))}</td>
               </tr>
+              {hasReajuste && (
+                <>
+                  <tr>
+                    <td>Reajuste polinómico (K = {factorK.toFixed(4)})</td>
+                    <td className="r">{money(montoReajuste)}</td>
+                  </tr>
+                  <tr>
+                    <td>Subtotal reajustado</td>
+                    <td className="r">{money(subtotal)}</td>
+                  </tr>
+                </>
+              )}
               <tr>
                 <td>IGV (18%)</td>
-                <td className="r">{money(Number(val.total_amount) * 0.18)}</td>
+                <td className="r">{money(subtotal * 0.18)}</td>
               </tr>
               <tr className="grand">
                 <td>TOTAL CON IGV</td>
-                <td className="r">{money(Number(val.total_amount) * 1.18)}</td>
+                <td className="r">{money(subtotal * 1.18)}</td>
               </tr>
             </tbody>
           </table>

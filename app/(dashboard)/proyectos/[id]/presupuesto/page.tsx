@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils";
 import { BudgetEditor } from "./budget-editor";
 import { ImportOcrButton } from "./import-ocr-button";
 import { ImportS10Button } from "./import-s10-button";
+import { userCanProject } from "@/lib/permissions";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,6 +23,9 @@ export default async function PresupuestoPage({ params }: Props) {
 
   if (!project) notFound();
 
+  // Permiso de edición de presupuesto/APU — project-aware (misma base que la RLS)
+  const canEdit = await userCanProject(supabase, id, "presupuesto", "edit");
+
   const { data: budgets } = await supabase
     .from("budgets")
     .select("*")
@@ -36,7 +40,7 @@ export default async function PresupuestoPage({ params }: Props) {
         title="Presupuesto"
         subtitle={project.name}
         actions={
-          ventaBudget ? (
+          ventaBudget && canEdit ? (
             <div className="flex items-center gap-2">
               <ImportS10Button budgetId={ventaBudget.id} />
               <ImportOcrButton budgetId={ventaBudget.id} />
@@ -62,6 +66,7 @@ export default async function PresupuestoPage({ params }: Props) {
             <BudgetEditor
               budgetId={ventaBudget.id}
               currency={project.currency}
+              canEdit={canEdit}
             />
           </div>
         )}

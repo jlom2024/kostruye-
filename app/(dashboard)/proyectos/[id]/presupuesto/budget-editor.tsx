@@ -57,6 +57,8 @@ interface Props {
   budgetId: string;
   currency: string;
   onTotalChange?: (total: number) => void;
+  /** ¿El usuario puede editar el presupuesto/APU? (permiso presupuesto.edit) */
+  canEdit?: boolean;
 }
 
 // ── Resource type config ───────────────────────────────────────────────────────
@@ -124,8 +126,18 @@ function exportCsv(chapters: Chapter[], currency: string) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
+export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true }: Props) {
   const supabase = createClient();
+
+  // Guard de edición: la RLS es la barrera definitiva; esto evita escrituras
+  // inútiles y da feedback inmediato a roles sin permiso presupuesto.edit.
+  const guardEdit = () => {
+    if (!canEdit) {
+      toast.error("No tienes permiso para editar el presupuesto");
+      return false;
+    }
+    return true;
+  };
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [apuLines, setApuLines] = useState<ApuLine[]>([]);
@@ -206,6 +218,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
 
   // ── Chapter actions ────────────────────────────────────────────────────────
   const addChapter = async () => {
+    if (!guardEdit()) return;
     const nextOrder = chapters.length;
     const nextNum   = String(nextOrder + 1).padStart(2, "0");
     const { data, error } = await supabase
@@ -232,6 +245,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const saveChapter = async (chapter: Chapter) => {
+    if (!guardEdit()) return;
     if (chapter.id === "__uncategorized__") return;
     await supabase
       .from("budget_chapters")
@@ -240,6 +254,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const deleteChapter = async (chapterId: string) => {
+    if (!guardEdit()) return;
     const chapter = chapters.find((c) => c.id === chapterId);
     if (chapter && chapter.items.length > 0) {
       toast.error("Elimina las partidas del capítulo primero");
@@ -252,6 +267,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
 
   // ── Item actions ───────────────────────────────────────────────────────────
   const addItem = async (chapterId: string) => {
+    if (!guardEdit()) return;
     const chapter = chapters.find((c) => c.id === chapterId);
     if (!chapter) return;
     const nextOrder = chapter.items.length;
@@ -301,6 +317,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const saveItem = async (item: BudgetItem) => {
+    if (!guardEdit()) return;
     setSaving(true);
     const total = Number(item.quantity) * Number(item.unit_price);
     const { error } = await supabase
@@ -323,6 +340,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const deleteItem = async (chapterId: string, itemId: string) => {
+    if (!guardEdit()) return;
     await supabase.from("budget_items").delete().eq("id", itemId);
     setChapters((prev) =>
       prev.map((c) =>
@@ -337,6 +355,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
 
   // ── APU line actions ────────────────────────────────────────────────────────
   const addApuLine = async (resourceType: ResourceType) => {
+    if (!guardEdit()) return;
     if (!selectedItemId) return;
     const { data, error } = await supabase
       .from("apu_lines")
@@ -369,6 +388,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const saveApuLine = async (line: ApuLine) => {
+    if (!guardEdit()) return;
     const { error } = await supabase
       .from("apu_lines")
       .update({
@@ -406,6 +426,7 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
   };
 
   const deleteApuLine = async (lineId: string) => {
+    if (!guardEdit()) return;
     await supabase.from("apu_lines").delete().eq("id", lineId);
     setApuLines((prev) => prev.filter((l) => l.id !== lineId));
     toast.success("Recurso eliminado");
@@ -437,14 +458,18 @@ export function BudgetEditor({ budgetId, currency, onTotalChange }: Props) {
     <div className="flex flex-col gap-4">
       {/* ── Toolbar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button
-          onClick={addChapter}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          <FolderPlus className="h-4 w-4" />
-          Capítulo
-        </button>
-        <span className="text-slate-300">|</span>
+        {canEdit && (
+          <>
+            <button
+              onClick={addChapter}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              <FolderPlus className="h-4 w-4" />
+              Capítulo
+            </button>
+            <span className="text-slate-300">|</span>
+          </>
+        )}
         <button
           onClick={() => exportCsv(chapters, currency)}
           className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"

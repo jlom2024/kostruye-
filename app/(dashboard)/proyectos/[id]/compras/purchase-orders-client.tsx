@@ -71,11 +71,13 @@ interface Props {
   projectId: string;
   currency: string;
   organizationId: string;
+  /** ¿El usuario puede aprobar/emitir órdenes? (permiso compras.approve) */
+  canApprove?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function PurchaseOrdersClient({ projectId, currency, organizationId }: Props) {
+export function PurchaseOrdersClient({ projectId, currency, organizationId, canApprove = true }: Props) {
   const supabase = createClient();
   const sym = currency === "PEN" ? "S/" : "$";
 
@@ -248,6 +250,12 @@ export function PurchaseOrdersClient({ projectId, currency, organizationId }: Pr
 
   async function changeStatus(status: POStatus) {
     if (!editingPo) return;
+    // Cambiar el estado de una OC (emitir/recibir/anular) requiere compras.approve.
+    // La RLS es la barrera definitiva; esto evita el intento y da feedback.
+    if (!canApprove) {
+      toast.error("No tienes permiso para cambiar el estado de las órdenes");
+      return;
+    }
     const { error } = await supabase
       .from("purchase_orders")
       .update({ status })
@@ -770,7 +778,7 @@ export function PurchaseOrdersClient({ projectId, currency, organizationId }: Pr
           </div>
 
           {/* Footer: acciones de estado */}
-          {editingPo && (
+          {editingPo && canApprove && (
             <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
               <p className="mb-2 text-xs font-medium text-slate-500">Cambiar estado</p>
               <div className="flex flex-wrap gap-2">
