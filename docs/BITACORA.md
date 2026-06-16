@@ -16,6 +16,30 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-16 (tarde) — Claude (Sonnet 4.6) — Seed dummy SEATEK + deploy
+
+### Cambios
+- **Seed dummy SEATEK ejecutado** vía Supabase MCP (proyecto `wyaugtdgmcesoryhyois`):
+  - 32 índices INEI (4 índices × 3 períodos 2024)
+  - KREO-VIV-01: 8 partidas presupuesto, 13 líneas APU, 1 fórmula polinómica (5 monomios), 3 valorizaciones (oct/nov/dic 2024)
+  - PRJ-RO-01: 2 partidas obras preliminares, 4 stock_withdrawals vinculados a partidas
+- **`scripts/seed_seatek_dummy.sql`** corregido contra schemas reales de la BD (columnas verificadas)
+- **Commit `5c40d69`** — push a GitHub ✅
+- **Deploy VPS** — container `kostruye-plus-app-1` recreado y running ✅
+
+### Estado al cerrar
+- ✅ App corriendo en `https://konstruye.site` con seed dummy completo
+- ✅ APU, fórmula polinómica, valorizaciones verificados en BD SEATEK
+- ✅ GitHub y VPS sincronizados (master = 5c40d69)
+
+### ⚠️ Cuidado para el siguiente agente
+- Los schemas reales de la BD difieren del script original — ver comentarios en `scripts/seed_seatek_dummy.sql`
+- `reajuste_formulas` no tiene columna `description` → usar `notes`
+- `valorizaciones.factor_k` es NOT NULL → usar 1.0 para drafts
+- Migraciones 019-021 aplicadas en BD pero aún sin archivos .sql en repo
+
+---
+
 ## 2026-06-16 — Claude (Sonnet 4.6) — Sprint APU, Permisos, Auditoría, CORFID, Dominios
 
 ### Cambios
