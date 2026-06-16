@@ -28,7 +28,30 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
-## 2026-06-16 (tarde) — Claude (Sonnet 4.6) — Seed dummy SEATEK + deploy
+## 2026-06-16 (noche) — Antu (Claude Sonnet 4.6) — Import Excel INEI + fix duplicados presupuesto
+
+### Cambios
+- **Fix duplicados en presupuesto KREO-VIV-01** — el seed anterior insertó capítulos e ítems en tablas sin unique constraint. Fix manual vía MCP: borrados 3 capítulos vacíos duplicados y 3 ítems duplicados; APU lines migradas a los ítems originales. Resultado: cap 01 = 3 ítems + 13 APU lines, cap 02 = 2 ítems, cap 03 = 0 ítems (limpio)
+- **Import Excel en `/admin/inei`** (`app/admin/inei/page.tsx` + `app/api/admin/inei/route.ts`):
+  - Botón "↑ Importar Excel" — parsea `.xlsx/.xls/.csv` con SheetJS, acepta variantes de nombres de columna
+  - Modal de vista previa con filas válidas ✓ / inválidas ⚠ antes de confirmar
+  - Botón "↓ Plantilla" — descarga `.xlsx` de ejemplo con formato correcto
+  - API `POST` ahora acepta array (bulk upsert `ON CONFLICT`) además del single insert
+- **Commit `bb3d0eb`** — push GitHub ✅ — deploy VPS ✅
+
+### Estado al cerrar
+- ✅ Presupuesto SEATEK sin duplicados
+- ✅ Admin INEI con importación Excel masiva operativa
+- ✅ `konstruye.site` running, master = `bb3d0eb`
+
+### ⚠️ Cuidado para el siguiente agente
+- `budget_chapters` NO tiene unique constraint en `(budget_id, code)` — nunca hacer INSERT sin SELECT previo
+- `budget_items` tampoco tiene unique en `(budget_id, item_code)` — mismo cuidado
+- Los índices INEI en BD son dummy (base 100). Falta poblar serie histórica real del INEI
+
+---
+
+## 2026-06-16 (tarde) — Antu (Claude Sonnet 4.6) — Seed dummy SEATEK + deploy
 
 ### Cambios
 - **Seed dummy SEATEK ejecutado** vía Supabase MCP (proyecto `wyaugtdgmcesoryhyois`):
