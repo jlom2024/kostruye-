@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { JoshyWidget } from "@/components/joshy-widget";
 
-const APP_URL = "https://kreo-crm.site";
+const APP_URL = "https://konstruye.site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -86,7 +85,6 @@ export default function RootLayout({
         <QueryProvider>
           {children}
           <Toaster richColors position="top-right" />
-          <JoshyWidget />
         </QueryProvider>
       </body>
     </html>

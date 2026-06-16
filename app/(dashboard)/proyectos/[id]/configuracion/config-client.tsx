@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Settings2, Users, Sliders } from "lucide-react";
+import { Settings2, Users, Sliders, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfigGeneral } from "./config-general";
 import { ConfigTeam } from "./config-team";
 import { ConfigParams } from "./config-params";
+import { ConfigFideicomiso } from "./config-fideicomiso";
 
-export function ConfiguracionClient({ 
-  project, 
+export function ConfiguracionClient({
+  project,
   projectId,
   members,
   orgMembers,
   venta
-}: { 
-  project: any; 
+}: {
+  project: any;
   projectId: string;
   members: any[];
   orgMembers: any[];
@@ -23,9 +24,10 @@ export function ConfiguracionClient({
   const [activeTab, setActiveTab] = useState("general");
 
   const tabs = [
-    { id: "general", label: "General", icon: Settings2 },
-    { id: "equipo", label: "Equipo", icon: Users },
-    { id: "parametros", label: "Parámetros", icon: Sliders },
+    { id: "general",      label: "General",      icon: Settings2   },
+    { id: "equipo",       label: "Equipo",        icon: Users       },
+    { id: "parametros",   label: "Parámetros",    icon: Sliders     },
+    { id: "fideicomiso",  label: "Fideicomiso",   icon: ShieldCheck },
   ];
 
   return (
@@ -60,11 +62,14 @@ export function ConfiguracionClient({
           />
         )}
         {activeTab === "parametros" && (
-          <ConfigParams 
-            projectId={projectId} 
+          <ConfigParams
+            projectId={projectId}
             project={project}
             venta={venta}
           />
+        )}
+        {activeTab === "fideicomiso" && (
+          <ConfigFideicomiso projectId={projectId} />
         )}
       </div>
     </div>

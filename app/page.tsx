@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
+import { JoshyWidget } from "@/components/joshy-widget";
 
 export const metadata: Metadata = {
   title: "KOSTRUYE+",
   description:
     "Gestiona presupuestos S10, valorizaciones, almacén, planilla y compras de todas tus obras desde una sola plataforma. ERP de construcción hecho en Perú.",
-  alternates: { canonical: "https://kreo-crm.site" },
+  alternates: { canonical: "https://konstruye.site" },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Kostruye+",
-  url: "https://kreo-crm.site",
+  url: "https://konstruye.site",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description:
@@ -42,7 +43,7 @@ const jsonLd = {
   creator: {
     "@type": "Organization",
     name: "KREO IA Studio",
-    url: "https://kreo-crm.site",
+    url: "https://konstruye.site",
   },
   inLanguage: "es-PE",
   keywords:
@@ -867,6 +868,7 @@ export default function Landing() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <JoshyWidget />
     </>
   );
 }
