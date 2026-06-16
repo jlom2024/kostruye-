@@ -42,13 +42,35 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data ?? []);
 }
 
-// POST — upsert de un índice (único por código + período)
+// POST — upsert de un índice o bulk (array) desde importación Excel
 export async function POST(req: NextRequest) {
   if (!(await guardAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { index_code, index_name, period_year, period_month, index_value } = body;
 
+  // Bulk import
+  if (Array.isArray(body)) {
+    const rows = body.map((r) => ({
+      index_code: String(r.index_code).trim(),
+      index_name: String(r.index_name).trim(),
+      period_year: Number(r.period_year),
+      period_month: Number(r.period_month),
+      index_value: Number(r.index_value),
+    }));
+
+    const invalid = rows.find((r) => !r.index_code || !r.index_name || !r.period_year || r.period_month < 1 || r.period_month > 12 || isNaN(r.index_value));
+    if (invalid) return NextResponse.json({ error: `Fila inválida: ${JSON.stringify(invalid)}` }, { status: 400 });
+
+    const { error } = await adminClient()
+      .from("inei_indices")
+      .upsert(rows, { onConflict: "index_code,period_year,period_month" });
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, imported: rows.length });
+  }
+
+  // Single upsert
+  const { index_code, index_name, period_year, period_month, index_value } = body;
   if (!index_code || !index_name || !period_year || !period_month || index_value == null) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
   }
