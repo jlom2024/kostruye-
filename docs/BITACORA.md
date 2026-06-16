@@ -28,6 +28,83 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-16 (noche 2) — Antu (Claude Sonnet 4.6) — CORFID/CRM credentials + RLS + SUNAT fix
+
+### Cambios
+
+**CORFID (`corfid.dhconsultores.site`)**
+- Reset contraseñas de los 3 usuarios a `Antu2026*` via SQL file (problema de quoting camelCase `"passwordHash"` en psql):
+  - `admin@hd-consultores.com` ✅ (estaba inactivo — activado también)
+  - `jlom2002@gmail.com` ✅
+  - `nino@dhconsultores.com` ✅ (era el que fallaba — hash corrupto anterior)
+- **Toggle mostrar/ocultar contraseña** en login page (`/opt/kreo-corfid/frontend/app/(auth)/login/page.tsx`):
+  - Estado `showPassword`, botón SVG ojo/ojo-tachado dentro del input con `type` dinámico
+  - Rebuilt `corfid-frontend` container: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build frontend` desde `/opt/kreo-corfid/infra/`
+  - Container recreado correctamente — verificado `Up` en producción
+
+**CRM DH (`crm.dhconsultores.site` → container `dh-dashboard`)**
+- Identificado: usa Supabase project `wwsjmscwqqxjgimebznz` para auth (no postgres local)
+- Reset contraseñas vía MCP `execute_sql` en `auth.users` con `crypt('Antu2026*', gen_salt('bf'))`:
+  - `jlom2002@gmail.com` ✅
+  - `nino@dhconsultores.com` ✅
+- **Fix alerta crítica de seguridad Supabase** (email recibido 2026-06-12): tablas sin RLS en schema public:
+  - `ALTER TABLE public.eventos ENABLE ROW LEVEL SECURITY`
+  - `ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY`
+  - `ALTER TABLE public.tareas ENABLE ROW LEVEL SECURITY`
+  - Política `authenticated_full_access` en las 3 tablas — solo usuarios autenticados (CRM interno)
+  - Migración aplicada vía MCP `apply_migration` en proyecto `wwsjmscwqqxjgimebznz`
+
+**SUNAT — Integración correcta (Kostruye+)**
+- **Problema detectado:** UI de `/configuracion` tab SUNAT llamaba a `/api/org/sunat` (PATCH) que guardaba `sol_usuario` y `sol_clave` en **texto plano** en Supabase
+- **Fix en `app/(dashboard)/configuracion/page.tsx`** (commit `a19e4cc`):
+  - GET carga `sunat_configurado` desde `/api/org/sunat-sol` (no expone credenciales)
+  - Al guardar: primero actualiza `organizations.ruc`, luego POST a `/api/org/sunat-sol` con `{ sol_usuario, sol_clave }`
+  - kreo-sunat cifra AES-256 y guarda en su propia BD — Supabase nunca ve las credenciales SOL
+  - Kostruye+ solo almacena `sunat_configurado = true` y `sunat_empresa_id`
+  - Estado variables renombrados: `sunatApiKey` → `solUsuario`, `sunatApiSecret` → `solClave`
+- Deploy VPS ✅ — container `kostruye-plus-app-1` recreado
+
+### Circuito completo integrado (estado 2026-06-16)
+
+```
+KREO IA Studio (Koko)
+  → Kostruye+ ERP: konstruye.site (Next.js 16 + Supabase wyaugtdgmcesoryhyois)
+
+DH Consultores (partner/reseller)
+  → CRM: crm.dhconsultores.site (Next.js, Supabase wwsjmscwqqxjgimebznz)
+  → CORFID: corfid.dhconsultores.site (NestJS backend + Next.js frontend + Postgres)
+
+Flujo Fideicomiso:
+  Constructora en Kostruye+ → tab Fideicomiso → POST /api/fideicomiso/project/[id]
+  → webhook a CORFID (corfid.dhconsultores.site/api)
+  → DH activa trust → callback /api/fideicomiso/project/[id]/confirm
+  → constructora ve fideicomiso activo
+
+Flujo SUNAT (ahora correcto):
+  Admin en /configuracion tab SUNAT → ingresa RUC + Usuario SOL + Clave SOL
+  → POST /api/org/sunat-sol → kreo-sunat (2.24.72.21:3020)
+  → kreo-sunat registra empresa + cifra credenciales AES-256
+  → Kostruye+ guarda solo sunat_empresa_id + sunat_configurado=true
+  → Emisión facturas: /api/invoices → kreo-sunat → SUNAT OSE
+```
+
+### Estado al cerrar
+- ✅ CORFID login funciona para los 3 usuarios con `Antu2026*` + toggle ojo
+- ✅ CRM login funciona para los 2 usuarios con `Antu2026*`
+- ✅ CRM Supabase sin tablas expuestas (RLS en `eventos`, `profiles`, `tareas`)
+- ✅ SUNAT: credenciales SOL van cifradas a kreo-sunat, no texto plano en Supabase
+- ✅ GitHub master = `a19e4cc` — VPS sincronizado
+
+### ⚠️ Cuidado para el siguiente agente
+- **CORFID `"passwordHash"`** es camelCase — en psql siempre necesita doble comilla. Usar archivo SQL (`cat > /tmp/x.sql && docker exec -i corfid-postgres psql ... < /tmp/x.sql`), nunca pasar el SQL como argumento de shell
+- **CRM usa Supabase** `wwsjmscwqqxjgimebznz` — no tiene postgres propio. Credenciales via MCP o Supabase Admin API
+- **SUNAT credenciales** NUNCA se leen de vuelta al UI (diseño correcto). Si el usuario quiere "ver" sus credenciales → no se puede, es por seguridad
+- **`sunat_api_key` y `sunat_api_secret`** en `organizations` son las credenciales de Kostruye+ con kreo-sunat (no del usuario), no confundir con `sol_usuario`/`sol_clave`
+- Webhook CORFID → Kostruye+ pendiente verificación end-to-end
+- Flujo emisión facturas Contabilidad → pendiente verificación completa
+
+---
+
 ## 2026-06-16 (noche) — Antu (Claude Sonnet 4.6) — Import Excel INEI + fix duplicados presupuesto
 
 ### Cambios
