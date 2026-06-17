@@ -28,6 +28,28 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-17 (noche) — Antu (Claude Sonnet 4.6) — KIA: INEI + fórmula polinómica
+
+### Cambios
+
+**`app/api/ai/chat/route.ts`**
+- System prompt ampliado: KIA ahora conoce todos los módulos, los IUPCs (R.J. 016-2026-INEI, base Dic 2025=100), los códigos de índice más usados (02, 03, 17, 21, 39, 43, 44, 47, 47-1, 48, 49, 54, 65, 66) y la fórmula del Factor K (D.S. 011-79-VC)
+- Nueva herramienta `get_inei_indices`: consulta `inei_indices` para el período más reciente; acepta `index_code` opcional para filtrar por código específico
+- Nueva herramienta `get_reajuste_formulas`: devuelve las fórmulas polinómicas de un proyecto con sus monomios (símbolo, coeficiente, índice asignado)
+- Commit `f15ac9e` — GitHub ✅ — VPS ✅
+
+### Estado al cerrar
+- ✅ KIA responde preguntas de índices INEI con valores reales desde BD
+- ✅ KIA explica el Factor K y puede mostrar la fórmula del proyecto activo
+- ✅ Todas las herramientas funcionan en contexto del proyecto que el usuario está viendo
+
+### ⚠️ Cuidado para el siguiente agente
+- KIA usa `gpt-4o-mini` — no cambiar modelo sin evaluar costo/calidad
+- El agentic loop tiene máximo 5 rondas de tool calls — suficiente para combinaciones de 2-3 herramientas
+- `get_inei_indices` siempre retorna el período más reciente en BD (actualmente Abr 2026)
+
+---
+
 ## 2026-06-17 (tarde) — Antu (Claude Sonnet 4.6) — INEI sync endpoint + Manual v1.1
 
 ### Cambios
