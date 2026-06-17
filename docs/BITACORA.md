@@ -28,6 +28,103 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-17 (tarde) — Antu (Claude Sonnet 4.6) — INEI sync endpoint + Manual v1.1
+
+### Cambios
+
+**Índices INEI — R.J. 016-2026-INEI (Base Dic 2025 = 100)**
+- Descargado Excel oficial INEI (Abr 2026, 4 meses de datos, 308 registros) y parseado con SheetJS en Node.js
+- Generado `inei_upsert.sql` + upsert en tabla `inei_indices` via Supabase MCP
+- `app/admin/inei/page.tsx` — KNOWN_CODES completamente reemplazados (20 códigos viejos → 95 nuevos) con nombres correctos per R.J. 016-2026-INEI; código default cambiado de "21" → "47" (MO)
+- Subtítulo actualizado: "R.J. 016-2026-INEI · Base Diciembre 2025 = 100 · Área 1 Lima Metropolitana · 95 índices"
+- Botón "↻ Sync INEI" (verde) en header del admin panel
+- `app/api/admin/inei/sync/route.ts` (nuevo): endpoint POST que descarga el Excel más reciente del INEI y hace upsert en `inei_indices`
+  - Auth: cookie `kostruye_admin` O header `x-admin-token` (para uso cron)
+  - URL pattern: `n07_indices_unificados_de_precios_de_la_construccion_{mon}{yy}.xlsx`
+  - Retrocede hasta 3 meses si el archivo del mes actual no está disponible
+  - GET endpoint devuelve info descriptiva
+
+**Manual PDF v1.1**
+- `generar_manual.py` (nuevo en raíz del repo): script Python/reportlab que regenera el manual completo
+- `Manual-Kostruye-Plus.pdf` + `kostruye-plus/public/Manual-Kostruye-Plus.pdf` — versión 1.1 generada (~506 KB)
+  - URL corregida en todo el documento: `konstruye.site` (era `kreo-crm.site` en 3 páginas)
+  - Versión 1.1 (era 1.0)
+  - 17 capítulos (era 14) — añadidos: Cap 7 Servicios, Cap 12 Control de Costos, Cap 14 Auditoría
+  - "11 módulos integrados" (era "8 módulos")
+  - Cap 16 Configuración ampliado: sección SUNAT + sección Fideicomiso/CORFID
+  - Glosario actualizado: Factor K, CORFID, Curva S, Fideicomiso, SOL, SUNAT, Kardex, OS, PPP, Variación, Índice INEI
+
+### Estado al cerrar
+- ✅ 308 registros INEI (Ene–Abr 2026) en `inei_indices` de Supabase
+- ✅ Admin INEI con 95 códigos correctos + botón sync
+- ✅ Endpoint POST /api/admin/inei/sync operativo
+- ✅ Manual PDF v1.1 generado en `public/Manual-Kostruye-Plus.pdf`
+- ⏳ Pendiente: commit + deploy al VPS
+
+### ⚠️ Cuidado para el siguiente agente
+- `inei_upsert.sql` e `inei_import.json` son archivos temporales en la raíz del proyecto — se pueden borrar
+- El script `generar_manual.py` usa reportlab (instalar con `pip install reportlab pillow`) — depende de `public/logo-brand.png`
+- El endpoint de sync requiere el Excel mensual del INEI en la URL exacta `n07_indices_unificados...` — si INEI cambia la URL, actualizar `ineiUrl()` en la route
+- Los índices INEI ahora son Base Dic 2025 = 100 (antes Base Jul 1992 = 100) — no mezclar bases al calcular variaciones
+
+---
+
+## 2026-06-17 — Antu (Claude Sonnet 4.6) — Logo crane-K + favicon + hero background
+
+### Cambios
+
+**Identidad visual — Logo crane-K (SVG)**
+- Diseñado SVG propio del logo crane-K (torre de construcción estilo K) a partir de `logo.png` original:
+  - Mástil vertical ámbar (`#F59E0B`) con bandas horizontales y retícula X oscura
+  - Cabecera marrón (`#B45309`) en la cima del mástil
+  - Jib (pluma horizontal) como brazo superior de la K → `polygon points="11,13 11,17 29,5 29,3"`
+  - Cabo metálico diagonal: `line x1="7.5" y1="2" x2="29" y2="4"` en marrón
+  - Cable + gancho (`CBD5E1` / `#9CA3AF`) colgando de la pluma
+  - Brazo inferior de la K → `polygon points="11,17 11,21 26,30 26,28"`
+  - Base inferior marrón
+- `public/favicon.svg` (nuevo): versión 32×32 viewBox del crane-K para browser tab
+- `public/logo-color.svg` y `public/logo.svg` (actualizados): versión 200×200 detallada con mismo diseño
+- `public/logo-brand.png` (nuevo): copia de `logo.png` original (crane-K con texto "ONSTRUYE+") para nav/footer
+
+**Favicon**
+- `app/layout.tsx`: icons → `/favicon.svg` (icon, shortcut, apple)
+
+**Landing page (`app/page.tsx`)**
+- **Nav**: reemplazado SVG inline + div "KOSTRUYE+" por `<img src="/logo-brand.png" height=38 />`
+- **Footer**: ídem, `height=28`
+- **Hero background**: añadida foto de obra de construcción aérea al atardecer generada con Higgsfield (modelo `nano_banana_2`) → `public/hero-construction.png` (1376×768, tonos ámbar/navy)
+  - CSS: `.hero-photo` (z=0, opacity:0.28, saturate:0.7) + `.hero-photo-overlay` (z=1, gradiente oscuro)
+  - JSX: `<div className="hero-photo" />` + `<div className="hero-photo-overlay" />` antes de los orbs
+- **Hero mockup eliminado**: quitados todos los KPI cards, gráficas y tabla dummy del hero (clases `.hero-db`, `.db-*`, `.hero-db-row*` y el bloque JSX ~150 líneas). Solo quedan orbs, grid y foto.
+- **Parallax eliminado**: script que referenciaba `hero-bg-mockup` removido
+
+**Sidebar (`components/layout/sidebar.tsx`)**
+- Reemplazado SVG anterior (K+plus blanco/azul) por nuevo crane-K SVG ámbar/oscuro cuando no hay org logo
+
+**Admin dashboard (`app/admin/page.tsx`)**
+- Reemplazado `<span>🏗️</span>` por crane-K SVG 32×32 en el header del panel
+
+**Admin login (`app/admin/login/page.tsx`)**
+- Reemplazado `<div style={{ fontSize: 36 }}>🏗️</div>` por crane-K SVG (52×52 render, 32×32 viewBox)
+
+**Deploy**
+- Commit `0e5cd51` — push GitHub ✅ — deploy VPS ✅ — container `kostruye-plus-app-1` corriendo
+
+### Estado al cerrar
+- ✅ Favicon crane-K visible en browser tab
+- ✅ Logo brand PNG en nav y footer de la landing
+- ✅ Crane-K SVG en sidebar, admin dashboard y admin login
+- ✅ Hero con foto de obra al atardecer (Higgsfield) + orbs, sin mockup analytics
+- ✅ GitHub master = `0e5cd51` — VPS sincronizado
+
+### ⚠️ Cuidado para el siguiente agente
+- `public/logo-brand.png` es el PNG con texto "ONSTRUYE+" — solo usarlo en nav/footer donde cabe el logo completo
+- `public/favicon.svg` y el SVG inline en sidebar/admin son el crane-K sin texto — mantener consistencia
+- La foto hero (`/hero-construction.png`) está en `public/` — si se regenera con Higgsfield, reemplazar el archivo y redesplegar
+- El hero usa z-index: foto(0) → overlay(1) → grid(1) → hero-overlay(2) → orbs+content(3) → sweep(4) — respetar capas al agregar elementos
+
+---
+
 ## 2026-06-16 (noche 2) — Antu (Claude Sonnet 4.6) — CORFID/CRM credentials + RLS + SUNAT fix
 
 ### Cambios
