@@ -131,41 +131,6 @@ export default function Landing() {
         }
         @keyframes sweep { to{left:150%} }
 
-        /* Dashboard que llena todo el fondo — z:2 */
-        .hero-db { position:absolute; inset:0; padding:72px 28px 28px; display:flex; flex-direction:column; gap:9px; pointer-events:none; z-index:2; opacity:.38; filter:blur(.5px); will-change:transform; animation:floatBg 9s ease-in-out infinite; }
-        @keyframes floatBg { 0%,100%{transform:translateY(0) scale(1.02)} 50%{transform:translateY(-12px) scale(1.02)} }
-        .hero-db-row { display:grid; gap:9px; }
-        .hero-db-row1 { grid-template-columns:repeat(4,1fr); }
-        .hero-db-row2 { grid-template-columns:2.2fr 1fr 1.2fr; flex:1; }
-        .hero-db-row3 { grid-template-columns:repeat(4,1fr); }
-        .db-card { background:rgba(15,22,45,.75); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:14px; overflow:hidden; }
-        .db-kpi-l { font-size:10px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.8px; display:block; margin-bottom:5px; }
-        .db-kpi-v { font-size:22px; font-weight:900; color:#fff; display:block; }
-        .db-kpi-d { font-size:11px; display:block; margin-top:3px; }
-        .db-green { color:#22c55e; }
-        .db-amber { color:#f59e0b; }
-        .db-blue  { color:#60a5fa; }
-        .db-red   { color:#f87171; }
-        .db-bar-h { height:4px; background:rgba(255,255,255,.08); border-radius:2px; margin-top:8px; }
-        .db-bar-f { height:100%; border-radius:2px; }
-        /* chart bars */
-        .db-chart-label { font-size:9px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
-        .db-bars { display:flex; align-items:flex-end; gap:5px; height:72px; }
-        .db-bar { flex:1; border-radius:3px 3px 0 0; animation:growBar 1.4s cubic-bezier(.22,1,.36,1) forwards; transform-origin:bottom; }
-        /* table */
-        .db-table-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.05); }
-        .db-table-row:last-child { border-bottom:none; }
-        .db-t-name { font-size:11px; color:#e5e7eb; font-weight:600; }
-        .db-t-sub  { font-size:9px; color:#4b5563; }
-        .db-badge  { font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; }
-        /* donut */
-        .db-donut { display:flex; align-items:center; gap:10px; margin-top:4px; }
-        .db-legend { display:flex; flex-direction:column; gap:4px; }
-        .db-legend-item { display:flex; align-items:center; gap:5px; font-size:9px; color:#9ca3af; }
-        .db-legend-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-        /* sparkline mini */
-        .db-spark { display:flex; align-items:flex-end; gap:2px; height:28px; margin-top:8px; }
-        .db-spark-bar { flex:1; border-radius:2px 2px 0 0; min-height:4px; }
 
         /* Overlay oscuro sobre el dashboard — menos agresivo para que se vea más */
         .hero-overlay { position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -384,15 +349,6 @@ export default function Landing() {
             setTimeout(function(){
               els.forEach(function(el){ el.classList.add('up'); });
             }, 2000);
-            // Parallax en el mockup de fondo
-            var bg = document.getElementById('hero-bg-mockup');
-            if(bg){
-              window.addEventListener('scroll',function(){
-                var y = window.scrollY;
-                bg.style.transform = 'translateY(calc(-50% + '+Math.round(y*0.35)+'px))';
-                bg.style.opacity = Math.max(0, 0.18 - y*0.0004);
-              },{ passive:true });
-            }
           }
           document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
         })();
@@ -432,118 +388,7 @@ export default function Landing() {
         {/* ── Sweep de luz diagonal ── */}
         <div className="hero-sweep" />
 
-        {/* ── Dashboard de fondo — llena todo el hero ── */}
-        <div className="hero-db" id="hero-bg-mockup">
-
-          {/* Fila 1: KPI cards con sparklines */}
-          <div className="hero-db-row hero-db-row1">
-            {[
-              { l:"Presupuesto total", v:"S/ 2.4M",  d:"▲ En control",         dc:"db-green", spark:[40,55,48,60,52,67,72], sc:"rgba(34,197,94,.5)" },
-              { l:"Avance promedio",   v:"67%",       d:"semana 24 de 36",      dc:"db-amber", prog:67 },
-              { l:"PPC semanal",       v:"84%",       d:"▲ +6 pts esta semana", dc:"db-green", prog:84 },
-              { l:"Stock crítico",     v:"3 alertas", d:"reposición urgente",   dc:"db-red",   spark:[2,4,3,5,3,4,3], sc:"rgba(248,113,113,.5)" },
-            ].map((k,i)=>(
-              <div key={i} className="db-card">
-                <span className="db-kpi-l">{k.l}</span>
-                <span className="db-kpi-v">{k.v}</span>
-                <span className={`db-kpi-d ${k.dc}`}>{k.d}</span>
-                {k.prog && <div className="db-bar-h" style={{ marginTop:10 }}><div className="db-bar-f" style={{ width:`${k.prog}%`, background:k.prog>80?"linear-gradient(90deg,#22c55e,#4ade80)":"linear-gradient(90deg,#f59e0b,#fbbf24)" }}/></div>}
-                {k.spark && <div className="db-spark">{k.spark.map((h,j)=><div key={j} className="db-spark-bar" style={{ height:`${(h/Math.max(...k.spark))*100}%`, background:k.sc, animationDelay:`${j*0.05}s` }}/>)}</div>}
-              </div>
-            ))}
-          </div>
-
-          {/* Fila 2: gráfico barras + donut pie + tabla proyectos */}
-          <div className="hero-db-row hero-db-row2">
-
-            {/* Barras duales presupuesto vs real */}
-            <div className="db-card">
-              <div className="db-chart-label">Presupuesto vs Gasto real — últimos 6 meses (S/)</div>
-              <div style={{ display:"flex", alignItems:"flex-end", gap:8, height:80 }}>
-                {[
-                  { p:60, r:45 },{ p:75, r:68 },{ p:55, r:52 },{ p:90, r:83 },{ p:70, r:65 },{ p:85, r:91 },
-                ].map((b,i)=>(
-                  <div key={i} style={{ flex:1, display:"flex", gap:2, alignItems:"flex-end", height:"100%" }}>
-                    <div style={{ flex:1, height:`${b.p}%`, background:"rgba(59,130,246,.45)", borderRadius:"3px 3px 0 0", animation:`growBar 1.3s ${i*0.08}s both` }}/>
-                    <div style={{ flex:1, height:`${b.r}%`, background:b.r>b.p?"rgba(248,113,113,.6)":"rgba(245,158,11,.7)", borderRadius:"3px 3px 0 0", animation:`growBar 1.3s ${i*0.08+0.04}s both` }}/>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display:"flex", gap:14, marginTop:8 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"#6b7280" }}><div style={{ width:8, height:8, background:"rgba(59,130,246,.7)", borderRadius:2 }}/>Presupuesto</div>
-                <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:9, color:"#6b7280" }}><div style={{ width:8, height:8, background:"rgba(245,158,11,.8)", borderRadius:2 }}/>Gasto real</div>
-              </div>
-            </div>
-
-            {/* Donut — distribución de proyectos */}
-            <div className="db-card" style={{ display:"flex", flexDirection:"column" }}>
-              <div className="db-chart-label">Estado de proyectos</div>
-              <div className="db-donut">
-                <svg width="72" height="72" viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)", flexShrink:0 }}>
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="4"/>
-                  {/* En ejecución 55% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22c55e" strokeWidth="4" strokeDasharray="48.4 39.6" strokeDashoffset="0" style={{ transition:"stroke-dasharray 1s ease" }}/>
-                  {/* Planificando 30% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#60a5fa" strokeWidth="4" strokeDasharray="26.4 61.6" strokeDashoffset="-48.4"/>
-                  {/* En pausa 15% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" strokeWidth="4" strokeDasharray="13.2 74.8" strokeDashoffset="-74.8"/>
-                </svg>
-                <div className="db-legend">
-                  {[["#22c55e","En ejecución","55%"],["#60a5fa","Planificando","30%"],["#f59e0b","En pausa","15%"]].map(([c,l,p])=>(
-                    <div key={l} className="db-legend-item"><div className="db-legend-dot" style={{ background:c }}/>{l} <span style={{ color:c, fontWeight:700 }}>{p}</span></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Tabla proyectos */}
-            <div className="db-card">
-              <div className="db-chart-label">Proyectos activos</div>
-              {[
-                { n:"Torre Miraflores",      s:"Lima · 24 part.",    b:"Activo", c:"#22c55e", bg:"rgba(34,197,94,.12)"  },
-                { n:"Resid. Los Olivos",     s:"Lima Norte · 18p",   b:"Plan.",  c:"#60a5fa", bg:"rgba(59,130,246,.12)" },
-                { n:"Obra Vial Huacho",      s:"Huacho · 31 part.",  b:"Pausa",  c:"#f59e0b", bg:"rgba(245,158,11,.12)" },
-                { n:"Edificio San Borja",    s:"Lima · 40 part.",    b:"Activo", c:"#22c55e", bg:"rgba(34,197,94,.12)"  },
-                { n:"Condominio Sur",        s:"Surco · 28 part.",   b:"Plan.",  c:"#60a5fa", bg:"rgba(59,130,246,.12)" },
-              ].map(p=>(
-                <div key={p.n} className="db-table-row">
-                  <div><div className="db-t-name">{p.n}</div><div className="db-t-sub">{p.s}</div></div>
-                  <span className="db-badge" style={{ background:p.bg, color:p.c, border:`1px solid ${p.c}44` }}>{p.b}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Fila 3: 4 métricas rápidas */}
-          <div className="hero-db-row hero-db-row3">
-            <div className="db-card">
-              <span className="db-kpi-l">Nómina — semana</span>
-              <span className="db-kpi-v" style={{ fontSize:18 }}>S/ 48,200</span>
-              <span className="db-kpi-d db-amber">↓ -3% vs sem. anterior</span>
-              <div className="db-spark">{[55,62,58,70,65,68,72].map((h,i)=><div key={i} className="db-spark-bar" style={{ height:`${(h/72)*100}%`, background:"rgba(245,158,11,.45)" }}/>)}</div>
-            </div>
-            <div className="db-card">
-              <span className="db-kpi-l">OC emitidas — mes</span>
-              <span className="db-kpi-v" style={{ fontSize:18 }}>24</span>
-              <span className="db-kpi-d db-blue">S/ 187,400 comprometido</span>
-              <div className="db-spark">{[3,5,4,6,5,7,6].map((h,i)=><div key={i} className="db-spark-bar" style={{ height:`${(h/7)*100}%`, background:"rgba(59,130,246,.45)" }}/>)}</div>
-            </div>
-            <div className="db-card">
-              <span className="db-kpi-l">Valorizaciones pendientes</span>
-              <span className="db-kpi-v" style={{ fontSize:18 }}>S/ 320K</span>
-              <span className="db-kpi-d db-green">2 obras · pendiente firma</span>
-              <div className="db-bar-h" style={{ marginTop:10 }}><div className="db-bar-f" style={{ width:"72%", background:"linear-gradient(90deg,#22c55e,#4ade80)" }}/></div>
-            </div>
-            <div className="db-card">
-              <span className="db-kpi-l">Incidentes LPS</span>
-              <span className="db-kpi-v" style={{ fontSize:18 }}>7</span>
-              <span className="db-kpi-d db-red">▲ restricciones abiertas</span>
-              <div className="db-spark">{[4,6,5,8,6,7,7].map((h,i)=><div key={i} className="db-spark-bar" style={{ height:`${(h/8)*100}%`, background:"rgba(248,113,113,.4)" }}/>)}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Overlay oscuro sobre el dashboard */}
+        {/* Overlay */}
         <div className="hero-overlay" />
 
         {/* ── Texto en primer plano ── */}
