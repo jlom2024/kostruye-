@@ -102,8 +102,8 @@ export default function Landing() {
 
         /* ── HERO ── */
         .hero { min-height:100svh; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#030712; }
-        .hero-photo { position:absolute; inset:0; z-index:0; background:url('/hero-construction.png') center center / cover no-repeat; opacity:.28; filter:saturate(0.7); }
-        .hero-photo-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(to bottom, rgba(3,7,18,.55) 0%, rgba(3,7,18,.2) 40%, rgba(3,7,18,.2) 60%, rgba(3,7,18,.7) 100%); }
+        .hero-photo { position:absolute; inset:0; z-index:0; background:url('/hero-construction.png') center center / cover no-repeat; opacity:.48; filter:saturate(0.75); }
+        .hero-photo-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(to bottom, rgba(3,7,18,.3) 0%, rgba(3,7,18,.08) 40%, rgba(3,7,18,.08) 60%, rgba(3,7,18,.45) 100%); }
 
         /* Orbs de luz animados — z:3 encima del overlay, debajo del contenido */
         .hero-orb { position:absolute; border-radius:50%; filter:blur(70px); pointer-events:none; z-index:3; mix-blend-mode:screen; }
