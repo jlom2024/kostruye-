@@ -1,16 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <!-- K shape — dark navy -->
-  <g fill="#1B2E4B">
-    <!-- Vertical stroke of K -->
-    <rect x="38" y="30" width="22" height="120" rx="2"/>
-    <!-- Upper diagonal arm -->
-    <polygon points="60,30 60,95 120,30"/>
-    <!-- Lower diagonal arm -->
-    <polygon points="60,105 60,150 120,150 78,105"/>
-  </g>
-  <!-- Plus sign — blue -->
-  <g fill="#2563EB">
-    <rect x="96" y="42" width="16" height="48" rx="2"/>
-    <rect x="80" y="58" width="48" height="16" rx="2"/>
-  </g>
+  <rect width="200" height="200" rx="40" fill="#0F172A"/>
+  <rect x="24" y="12" width="44" height="178" rx="5" fill="#F59E0B"/>
+  <line x1="24" y1="12" x2="68" y2="42" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="12" x2="24" y2="42" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="42" x2="68" y2="72" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="42" x2="24" y2="72" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="72" x2="68" y2="102" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="72" x2="24" y2="102" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="102" x2="68" y2="132" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="102" x2="24" y2="132" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="132" x2="68" y2="162" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="132" x2="24" y2="162" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="162" x2="68" y2="190" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="68" y1="162" x2="24" y2="190" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="24" y1="42"  x2="68" y2="42"  stroke="#0F172A" stroke-width="2" opacity="0.28"/>
+  <line x1="24" y1="72"  x2="68" y2="72"  stroke="#0F172A" stroke-width="2" opacity="0.28"/>
+  <line x1="24" y1="102" x2="68" y2="102" stroke="#0F172A" stroke-width="2" opacity="0.28"/>
+  <line x1="24" y1="132" x2="68" y2="132" stroke="#0F172A" stroke-width="2" opacity="0.28"/>
+  <line x1="24" y1="162" x2="68" y2="162" stroke="#0F172A" stroke-width="2" opacity="0.28"/>
+  <rect x="18" y="4" width="56" height="24" rx="6" fill="#B45309"/>
+  <rect x="25" y="8" width="22" height="14" rx="3" fill="#1E3A5F" opacity="0.85"/>
+  <polygon points="68,81 68,106 183,31 183,18" fill="#F59E0B"/>
+  <line x1="90"  y1="69" x2="90"  y2="92" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="115" y1="54" x2="115" y2="75" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="140" y1="40" x2="140" y2="59" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="165" y1="25" x2="165" y2="43" stroke="#0F172A" stroke-width="1.5" opacity="0.22"/>
+  <line x1="46" y1="10" x2="183" y2="22" stroke="#B45309" stroke-width="4" stroke-linecap="round"/>
+  <line x1="144" y1="57" x2="144" y2="96" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <rect x="131" y="96" width="26" height="14" rx="4" fill="#9CA3AF"/>
+  <path d="M134,110 C134,132 154,132 154,110" stroke="#9CA3AF" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <polygon points="68,106 68,131 163,190 163,170" fill="#F59E0B"/>
+  <rect x="16" y="188" width="58" height="10" rx="4" fill="#B45309"/>
 </svg>

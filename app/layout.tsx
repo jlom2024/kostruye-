@@ -64,9 +64,9 @@ export const metadata: Metadata = {
     creator: "@kreoia_studio",
   },
   icons: {
-    icon: "/logo-color.svg",
-    shortcut: "/logo-color.svg",
-    apple: "/logo-color.svg",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   alternates: {
     canonical: APP_URL,

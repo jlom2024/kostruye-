@@ -102,6 +102,8 @@ export default function Landing() {
 
         /* ── HERO ── */
         .hero { min-height:100svh; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#030712; }
+        .hero-photo { position:absolute; inset:0; z-index:0; background:url('/hero-construction.png') center center / cover no-repeat; opacity:.28; filter:saturate(0.7); }
+        .hero-photo-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(to bottom, rgba(3,7,18,.55) 0%, rgba(3,7,18,.2) 40%, rgba(3,7,18,.2) 60%, rgba(3,7,18,.7) 100%); }
 
         /* Orbs de luz animados — z:3 encima del overlay, debajo del contenido */
         .hero-orb { position:absolute; border-radius:50%; filter:blur(70px); pointer-events:none; z-index:3; mix-blend-mode:screen; }
@@ -399,15 +401,7 @@ export default function Landing() {
       {/* ═══════════════ NAV ═══════════════ */}
       <nav className="nav">
         <a href="/" className="nav-logo">
-          <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="6" fill="white" fillOpacity="0.08"/>
-            <rect x="5" y="5" width="5" height="22" rx="1" fill="white"/>
-            <polygon points="10,5 10,15 21,5" fill="white"/>
-            <polygon points="10,17 10,27 21,27 16,17" fill="white"/>
-            <rect x="16.5" y="8" width="3" height="9" rx="0.75" fill="#60A5FA"/>
-            <rect x="14" y="10.5" width="8" height="3" rx="0.75" fill="#60A5FA"/>
-          </svg>
-          <div className="nav-logo-text">KOSTRUYE<span>+</span></div>
+          <img src="/logo-brand.png" alt="Kostruye+" style={{ height: 38, width: "auto", objectFit: "contain" }} />
         </a>
         <ul className="nav-links">
           {([["#features","Módulos"],["#pricing","Precios"],["#contact","Contacto"]] as [string,string][]).map(([h,l])=>(
@@ -422,6 +416,10 @@ export default function Landing() {
 
       {/* ═══════════════ HERO ═══════════════ */}
       <section className="hero">
+
+        {/* ── Foto de construcción de fondo ── */}
+        <div className="hero-photo" />
+        <div className="hero-photo-overlay" />
 
         {/* ── Orbs de luz animados ── */}
         <div className="hero-orb hero-orb1" />
@@ -846,14 +844,7 @@ export default function Landing() {
       {/* ═══════════════ FOOTER ═══════════════ */}
       <footer className="footer">
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="6" fill="white" fillOpacity="0.08"/>
-            <rect x="5" y="5" width="5" height="22" rx="1" fill="white"/>
-            <polygon points="10,5 10,15 21,5" fill="white"/>
-            <polygon points="10,17 10,27 21,27 16,17" fill="white"/>
-            <rect x="16.5" y="8" width="3" height="9" rx="0.75" fill="#60A5FA"/>
-            <rect x="14" y="10.5" width="8" height="3" rx="0.75" fill="#60A5FA"/>
-          </svg>
+          <img src="/logo-brand.png" alt="Kostruye+" style={{ height: 28, width: "auto", objectFit: "contain" }} />
           <span style={{ fontWeight:700, fontSize:13, color:"#374151" }}>© 2026 KREO IA Studio</span>
         </div>
         <ul className="footer-links">

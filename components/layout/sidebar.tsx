@@ -110,12 +110,27 @@ export function Sidebar({ projectId, projectName }: SidebarProps) {
         ) : (
           <>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-              <rect width="32" height="32" rx="6" fill="white" fillOpacity="0.08"/>
-              <rect x="5" y="5" width="5" height="22" rx="1" fill="white"/>
-              <polygon points="10,5 10,15 21,5" fill="white"/>
-              <polygon points="10,17 10,27 21,27 16,17" fill="white"/>
-              <rect x="16.5" y="8" width="3" height="9" rx="0.75" fill="#60A5FA"/>
-              <rect x="14" y="10.5" width="8" height="3" rx="0.75" fill="#60A5FA"/>
+              <rect width="32" height="32" rx="7" fill="#0F172A"/>
+              <rect x="4" y="2" width="7" height="28" rx="1" fill="#F59E0B"/>
+              <line x1="4" y1="10" x2="11" y2="10" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="17" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="24" x2="11" y2="24" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="10" x2="11" y2="2"  stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="2"  x2="11" y2="10" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="17" x2="11" y2="10" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="10" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="24" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="17" x2="11" y2="24" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="30" x2="11" y2="24" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="24" x2="11" y2="30" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <rect x="3" y="1" width="9" height="4" rx="1.5" fill="#B45309"/>
+              <polygon points="11,13 11,17 29,5 29,3" fill="#F59E0B"/>
+              <line x1="7.5" y1="2" x2="29" y2="4" stroke="#B45309" strokeWidth="1.2" strokeLinecap="round"/>
+              <line x1="23" y1="10" x2="23" y2="15" stroke="#CBD5E1" strokeWidth="1.2" strokeLinecap="round"/>
+              <rect x="21" y="15" width="5" height="2.5" rx="0.8" fill="#9CA3AF"/>
+              <path d="M21.5,17.5 C21.5,20.5 24.5,20.5 24.5,17.5" stroke="#9CA3AF" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+              <polygon points="11,17 11,21 26,30 26,28" fill="#F59E0B"/>
+              <rect x="3" y="30" width="9" height="2" rx="1" fill="#B45309"/>
             </svg>
             <div className="leading-tight">
               <span className="text-sm font-bold tracking-widest uppercase text-white">KONSTRUYE</span>
