@@ -21,6 +21,9 @@ import {
 interface IneiIndex {
   index_code: string;
   index_name: string;
+  index_value?: number | null;
+  period_year?: number | null;
+  period_month?: number | null;
 }
 
 interface Monomio {
@@ -298,21 +301,33 @@ export function ReajustePanel({ projectId, budgetId, ineiIndices, canEdit }: Pro
                             onBlur={() => saveMonomio(m)}
                             className="rounded-md border border-slate-200 px-2 py-1 text-xs text-right disabled:bg-slate-50"
                           />
-                          <select
-                            value={m.index_code}
-                            disabled={!canEdit}
-                            onChange={(e) => {
-                              updateMonomioLocal(f.id, m.id, { index_code: e.target.value });
-                              saveMonomio({ ...m, index_code: e.target.value });
-                            }}
-                            className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:bg-slate-50"
-                          >
-                            {ineiIndices.map((idx) => (
-                              <option key={idx.index_code} value={idx.index_code}>
-                                {idx.index_code} — {idx.index_name}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="flex flex-col gap-0.5">
+                            <select
+                              value={m.index_code}
+                              disabled={!canEdit}
+                              onChange={(e) => {
+                                updateMonomioLocal(f.id, m.id, { index_code: e.target.value });
+                                saveMonomio({ ...m, index_code: e.target.value });
+                              }}
+                              className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:bg-slate-50"
+                            >
+                              {ineiIndices.map((idx) => (
+                                <option key={idx.index_code} value={idx.index_code}>
+                                  {idx.index_code} — {idx.index_name}
+                                </option>
+                              ))}
+                            </select>
+                            {(() => {
+                              const idx = ineiIndices.find((i) => i.index_code === m.index_code);
+                              if (!idx?.index_value) return null;
+                              const mon = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][(idx.period_month ?? 1) - 1];
+                              return (
+                                <span className="pl-1 font-mono text-[10px] leading-tight text-slate-400">
+                                  Valor actual: <span className="text-slate-600">{idx.index_value.toFixed(2)}</span> · {mon} {idx.period_year}
+                                </span>
+                              );
+                            })()}
+                          </div>
                           {canEdit && (
                             <button
                               onClick={() => deleteMonomio(f.id, m.id)}

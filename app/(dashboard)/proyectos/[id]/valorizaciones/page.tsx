@@ -26,14 +26,20 @@ export default async function ValorizacionesPage({
   // Editar fórmulas de reajuste usa el permiso del módulo valorizaciones
   const canEditReajuste = await userCanProject(supabase, id, "valorizaciones", "edit");
 
-  // Índices INEI disponibles (catálogo distinto por código)
+  // Índices INEI disponibles — último período por código (para mostrar valor actual en fórmula)
   const { data: ineiRaw } = await supabase
     .from("inei_indices")
-    .select("index_code, index_name")
-    .order("index_code");
-  const ineiIndices = Array.from(
-    new Map((ineiRaw ?? []).map((i) => [i.index_code, i])).values()
-  );
+    .select("index_code, index_name, index_value, period_year, period_month")
+    .order("index_code")
+    .order("period_year", { ascending: false })
+    .order("period_month", { ascending: false });
+  // Dedup: primera aparición por código = período más reciente (orden DESC)
+  const seen = new Set<string>();
+  const ineiIndices = (ineiRaw ?? []).filter((i) => {
+    if (seen.has(i.index_code)) return false;
+    seen.add(i.index_code);
+    return true;
+  });
 
   // Presupuesto venta (para total del contrato)
   const { data: budget } = await supabase
@@ -65,7 +71,7 @@ export default async function ValorizacionesPage({
           <ReajustePanel
             projectId={id}
             budgetId={budget?.id ?? null}
-            ineiIndices={ineiIndices as { index_code: string; index_name: string }[]}
+            ineiIndices={ineiIndices as { index_code: string; index_name: string; index_value?: number; period_year?: number; period_month?: number }[]}
             canEdit={canEditReajuste}
           />
         </div>
