@@ -119,6 +119,37 @@ const tools: OpenAI.Chat.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_inei_indices",
+      description: "Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPCs). Úsalo cuando el usuario pregunte por índices INEI, valores para la fórmula polinómica, el índice de mano de obra, acero, cemento, etc. Retorna los valores del período más reciente disponible.",
+      parameters: {
+        type: "object",
+        properties: {
+          index_code: {
+            type: "string",
+            description: "Código del índice (ej: '47' mano de obra, '03' acero corrugado, '21' cemento). Omitir para obtener todos.",
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_reajuste_formulas",
+      description: "Obtiene las fórmulas polinómicas de reajuste (Factor K) de un proyecto con sus monomios e índices INEI asignados",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "string", description: "UUID del proyecto" },
+        },
+        required: ["project_id"],
+      },
+    },
+  },
 ];
 
 async function runTool(name: string, args: Record<string, string>, supabase: Awaited<ReturnType<typeof createClient>>, orgId: string) {
@@ -231,6 +262,54 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
       if (!data?.length) return { message: "No se encontraron empleados o trabajadores para este proyecto." };
       return data;
     }
+    case "get_inei_indices": {
+      // Período más reciente disponible
+      const { data: latest } = await supabase
+        .from("inei_indices")
+        .select("period_year, period_month")
+        .order("period_year", { ascending: false })
+        .order("period_month", { ascending: false })
+        .limit(1)
+        .single();
+      if (!latest) return { message: "No hay índices INEI cargados en el sistema." };
+
+      let q = supabase
+        .from("inei_indices")
+        .select("index_code, index_name, index_value")
+        .eq("period_year", latest.period_year)
+        .eq("period_month", latest.period_month)
+        .order("index_code");
+      if (args.index_code) q = q.eq("index_code", args.index_code) as typeof q;
+
+      const { data: indices } = await q;
+      const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      return {
+        periodo: `${meses[latest.period_month - 1]} ${latest.period_year}`,
+        base: "Diciembre 2025 = 100 (R.J. 016-2026-INEI)",
+        area: "Área 1 — Lima Metropolitana",
+        indices: indices ?? [],
+      };
+    }
+    case "get_reajuste_formulas": {
+      const { data: formulas } = await supabase
+        .from("reajuste_formulas")
+        .select("id, name, contract_date, notes")
+        .eq("project_id", args.project_id)
+        .order("created_at");
+      if (!formulas?.length) return { message: "No hay fórmulas polinómicas definidas para este proyecto." };
+
+      const ids = formulas.map((f) => f.id);
+      const { data: monomios } = await supabase
+        .from("reajuste_monomios")
+        .select("formula_id, symbol, coefficient, index_code, description")
+        .in("formula_id", ids)
+        .order("sort_order");
+
+      return formulas.map((f) => ({
+        ...f,
+        monomios: (monomios ?? []).filter((m) => m.formula_id === f.id),
+      }));
+    }
     default:
       return { error: "tool not found" };
   }
@@ -270,12 +349,33 @@ NO pidas el nombre o código del proyecto — ya lo tienes.`;
     }
   }
 
-  const systemPrompt = `Eres KIA, el asistente de inteligencia artificial de Kostruye+, una plataforma de gestión de obras de construcción.
-Ayudas al equipo de la constructora a consultar datos de proyectos, presupuestos, compras, nóminas, valorizaciones y almacén.
-Responde siempre en español, de forma concisa y útil.
-Cuando el usuario pregunte sobre datos, usa las herramientas disponibles para obtener información actualizada.
-Formatea los montos en soles (S/) con separadores de miles.
-Si detectas anomalías (sobre-gasto, OC pendiente antigua, stock bajo), menciónalas proactivamente.
+  const systemPrompt = `Eres KIA, el asistente de inteligencia artificial de Kostruye+, plataforma ERP para constructoras peruanas.
+Ayudas al equipo a consultar y analizar datos de proyectos, presupuestos, compras, nóminas, valorizaciones, almacén e índices INEI.
+Responde siempre en español, de forma concisa y útil. Usa las herramientas cuando el usuario pida datos reales.
+Formatea montos en soles (S/) con separadores de miles. Si detectas anomalías (sobre-gasto, OC antigua pendiente, stock bajo), menciónalo.
+
+MÓDULOS QUE CONOCES:
+- Presupuesto/APU: partidas con costos directos e indirectos, roll-up automático
+- Compras: órdenes de compra con aprobación por roles
+- Servicios: órdenes de servicio (subcontratos, equipos, transporte)
+- Almacén: Kardex PPP (precio promedio ponderado), alertas de stock mínimo
+- Nóminas/Planillas: períodos con totales bruto/neto
+- Valorizaciones: avance de obra por período con Fórmula Polinómica y Factor K
+- Control de Costos: desviación entre presupuesto y costo real (Kardex)
+- Contabilidad: facturación electrónica SUNAT
+- Auditoría: log de cambios multi-tenant
+
+ÍNDICES INEI (IUPCs — Índices Unificados de Precios de la Construcción):
+- Norma vigente: R.J. 016-2026-INEI. Base: Diciembre 2025 = 100. Área 1 = Lima Metropolitana.
+- Se usan en la Fórmula Polinómica de Reajuste (D.S. 011-79-VC) para calcular el Factor K de cada valorización.
+- Índices clave: 02=Acero liso, 03=Acero corrugado, 04=Agregados, 17=Cemento Portland tipo I, 21=Cemento Portland IP, 39=Índice General de Precios al Consumidor, 43=Madera para encofrado, 44=Madera para carpintería, 47=Mano de obra, 47-1=MO alta especialización, 48=Maquinaria liviana, 49=Maquinaria pesada, 54=Pintura látex, 65=Tubería de acero, 66=Tubería PVC.
+- Cuando pregunten por un índice específico, usa get_inei_indices con el código o nombre para dar el valor actualizado.
+
+FÓRMULA POLINÓMICA (Factor K):
+- K = Σ(Ci × Ir_i / Io_i) donde Ci = coeficiente del monomio, Io = valor del índice en el mes base (fecha de contrato), Ir = valor del índice en el mes de la valorización.
+- Monto de reajuste = (K − 1) × monto valorizado.
+- Para ver las fórmulas de un proyecto, usa get_reajuste_formulas.
+
 Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.${projectContext}`;
 
   const msgs: OpenAI.Chat.ChatCompletionMessageParam[] = [

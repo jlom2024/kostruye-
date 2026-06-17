@@ -54,18 +54,22 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
   - Cap 16 Configuración ampliado: sección SUNAT + sección Fideicomiso/CORFID
   - Glosario actualizado: Factor K, CORFID, Curva S, Fideicomiso, SOL, SUNAT, Kardex, OS, PPP, Variación, Índice INEI
 
+**Valor INEI en fórmula polinómica (usuario)**
+- `components/reajuste/reajuste-panel.tsx`: debajo del `<select>` de índice en cada monomio se muestra el valor actual ("Valor actual: 245.31 · Abr 2026") tomado de `inei_indices`
+- `app/(dashboard)/proyectos/[id]/valorizaciones/page.tsx`: query extendida para traer `index_value, period_year, period_month`; dedup por código tomando el período más reciente
+
 ### Estado al cerrar
 - ✅ 308 registros INEI (Ene–Abr 2026) en `inei_indices` de Supabase
 - ✅ Admin INEI con 95 códigos correctos + botón sync
 - ✅ Endpoint POST /api/admin/inei/sync operativo
-- ✅ Manual PDF v1.1 generado en `public/Manual-Kostruye-Plus.pdf`
-- ⏳ Pendiente: commit + deploy al VPS
+- ✅ Manual PDF v1.1 en `public/Manual-Kostruye-Plus.pdf`
+- ✅ Fórmula polinómica muestra valor INEI actual al seleccionar índice
+- ✅ Commit `5a5406f` — GitHub ✅ — VPS ✅
 
 ### ⚠️ Cuidado para el siguiente agente
-- `inei_upsert.sql` e `inei_import.json` son archivos temporales en la raíz del proyecto — se pueden borrar
-- El script `generar_manual.py` usa reportlab (instalar con `pip install reportlab pillow`) — depende de `public/logo-brand.png`
-- El endpoint de sync requiere el Excel mensual del INEI en la URL exacta `n07_indices_unificados...` — si INEI cambia la URL, actualizar `ineiUrl()` en la route
-- Los índices INEI ahora son Base Dic 2025 = 100 (antes Base Jul 1992 = 100) — no mezclar bases al calcular variaciones
+- El script `generar_manual.py` (raíz del repo local, no commiteado) usa reportlab — depende de `public/logo-brand.png`
+- El endpoint de sync requiere el Excel mensual del INEI en URL exacta `n07_indices_unificados...` — si INEI cambia la URL, actualizar `ineiUrl()` en la route
+- Los índices INEI ahora son Base Dic 2025 = 100 (antes Base Jul 1992 = 100) — no mezclar bases
 
 ---
 
