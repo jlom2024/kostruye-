@@ -25,27 +25,86 @@ interface ImportRow {
   _error?: string;
 }
 
+// Códigos vigentes desde R.J. 016-2026-INEI (Base Dic 2025 = 100)
 const KNOWN_CODES: Record<string, string> = {
-  "02": "Acero de Construcción Liso",
-  "03": "Acero de Construcción Corrugado",
-  "04": "Agregado Fino",
-  "05": "Agregado Grueso",
+  "01": "Aceite y lubricante",
+  "02": "Acero de construcción liso",
+  "03": "Acero de construcción corrugado",
+  "04": "Agregado fino",
+  "05": "Agregado grueso",
+  "06": "Alambre y cable de cobre desnudo",
+  "07": "Alambre y cable tipo TW, THW, LSOH",
+  "08": "Alambre y cable tipo WP, CPI",
+  "09": "Alcantarilla metálica y guardavías",
+  "10": "Aparato sanitario con grifería",
+  "11": "Artefacto de alumbrado exterior",
+  "12": "Artefacto de alumbrado interior",
   "13": "Asfalto",
-  "17": "Bloque y Ladrillo",
-  "21": "Cemento Portland Tipo I",
-  "29": "Mano de Obra (MO)",
-  "30": "Dólar (tipo de cambio)",
-  "37": "Herramienta Manual",
-  "39": "Madera Nacional para Encofrado",
-  "43": "Madera Terciada para Encofrado",
-  "44": "Maquinaria y Equipo Nacional",
-  "45": "Maquinaria y Equipo Importado",
-  "47": "Pintura Látex",
-  "49": "Tubería de Acero",
-  "54": "Tubería de PVC para Agua Potable",
-  "65": "Vidrio Incoloro Doble",
-  "67": "Combustibles y Carburantes",
-  "71": "Agua",
+  "14": "Baldosa acústica",
+  "16": "Baldosa vinílica y PVC",
+  "17": "Bloque y ladrillo",
+  "18": "Cable telefónico y de red",
+  "19": "Cable NYY, N2XY, NPT, N2XOH, N2XSY",
+  "20": "Cemento asfáltico",
+  "21": "Cemento Portland e hidráulico",
+  "24": "Cerámica y porcelanato",
+  "26": "Cerrajería",
+  "27": "Detonante",
+  "28": "Dinamita",
+  "30": "Dólar más inflación mercado USA",
+  "31": "Prefabricado de concreto",
+  "32": "Flete terrestre",
+  "33": "Flete aéreo",
+  "34": "Gasohol y gasolina",
+  "37": "Herramienta manual",
+  "38": "Hormigón y afirmado",
+  "39": "Índice de Precios al Consumidor (INEI)",
+  "40": "Loseta y terrazo",
+  "41": "Madera nacional en tiras para piso",
+  "42": "Madera importada para encofrado y carpintería",
+  "43": "Madera nacional para encofrado y carpintería",
+  "44": "Madera terciada nacional",
+  "46": "Malla de acero",
+  "47": "Mano de obra (incluye leyes sociales)",
+  "47-1": "Mano de obra de alta especialización",
+  "48": "Maquinaria y equipo de construcción liviano",
+  "49": "Maquinaria y equipo de construcción pesado",
+  "50": "Marco y tapa de fierro",
+  "51": "Perfil de acero al carbono",
+  "52": "Perfil de aluminio",
+  "53": "Petróleo diésel",
+  "54": "Pintura látex",
+  "55": "Pintura temple",
+  "56": "Plancha de acero LAC",
+  "57": "Plancha de acero LAF",
+  "59": "Plancha de fibrocemento y yeso",
+  "60": "Plancha de poliuretano, poliestireno y termoaislante",
+  "61": "Plancha galvanizada",
+  "62": "Poste de concreto",
+  "65": "Tubería de acero negro y/o galvanizado",
+  "66": "Tubería de PVC para la red de agua potable y alcantarillado",
+  "68": "Tubería de cobre",
+  "71": "Tubería de hierro fundido y dúctil",
+  "72": "Tubería de PVC para redes interiores",
+  "77": "Válvula de bronce y latón",
+  "78": "Válvula de hierro y acero",
+  "79": "Vidrio",
+  "80": "Concreto premezclado",
+  "81": "Aditivo de concreto y similar",
+  "82": "Alambre y cable de aluminio",
+  "83": "Implemento y accesorio de seguridad",
+  "84": "Madera terciada importada",
+  "85": "Perfil de acero galvanizado",
+  "86": "Pintura esmalte y epóxica",
+  "87": "Plancha con cubierta aluzinc",
+  "88": "Plancha y cobertura plástica",
+  "89": "Poste y tubería de fibra de vidrio",
+  "90": "Tubería de polietileno",
+  "91": "Geomembrana y geotextil",
+  "92": "Flete fluvial",
+  "93": "Bienes y servicios auxiliares",
+  "94": "Encofrado y andamio prefabricado",
+  "95": "Equipamiento permanente de obra",
 };
 
 const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -64,11 +123,15 @@ export default function IneiAdminPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState("");
 
+  // Sync desde INEI
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState("");
+
   const [form, setForm] = useState({
-    index_code: "21",
-    index_name: KNOWN_CODES["21"],
-    period_year: 2026,
-    period_month: 1,
+    index_code: "47",
+    index_name: KNOWN_CODES["47"],
+    period_year: new Date().getFullYear(),
+    period_month: new Date().getMonth() + 1,
     index_value: "" as string | number,
   });
 
@@ -168,6 +231,24 @@ export default function IneiAdminPage() {
     e.target.value = "";
   }
 
+  async function syncFromInei() {
+    setSyncing(true);
+    setSyncResult("");
+    try {
+      const res = await fetch("/api/admin/inei/sync", { method: "POST" });
+      const d = await res.json();
+      if (res.ok) {
+        setSyncResult(`✓ ${d.imported} índices actualizados (${d.lastMonth})`);
+        load();
+      } else {
+        setSyncResult(`Error: ${d.error}`);
+      }
+    } catch {
+      setSyncResult("Error de red al conectar con INEI");
+    }
+    setSyncing(false);
+  }
+
   async function confirmImport() {
     const valid = importRows.filter((r) => !r._error);
     if (!valid.length) return;
@@ -206,10 +287,21 @@ export default function IneiAdminPage() {
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: 0 }}>Índices Unificados INEI</h1>
             <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>
-              Data nacional para el reajuste polinómico (factor K). Base 100 según período de referencia.
+              R.J. 016-2026-INEI · Base Diciembre 2025 = 100 · Área 1 Lima Metropolitana · 95 índices
             </p>
+            {syncResult && (
+              <p style={{ fontSize: 12, color: syncResult.startsWith("✓") ? "#4ade80" : "#f87171", margin: "4px 0 0" }}>{syncResult}</p>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={syncFromInei}
+              disabled={syncing}
+              style={{ ...btnPrimary, background: syncing ? "#374151" : "linear-gradient(135deg,#10b981,#059669)", opacity: syncing ? 0.7 : 1 }}
+              title="Descarga el Excel más reciente del INEI y actualiza los índices"
+            >
+              {syncing ? "Sincronizando…" : "↻ Sync INEI"}
+            </button>
             <button onClick={downloadTemplate} style={btnSecondary} title="Descarga la plantilla Excel con el formato correcto">
               ↓ Plantilla
             </button>
