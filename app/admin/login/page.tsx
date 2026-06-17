@@ -53,7 +53,29 @@ export default function AdminLogin() {
 
       <div style={{ width: 380, padding: "40px 36px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, backdropFilter: "blur(10px)", position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🏗️</div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+            <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="7" fill="#0F172A"/>
+              <rect x="4" y="2" width="7" height="28" rx="1" fill="#F59E0B"/>
+              <line x1="4" y1="10" x2="11" y2="10" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="17" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="24" x2="11" y2="24" stroke="#0F172A" strokeWidth="0.9" opacity="0.35"/>
+              <line x1="4" y1="10" x2="11" y2="2"  stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="2"  x2="11" y2="10" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="17" x2="11" y2="10" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="10" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="24" x2="11" y2="17" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <line x1="4" y1="17" x2="11" y2="24" stroke="#0F172A" strokeWidth="0.6" opacity="0.2"/>
+              <rect x="3" y="1" width="9" height="4" rx="1.5" fill="#B45309"/>
+              <polygon points="11,13 11,17 29,5 29,3" fill="#F59E0B"/>
+              <line x1="7.5" y1="2" x2="29" y2="4" stroke="#B45309" strokeWidth="1.2" strokeLinecap="round"/>
+              <line x1="23" y1="10" x2="23" y2="15" stroke="#CBD5E1" strokeWidth="1.2" strokeLinecap="round"/>
+              <rect x="21" y="15" width="5" height="2.5" rx="0.8" fill="#9CA3AF"/>
+              <path d="M21.5,17.5 C21.5,20.5 24.5,20.5 24.5,17.5" stroke="#9CA3AF" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+              <polygon points="11,17 11,21 26,30 26,28" fill="#F59E0B"/>
+              <rect x="3" y="30" width="9" height="2" rx="1" fill="#B45309"/>
+            </svg>
+          </div>
           <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 700, margin: 0 }}>Kostruye+ Admin</h1>
           <p style={{ color: "#6b7280", fontSize: 14, margin: "8px 0 0" }}>Panel de control privado</p>
         </div>
