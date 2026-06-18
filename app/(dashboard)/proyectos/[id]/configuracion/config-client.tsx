@@ -20,6 +20,7 @@ export function ConfiguracionClient({
   members: any[];
   orgMembers: any[];
   venta: any;
+  organizationId?: string;
 }) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -55,10 +56,11 @@ export function ConfiguracionClient({
       <div className="flex-1 p-8 overflow-y-auto bg-slate-50/50">
         {activeTab === "general" && <ConfigGeneral project={project} projectId={projectId} />}
         {activeTab === "equipo" && (
-          <ConfigTeam 
-            projectId={projectId} 
-            members={members} 
-            orgMembers={orgMembers} 
+          <ConfigTeam
+            projectId={projectId}
+            organizationId={project.organization_id}
+            members={members}
+            orgMembers={orgMembers}
           />
         )}
         {activeTab === "parametros" && (
