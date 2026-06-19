@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 
-const CHUNK_SIZE = 10; // páginas por chunk
-const MAX_TOKENS  = 16000;
+const CHUNK_SIZE = 15; // páginas por chunk
+const MAX_TOKENS  = 8192;
 
 const EXTRACTION_PROMPT = `Analiza este fragmento de presupuesto de construcción (formato S10 peruano) y extrae su estructura.
 
@@ -61,7 +61,7 @@ async function extractChunk(base64Pdf: string, apiKey: string, chunkIndex: numbe
       "content-type":      "application/json",
     },
     body: JSON.stringify({
-      model:      "claude-sonnet-4-6",
+      model:      "claude-haiku-4-5-20251001",
       max_tokens: MAX_TOKENS,
       messages: [{
         role: "user",
