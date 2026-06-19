@@ -82,6 +82,10 @@ export function ImportOcrModal({
     setError(null);
 
     try {
+      // Limpiar datos previos antes de insertar
+      await sb.from("budget_items").delete().eq("budget_id", budgetId);
+      await sb.from("budget_chapters").delete().eq("budget_id", budgetId);
+
       let sortChapter = 0;
       for (const chapter of extracted.chapters) {
         sortChapter++;
