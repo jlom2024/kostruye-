@@ -161,7 +161,10 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
           .from(table)
           .select("*")
           .eq("budget_id", budgetId)
+          // sort_order NO es único (se reinicia por capítulo en las partidas);
+          // sin desempate estable, .range() duplica/salta filas entre páginas.
           .order("sort_order")
+          .order("id")
           .range(from, from + PAGE - 1);
         if (error || !data) break;
         acc.push(...data);
