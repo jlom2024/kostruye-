@@ -21,23 +21,43 @@ function adminClient() {
   );
 }
 
+// Capítulo padre de un código de partida: "01.01.01.01" → "01.01.01"
+function parentCode(itemCode: string): string {
+  const parts = itemCode.split(".");
+  return parts.length > 1 ? parts.slice(0, -1).join(".") : itemCode;
+}
+
 // ── Parse Claude pipe-format response ────────────────────────────────────
-function parsePipeText(text: string): BudgetChapter[] {
-  const chapters: BudgetChapter[] = [];
-  let current: BudgetChapter | null = null;
+// Inmune a cortes de chunk: las partidas se asignan a su capítulo por código,
+// no por proximidad. Una partida huérfana (sin C| en su chunk) crea/usa el
+// capítulo derivado de su propio código jerárquico.
+function parsePipeText(text: string, chapterMap: Map<string, BudgetChapter>): void {
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (line.startsWith("C|")) {
       const p = line.split("|");
       if (p.length >= 3) {
-        current = { code: p[1].trim(), name: p.slice(2).join("|").trim(), items: [] };
-        chapters.push(current);
+        const code = p[1].trim();
+        const name = p.slice(2).join("|").trim();
+        const ex = chapterMap.get(code);
+        if (ex) {
+          if (name && (ex.name === "" || ex.name.length < name.length)) ex.name = name;
+        } else {
+          chapterMap.set(code, { code, name, items: [] });
+        }
       }
-    } else if (line.startsWith("I|") && current) {
+    } else if (line.startsWith("I|")) {
       const p = line.split("|");
       if (p.length >= 6) {
-        current.items.push({
-          item_code:   p[1].trim(),
+        const itemCode = p[1].trim();
+        if (!itemCode) continue;
+        const chCode = parentCode(itemCode);
+        let ch = chapterMap.get(chCode);
+        if (!ch) { ch = { code: chCode, name: "", items: [] }; chapterMap.set(chCode, ch); }
+        // evitar duplicar la misma partida
+        if (ch.items.some(i => i.item_code === itemCode)) continue;
+        ch.items.push({
+          item_code:   itemCode,
           description: p[2].trim(),
           unit:        p[3].trim() || "und",
           quantity:    parseFloat(p[4].replace(/[,\s]/g, "")) || 0,
@@ -46,28 +66,6 @@ function parsePipeText(text: string): BudgetChapter[] {
       }
     }
   }
-  return chapters.filter(c => c.code);
-}
-
-// ── Merge chapters (same code → merge items) ──────────────────────────────
-function mergeChapters(groups: BudgetChapter[][]): BudgetChapter[] {
-  const map = new Map<string, BudgetChapter>();
-  for (const list of groups) {
-    for (const ch of list) {
-      const key = ch.code.trim();
-      if (!key) continue;
-      if (map.has(key)) {
-        const ex = map.get(key)!;
-        const seen = new Set(ex.items.map(i => i.item_code));
-        for (const item of ch.items) {
-          if (!seen.has(item.item_code)) { ex.items.push(item); seen.add(item.item_code); }
-        }
-      } else {
-        map.set(key, { ...ch, items: [...ch.items] });
-      }
-    }
-  }
-  return Array.from(map.values());
 }
 
 // ── Split text into chunks on line boundaries ─────────────────────────────
@@ -103,7 +101,7 @@ REGLAS:
 - NO incluyas filas de totales, subtotales, gastos generales, IGV ni encabezados de columna
 - Si no encuentras partidas en algún fragmento, igual devuelve los capítulos que identifiques`;
 
-async function parseChunkWithClaude(text: string, apiKey: string, idx: number): Promise<BudgetChapter[]> {
+async function callClaudeText(text: string, apiKey: string): Promise<{ body: string; stop: string } | null> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -113,19 +111,34 @@ async function parseChunkWithClaude(text: string, apiKey: string, idx: number): 
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 8192,
+      max_tokens: 16000,
       messages: [{ role: "user", content: `${TEXT_PROMPT}\n\nTEXTO A ANALIZAR:\n${text}` }],
     }),
   });
   if (!res.ok) {
-    console.error(`Claude text chunk ${idx} error:`, (await res.text()).slice(0, 200));
-    return [];
+    console.error("Claude text error:", (await res.text()).slice(0, 200));
+    return null;
   }
   const data = await res.json();
-  const responseText: string = data.content?.[0]?.text ?? "";
-  const chapters = parsePipeText(responseText);
-  console.log(`Chunk ${idx}: ${chapters.length} caps, ${chapters.reduce((s, c) => s + c.items.length, 0)} items`);
-  return chapters;
+  return { body: data.content?.[0]?.text ?? "", stop: data.stop_reason ?? "" };
+}
+
+// Procesa un chunk; si Claude trunca la salida, parte el chunk a la mitad y reintenta.
+async function parseChunkWithClaude(
+  text: string, apiKey: string, idx: number, chapterMap: Map<string, BudgetChapter>, depth = 0
+): Promise<void> {
+  const r = await callClaudeText(text, apiKey);
+  if (!r) return;
+  if (r.stop === "max_tokens" && depth < 3) {
+    // Salida truncada → el chunk tenía demasiadas partidas. Partir y reintentar.
+    console.warn(`⚠️ Chunk ${idx} truncado — partiendo (depth ${depth})`);
+    const lines = text.split("\n");
+    const mid = Math.floor(lines.length / 2);
+    await parseChunkWithClaude(lines.slice(0, mid).join("\n"), apiKey, idx, chapterMap, depth + 1);
+    await parseChunkWithClaude(lines.slice(mid).join("\n"), apiKey, idx, chapterMap, depth + 1);
+    return;
+  }
+  parsePipeText(r.body, chapterMap);
 }
 
 // ── Claude vision OCR fallback (for scanned PDFs) ────────────────────────
@@ -138,7 +151,7 @@ FORMATO (solo estas líneas):
 C|<código>|<nombre del capítulo>
 I|<código>|<descripción>|<unidad>|<metrado>|<precio unitario>`;
 
-async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise<BudgetChapter[]> {
+async function ocrChunk(base64Pdf: string, apiKey: string, idx: number, chapterMap: Map<string, BudgetChapter>): Promise<void> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -149,19 +162,18 @@ async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 8192,
+      max_tokens: 16000,
       messages: [{ role: "user", content: [
         { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Pdf } },
         { type: "text", text: OCR_PROMPT },
       ]}],
     }),
   });
-  if (!res.ok) { console.error(`OCR chunk ${idx} error:`, (await res.text()).slice(0, 200)); return []; }
+  if (!res.ok) { console.error(`OCR chunk ${idx} error:`, (await res.text()).slice(0, 200)); return; }
   const data = await res.json();
   const text: string = data.content?.[0]?.text ?? "";
-  const chapters = parsePipeText(text);
-  console.log(`OCR chunk ${idx}: ${chapters.length} caps, ${chapters.reduce((s, c) => s + c.items.length, 0)} items`);
-  return chapters;
+  parsePipeText(text, chapterMap);
+  console.log(`OCR chunk ${idx} procesado (stop=${data.stop_reason})`);
 }
 
 // ── Recalculate budget total (server-side) ────────────────────────────────
@@ -221,23 +233,21 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Paso 2: Claude texto (digital) o Claude visión (escaneado) ───────
-  let chapters: BudgetChapter[] = [];
+  // Map compartido código→capítulo: inmune a cortes de chunk y duplicados
+  const chapterMap = new Map<string, BudgetChapter>();
 
   if (!isScanned) {
     // Claude lee el texto — barato, maneja cualquier formato de número/descripción
-    const MAX_CHARS = 40_000; // ~10K tokens input → salida cabe en 8192 tokens
+    const MAX_CHARS = 15_000; // chunks pequeños → salida nunca toca el techo de tokens
     const chunks = splitText(extractedText, MAX_CHARS);
     console.log(`Texto → ${chunks.length} chunk(s) para Claude`);
 
-    const allResults: BudgetChapter[][] = [];
     const BATCH = 5;
     for (let b = 0; b < chunks.length; b += BATCH) {
-      const batch = await Promise.all(
-        chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j))
+      await Promise.all(
+        chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j, chapterMap))
       );
-      allResults.push(...batch);
     }
-    chapters = mergeChapters(allResults);
   } else {
     // Fallback visión para PDFs escaneados
     console.log("PDF escaneado — usando OCR visión");
@@ -258,13 +268,14 @@ export async function POST(req: NextRequest) {
     );
 
     const BATCH = 5;
-    const allResults: BudgetChapter[][] = [];
     for (let b = 0; b < buffers.length; b += BATCH) {
-      const res = await Promise.all(buffers.slice(b, b + BATCH).map((buf, j) => ocrChunk(buf, apiKey, b + j)));
-      allResults.push(...res);
+      await Promise.all(buffers.slice(b, b + BATCH).map((buf, j) => ocrChunk(buf, apiKey, b + j, chapterMap)));
     }
-    chapters = mergeChapters(allResults);
   }
+
+  // Ordenar capítulos por código y descartar los vacíos sin nombre
+  const chapters = Array.from(chapterMap.values())
+    .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
   if (chapters.length === 0) {
     return NextResponse.json({ error: "No se pudo identificar estructura de presupuesto en el PDF" }, { status: 422 });
