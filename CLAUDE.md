@@ -42,12 +42,12 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 
 ---
 
-## Módulos activos (estado 2026-06-16)
+## Módulos activos (estado 2026-06-19)
 
 | Módulo | Ruta | Roles | Estado |
 |--------|------|-------|--------|
 | Dashboard | `/proyectos/[id]/dashboard` | admin/contador/user | ✅ |
-| Presupuesto / APU | `/proyectos/[id]/presupuesto` | admin/contador | ✅ Roll-up automático, gating edición |
+| Presupuesto / APU | `/proyectos/[id]/presupuesto` | admin/contador | ✅ Roll-up automático, gating edición, importación S10 exacta al céntimo (Excel/PDF) |
 | Compras | `/proyectos/[id]/compras` | admin/contador | ✅ Gating aprobación/emisión |
 | Servicios | `/proyectos/[id]/servicios` | admin/contador | ✅ |
 | Almacén | `/proyectos/[id]/almacen` | admin/user | ✅ Kardex PPP |
@@ -60,6 +60,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Config. proyecto | `/proyectos/[id]/configuracion` | admin | ✅ General, Equipo, Parámetros, **Fideicomiso** |
 | Admin INEI | `/admin/inei` | admin app | ✅ CRUD índices |
 | Configuración SUNAT | `/configuracion` | admin | ✅ Credenciales SOL por org |
+| **App Móvil** | `kostruye-movil/` (repo separado) | todos | ✅ Expo/RN — Dashboard KPIs, Almacén, Compras. Misma Supabase. |
 
 ---
 
@@ -77,9 +78,17 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 - **Ubicación:** `app/(dashboard)/layout.tsx` → `<AiChat />` (aparece en todo el dashboard)
 - **API:** `app/api/ai/chat/route.ts` — Anthropic `claude-haiku-4-5` (loop agéntico, máx 5 rondas)
 - **Context-aware:** auto-detecta `projectId` del URL, lo inyecta en system prompt
-- **Herramientas:** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`, `get_inei_indices`, `get_reajuste_formulas`
-- **Conoce** la importación de presupuestos S10 (Excel/PDF exacto al céntimo), índices INEI y Fórmula Polinómica (ver system prompt)
+- **Herramientas (11):** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`, `get_inei_indices`, `get_reajuste_formulas`
+- **Conoce:** importación S10 exacta al céntimo (Excel/PDF), app móvil, índices INEI y Fórmula Polinómica
 - ⚠️ **NO está en la landing** — solo en el dashboard de la app
+
+## Manual de Usuario
+
+- **PDF público:** `public/Manual-Kostruye-Plus.pdf` → descargable desde la landing y el sidebar del dashboard
+- **Fuente versionada:** `docs/manual/Manual-Kostruye-Plus.html` — editar aquí para actualizarlo
+- **Regenerar PDF:** `pwsh docs/manual/build.ps1` (requiere Chrome o Edge instalado)
+- **Versión actual:** v1.3 (2026-06-19) — 27 págs: importación S10, app móvil, KIA con 11 herramientas
+- **Sidebar link:** `components/layout/sidebar.tsx` — botón "Manual de usuario" (BookOpen) visible para todos los roles
 
 ## Alanis (Lemon Slice widget ventas)
 
@@ -130,6 +139,8 @@ CORFID_WEBHOOK_SECRET=<secret>
 | 020 | Write policies reajuste_formulas/monomios | ✅ Aplicada (sin .sql en repo) |
 | 021 | org_id/project_id en audit_logs, fn_audit multi-tenant | ✅ Aplicada (sin .sql en repo) |
 | 022 | fideicomiso_* en projects | ✅ Aplicada |
+| budget_total_exact_parcial | `total` deja de ser GENERATED; rollups suman parcial impreso | ✅ Aplicada (2026-06-19) |
+| import_budget_chunked | RPCs `import_budget_chunk` + `import_budget_finalize` (SECURITY DEFINER, 300s timeout) | ✅ Aplicada (2026-06-19) |
 
 > **Pendiente:** Crear archivos .sql para migraciones 019, 020, 021 (reproducibilidad).
 
