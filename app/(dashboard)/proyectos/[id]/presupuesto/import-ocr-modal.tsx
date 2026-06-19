@@ -11,6 +11,7 @@ type ExtractedItem = {
   unit: string;
   quantity: number;
   unit_price: number;
+  total?: number | null;
 };
 
 type ExtractedChapter = {
@@ -89,54 +90,37 @@ export function ImportOcrModal({
     setError(null);
 
     try {
-      // Limpiar datos previos vía API (server-side, bypasa RLS)
-      await fetch(`/api/import-budget-ocr?budget_id=${budgetId}`, { method: "DELETE" });
+      setProgress(`Importando ${stats?.totalItems ?? ""} partidas...`);
 
-      let sortChapter = 0;
-      for (const chapter of extracted.chapters) {
-        sortChapter++;
-        setProgress(`Importando capítulo ${chapter.code}...`);
+      // Importación masiva en un solo round-trip vía RPC: limpia, inserta y
+      // recalcula totales con el rollup desactivado (rápido y exacto, escala a
+      // presupuestos enormes). Guarda el "total" (parcial) de cada partida.
+      const { data, error: rpcErr } = await sb.rpc("import_budget", {
+        p_budget_id: budgetId,
+        p_chapters: extracted.chapters.map((c) => ({
+          code: c.code,
+          name: c.name,
+          items: c.items.map((i) => ({
+            item_code:   i.item_code,
+            description: i.description,
+            unit:        i.unit || "und",
+            quantity:    i.quantity || 0,
+            unit_price:  i.unit_price || 0,
+            total:       i.total ?? null,
+          })),
+        })),
+      });
 
-        // Insert chapter
-        const { data: chap, error: chapErr } = await sb
-          .from("budget_chapters")
-          .insert({
-            budget_id:  budgetId,
-            code:       chapter.code,
-            name:       chapter.name,
-            level:      1,
-            sort_order: sortChapter * 10,
-            total:      chapter.items.reduce((s, i) => s + i.quantity * i.unit_price, 0),
-          })
-          .select("id")
-          .single();
+      if (rpcErr) throw new Error(rpcErr.message);
 
-        if (chapErr) throw new Error(`Capítulo ${chapter.code}: ${chapErr.message}`);
-
-        // Insert items
-        let sortItem = 0;
-        for (const item of chapter.items) {
-          sortItem++;
-          const { error: itemErr } = await sb.from("budget_items").insert({
-            budget_id:   budgetId,
-            chapter_id:  chap.id,
-            item_code:   item.item_code,
-            description: item.description,
-            unit:        item.unit || "und",
-            quantity:    item.quantity || 0,
-            unit_price:  item.unit_price || 0,
-            sort_order:  sortItem * 10,
-          });
-          if (itemErr) throw new Error(`Partida ${item.item_code}: ${itemErr.message}`);
-        }
-      }
-
-      // Recalculate budget total server-side to avoid 1000-row client limit
-      await fetch(`/api/import-budget-ocr?budget_id=${budgetId}`, { method: "PATCH" });
-
+      const inserted = data as { chapters: number; items: number; total: number } | null;
       setPhase("done");
-      toast.success(`${stats?.totalItems ?? 0} partidas importadas correctamente`);
-      setTimeout(() => { onImported(); onClose(); }, 1200);
+      toast.success(
+        `${inserted?.items ?? stats?.totalItems ?? 0} partidas importadas — total S/ ${
+          (inserted?.total ?? 0).toLocaleString("es-PE", { minimumFractionDigits: 2 })
+        }`
+      );
+      setTimeout(() => { onImported(); onClose(); }, 1400);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al importar");
       setPhase("preview");

@@ -13,6 +13,7 @@ type BudgetItem = {
   unit: string;
   quantity: number;
   unit_price: number;
+  total?: number; // "parcial" impreso S10 — total exacto al céntimo
 };
 type BudgetChapter = { code: string; name: string; items: BudgetItem[] };
 
@@ -109,13 +110,15 @@ function parseS10Text(text: string, chapterMap: Map<string, BudgetChapter>): num
       const chCode = parentCode(itemCode);
       let ch = chapterMap.get(chCode);
       if (!ch) { ch = { code: chCode, name: "", items: [] }; chapterMap.set(chCode, ch); }
-      if (ch.items.some(i => i.item_code === itemCode)) continue;
+      // OJO: no deduplicar por código — en S10 un mismo código puede repetirse
+      // como filas distintas (sub-presupuestos/metrados); cada parcial cuenta.
       ch.items.push({
         item_code:   itemCode,
         description: m[1].trim(),
         unit:        (unit || "und").trim(),
         quantity:    S10_NUM(m[4]),
         unit_price:  S10_NUM(m[5]),
+        total:       S10_NUM(m[6]), // parcial impreso = total exacto
       });
       continue;
     }
@@ -323,13 +326,14 @@ export async function POST(req: NextRequest) {
     const detMap = new Map<string, BudgetChapter>();
     costoDirecto = parseS10Text(extractedText, detMap);
     parsedSum = Array.from(detMap.values())
-      .reduce((s, c) => s + c.items.reduce((t, i) => t + i.quantity * i.unit_price, 0), 0);
+      .reduce((s, c) => s + c.items.reduce((t, i) => t + (i.total ?? i.quantity * i.unit_price), 0), 0);
+    parsedSum = Math.round(parsedSum * 100) / 100;
     const detItems = Array.from(detMap.values()).reduce((s, c) => s + c.items.length, 0);
 
-    // Auto-verificación: si la suma cuadra con el COSTO DIRECTO impreso (±1 sol
-    // por redondeos), confiamos al 100%. Si no hay costo directo pero sí hay
-    // muchas partidas, también lo usamos (PDF sin línea de total).
-    const reconciles = costoDirecto != null && Math.abs(parsedSum - costoDirecto) <= 1.0;
+    // Auto-verificación: la suma de parciales debe igualar el COSTO DIRECTO
+    // impreso al céntimo (tolerancia 0.05 por flotantes). Si no hay costo
+    // directo pero sí partidas, se usa igual (PDF sin línea de total).
+    const reconciles = costoDirecto != null && Math.abs(parsedSum - costoDirecto) <= 0.05;
     if (detItems > 0 && (reconciles || costoDirecto == null)) {
       chapterMap = detMap;
       method = "determinístico";
@@ -383,7 +387,7 @@ export async function POST(req: NextRequest) {
   }
 
   const totalItems = chapters.reduce((s, c) => s + c.items.length, 0);
-  const importSum = chapters.reduce((s, c) => s + c.items.reduce((t, i) => t + i.quantity * i.unit_price, 0), 0);
+  const importSum = chapters.reduce((s, c) => s + c.items.reduce((t, i) => t + (i.total ?? i.quantity * i.unit_price), 0), 0);
   console.log(`OK (${method}): ${chapters.length} capítulos, ${totalItems} partidas, suma ${importSum.toFixed(2)}`);
   return NextResponse.json({
     ok: true,
