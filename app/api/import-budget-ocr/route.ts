@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 
-const CHUNK_SIZE = 15; // páginas por chunk
+const CHUNK_SIZE = 5; // páginas por chunk — garantiza JSON completo sin truncar
 const MAX_TOKENS  = 8192;
 
 const EXTRACTION_PROMPT = `Analiza este fragmento de presupuesto de construcción (formato S10 peruano) y extrae su estructura.
@@ -174,10 +174,14 @@ export async function POST(req: NextRequest) {
     })
   );
 
-  // Llamar a Anthropic en paralelo para todos los chunks
-  const chunkResults = await Promise.all(
-    chunkBuffers.map((b64, i) => extractChunk(b64, apiKey, i))
-  );
+  // Llamar a Anthropic en lotes de 8 para no saturar la API
+  const BATCH = 8;
+  const chunkResults: BudgetChapter[][] = [];
+  for (let b = 0; b < chunkBuffers.length; b += BATCH) {
+    const batch = chunkBuffers.slice(b, b + BATCH);
+    const batchResults = await Promise.all(batch.map((b64, j) => extractChunk(b64, apiKey, b + j)));
+    chunkResults.push(...batchResults);
+  }
 
   const chapters = mergeChapters(chunkResults);
 
