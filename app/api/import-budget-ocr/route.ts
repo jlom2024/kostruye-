@@ -14,21 +14,34 @@ type BudgetItem = {
 type BudgetChapter = { code: string; name: string; items: BudgetItem[] };
 
 // ── S10 text parser ────────────────────────────────────────────────────────
-// Unidades de medida reconocidas en presupuestos peruanos
-const UNITS = [
-  "m2","m3","ml","km","ha","m",
-  "kg","tn","ton","lb","gal","lt","lts",
+// En S10 el formato real es:
+//   Capítulo: {código}{descripción}          ej: "01.01.01CONSTRUCCIONES PROVISIONALES"
+//   Partida:  {descripción}{unidad}{código} {metrado} {pu} {parcial}
+//             ej: "ALMACEN Y OFICINAmes01.01.01.01 18.00 1,733.28 31,199.04"
+
+// Unidades ordenadas: más largas primero para evitar match parcial de "m" antes de "mes"
+const UNIT_TOKENS = [
+  "mes","m2","m3","ml","km","ha",
+  "hh","hm","hd","he",
+  "tn","ton","kg","lb","gal","lt","lts",
   "glb","und","unid","pza","jgo","pto","rll","rol","bls","sac","bolsa",
-  "hh","hm","hd","he","día","dia","mes","sem",
-  "pie2","pie3","pie","p2","p3","pulg","plg",
-  "vje","viaje","eq","und\\.",
+  "pie2","pie3","p2","p3","pulg","plg",
+  "vje","viaje",
+  "día","dia","sem","eq",
+  "m",  // letra sola al final
 ].join("|");
 
-const UNIT_RE = new RegExp(
-  `^(.*?)\\s+(${UNITS})\\s+([\\d,]+\\.\\d+)\\s+([\\d,]+\\.\\d+)(?:\\s+[\\d,]+\\.\\d+)?\\s*$`,
+// Partida: {desc}{unidad}{código.con.puntos} {qty} {pu}
+// String.raw evita ambigüedad de escapes en template literals
+const ITEM_RE = new RegExp(
+  String.raw`^(.+?)(${UNIT_TOKENS})(\d{2}(?:\.\d{2,})+)\s+([\d,]+\.?\d+)\s+([\d,]+\.?\d+)`,
   "i"
 );
-const CODE_RE = /^(\d{2}(?:\.\d{2,})*)\s+(.+)/;
+
+// Capítulo: código seguido de descripción (con o sin espacio)
+// ej: "01.01.01CONSTRUCCIONES PROVISIONALES" o "01 OBRAS CIVILES"
+// El ? en \s? permite ambos casos, y [A-Z...] evita falsos positivos con números
+const CHAPTER_RE = /^(\d{2}(?:\.\d{2,})*)\s?([A-ZÁÉÍÓÚÑ].+)/i;
 
 function parseNum(s: string): number {
   return parseFloat(s.replace(/,/g, "")) || 0;
@@ -37,39 +50,44 @@ function parseNum(s: string): number {
 function parseS10Text(text: string): BudgetChapter[] {
   const chapters: BudgetChapter[] = [];
   let current: BudgetChapter | null = null;
+  let pendingDesc = "";  // acumula descripción multi-línea
 
-  // Normalizar: unir líneas que son continuación de descripción multi-línea
-  const lines = text
-    .split("\n")
-    .map(l => l.trim())
-    .filter(Boolean);
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
   for (const line of lines) {
-    const codeMatch = line.match(CODE_RE);
-    if (!codeMatch) continue;
-
-    const code = codeMatch[1];
-    const rest = codeMatch[2].trim();
-
-    const unitMatch = rest.match(UNIT_RE);
-    if (unitMatch) {
-      // Es una partida con metrado
+    // ¿Es una partida completa?
+    const candidate = pendingDesc ? pendingDesc + line : line;
+    const itemMatch = candidate.match(ITEM_RE);
+    if (itemMatch) {
       if (!current) {
-        // Partida sin capítulo padre — crear capítulo raíz
-        current = { code: code.split(".")[0], name: "SIN CAPÍTULO", items: [] };
+        current = { code: itemMatch[3].split(".")[0], name: "SIN CAPÍTULO", items: [] };
         chapters.push(current);
       }
       current.items.push({
-        item_code:   code,
-        description: unitMatch[1].trim(),
-        unit:        unitMatch[2].toLowerCase(),
-        quantity:    parseNum(unitMatch[3]),
-        unit_price:  parseNum(unitMatch[4]),
+        item_code:   itemMatch[3],
+        description: itemMatch[1].trim(),
+        unit:        itemMatch[2].toLowerCase(),
+        quantity:    parseNum(itemMatch[4]),
+        unit_price:  parseNum(itemMatch[5]),
       });
-    } else {
-      // Es un capítulo/subcapítulo
-      current = { code, name: rest, items: [] };
+      pendingDesc = "";
+      continue;
+    }
+
+    // ¿Es un capítulo? (empieza con código)
+    const chapMatch = line.match(CHAPTER_RE);
+    if (chapMatch) {
+      pendingDesc = "";
+      current = { code: chapMatch[1], name: chapMatch[2].trim(), items: [] };
       chapters.push(current);
+      continue;
+    }
+
+    // ¿Parece inicio de descripción multi-línea? (no es número ni total)
+    if (!/^[\d\s,.$]+$/.test(line) && line.length > 3) {
+      pendingDesc = line + " ";
+    } else {
+      pendingDesc = "";
     }
   }
 
