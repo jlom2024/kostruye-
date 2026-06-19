@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+
+export const maxDuration = 600; // permite extracciones largas (PDFs grandes)
+export const dynamic = "force-dynamic";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
 
@@ -242,7 +245,7 @@ export async function POST(req: NextRequest) {
     const chunks = splitText(extractedText, MAX_CHARS);
     console.log(`Texto → ${chunks.length} chunk(s) para Claude`);
 
-    const BATCH = 5;
+    const BATCH = 12;
     for (let b = 0; b < chunks.length; b += BATCH) {
       await Promise.all(
         chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j, chapterMap))
