@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 
-const CHUNK_SIZE = 20; // páginas por chunk
-const MAX_TOKENS  = 8192;
+const CHUNK_SIZE = 10; // páginas por chunk
+const MAX_TOKENS  = 16000;
 
 const EXTRACTION_PROMPT = `Analiza este fragmento de presupuesto de construcción (formato S10 peruano) y extrae su estructura.
 
