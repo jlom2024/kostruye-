@@ -85,7 +85,7 @@ function parseS10Text(text: string): BudgetChapter[] {
 
     // ¿Parece inicio de descripción multi-línea? (no es número ni total)
     if (!/^[\d\s,.$]+$/.test(line) && line.length > 3) {
-      pendingDesc = line + " ";
+      pendingDesc = (pendingDesc + line + " ").slice(0, 400);
     } else {
       pendingDesc = "";
     }
