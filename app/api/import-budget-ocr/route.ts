@@ -225,14 +225,19 @@ export async function POST(req: NextRequest) {
 
   if (!isScanned) {
     // Claude lee el texto — barato, maneja cualquier formato de número/descripción
-    const MAX_CHARS = 400_000; // ~100K tokens, bien dentro del contexto de Haiku
+    const MAX_CHARS = 40_000; // ~10K tokens input → salida cabe en 8192 tokens
     const chunks = splitText(extractedText, MAX_CHARS);
     console.log(`Texto → ${chunks.length} chunk(s) para Claude`);
 
-    const results = await Promise.all(
-      chunks.map((chunk, i) => parseChunkWithClaude(chunk, apiKey, i))
-    );
-    chapters = mergeChapters(results);
+    const allResults: BudgetChapter[][] = [];
+    const BATCH = 5;
+    for (let b = 0; b < chunks.length; b += BATCH) {
+      const batch = await Promise.all(
+        chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j))
+      );
+      allResults.push(...batch);
+    }
+    chapters = mergeChapters(allResults);
   } else {
     // Fallback visión para PDFs escaneados
     console.log("PDF escaneado — usando OCR visión");
