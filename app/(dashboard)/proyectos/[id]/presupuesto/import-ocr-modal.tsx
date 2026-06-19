@@ -93,7 +93,7 @@ export function ImportOcrModal({
       // Importación por LOTES — escala a presupuestos enormes (carreteras
       // 200-500M / cientos de miles de partidas) sin reventar el tamaño del
       // payload. Cada lote inserta con el rollup apagado; se recalcula al final.
-      const MAX_ITEMS_PER_BATCH = 4000;
+      const MAX_ITEMS_PER_BATCH = 1500;
       const toRpcChapter = (c: ExtractedChapter) => ({
         code: c.code,
         name: c.name,
