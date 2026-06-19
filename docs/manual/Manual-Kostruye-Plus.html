@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Kostruye+ · Manual de Usuario v1.3</title>
+<style>
+  :root{
+    --navy:#0E2A47; --blue:#1F5FA6; --accent:#F5A623; --accent-soft:#FEF3DD;
+    --ink:#1f2937; --muted:#667085; --line:#e5e7eb; --soft:#f3f6fb; --green:#1f8a4c; --green-soft:#e7f6ec;
+  }
+  @page{ size:A4; margin:18mm 16mm 22mm 16mm; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Segoe UI", Arial, Helvetica, sans-serif;
+    color:var(--ink); font-size:10.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+
+  /* running footer on every printed page */
+  .footer{
+    position:fixed; bottom:-14mm; left:0; right:0; height:10mm;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:7.8pt; color:var(--muted); border-top:1px solid var(--line); padding-top:3px;
+  }
+  .footer b{ color:var(--navy); }
+
+  h2{ color:var(--navy); font-size:13pt; margin:18px 0 6px; }
+  h3{ color:var(--blue); font-size:11pt; margin:14px 0 4px; }
+  p{ margin:6px 0; }
+  ul{ margin:6px 0 6px 0; padding-left:18px; }
+  li{ margin:3px 0; }
+  .lead{ color:#34404f; }
+
+  /* page structure */
+  .chapter{ page-break-before:always; }
+  .chapter-head{ border-left:5px solid var(--accent); padding:4px 0 4px 12px; margin-bottom:6px; }
+  .chapter-head .tag{ font-size:8.5pt; letter-spacing:.14em; font-weight:700; color:var(--accent); text-transform:uppercase; }
+  .chapter-head h1{ font-size:20pt; color:var(--navy); margin:2px 0 2px; }
+  .chapter-head .sub{ color:var(--muted); font-size:10.5pt; }
+
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:9.7pt; }
+  th{ background:var(--navy); color:#fff; text-align:left; padding:6px 8px; font-weight:600; }
+  td{ padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td{ background:var(--soft); }
+  table.center td, table.center th{ text-align:center; }
+  table.center td:first-child{ text-align:left; }
+
+  .callout{ border-radius:8px; padding:9px 12px; margin:10px 0; font-size:9.7pt; }
+  .callout.tip{ background:var(--soft); border-left:4px solid var(--blue); }
+  .callout.warn{ background:var(--accent-soft); border-left:4px solid var(--accent); }
+  .callout.ok{ background:var(--green-soft); border-left:4px solid var(--green); }
+  .callout b{ color:var(--navy); }
+
+  .check{ color:var(--green); font-weight:700; }
+  .x{ color:#c0392b; font-weight:700; }
+
+  /* cover */
+  .cover{ height:262mm; display:flex; flex-direction:column; justify-content:space-between;
+    background:linear-gradient(160deg,#0E2A47 0%, #163A63 55%, #1F5FA6 100%); color:#fff;
+    margin:-2mm -4mm 0; padding:26mm 18mm; border-radius:2px; }
+  .cover .brand{ font-size:13pt; letter-spacing:.18em; font-weight:700; opacity:.9; }
+  .cover h1{ font-size:46pt; margin:6px 0 0; line-height:1.02; }
+  .cover h1 span{ color:var(--accent); }
+  .cover .v{ margin-top:10px; font-size:12pt; opacity:.92; }
+  .cover .tagline{ font-size:15pt; font-weight:600; opacity:.96; }
+  .cover .tagline small{ display:block; font-size:10.5pt; font-weight:400; opacity:.8; margin-top:6px; }
+  .cover .mods{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .cover .mods span{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    padding:4px 10px; border-radius:20px; font-size:9pt; }
+  .cover .foot{ font-size:9.5pt; opacity:.85; border-top:1px solid rgba(255,255,255,.25); padding-top:10px; }
+
+  /* toc */
+  .toc h1{ color:var(--navy); font-size:22pt; border-bottom:3px solid var(--accent); padding-bottom:6px; }
+  .toc .row{ display:flex; align-items:baseline; padding:6px 0; border-bottom:1px solid var(--line); }
+  .toc .n{ width:34px; color:var(--accent); font-weight:700; }
+  .toc .t{ flex:1; color:var(--ink); }
+  .toc .t b{ color:var(--navy); }
+  .no-break{ page-break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<div class="footer">
+  <span><b>KOSTRUYE+</b> · Manual de Usuario</span>
+  <span>konstruye.site · kreoiastudioperu@gmail.com · Versión 1.3 — 2026</span>
+</div>
+
+<!-- ===================== COVER ===================== -->
+<section class="cover">
+  <div>
+    <div class="brand">KOSTRUYE+</div>
+    <h1>MANUAL DE<br><span>USUARIO</span></h1>
+    <div class="v">Versión 1.3 · 2026 · konstruye.site</div>
+  </div>
+  <div>
+    <div class="tagline">Plataforma digital integral para la gestión de obras
+      <small>Once módulos integrados. Un solo login. Cero planillas.</small>
+    </div>
+    <div class="mods">
+      <span>Presupuesto</span><span>Almacén</span><span>Compras</span><span>Servicios</span>
+      <span>Nóminas</span><span>Lean</span><span>Valorizaciones</span><span>Control de Costos</span>
+      <span>Contabilidad</span><span>Auditoría</span><span>KIA</span>
+    </div>
+  </div>
+  <div class="foot">KREO IA Studio · kreoiastudioperu@gmail.com</div>
+</section>
+
+<!-- ===================== TOC ===================== -->
+<section class="chapter toc">
+  <h1>Índice de contenidos</h1>
+  <div class="row"><div class="n">1</div><div class="t"><b>Introducción a Kostruye+</b></div></div>
+  <div class="row"><div class="n">2</div><div class="t"><b>Planes y Suscripción</b></div></div>
+  <div class="row"><div class="n">3</div><div class="t"><b>Primeros pasos</b> — Acceso, roles y navegación</div></div>
+  <div class="row"><div class="n">4</div><div class="t"><b>Módulo: Presupuesto de Obra</b></div></div>
+  <div class="row"><div class="n">5</div><div class="t"><b>Módulo: Control de Stock / Almacén</b></div></div>
+  <div class="row"><div class="n">6</div><div class="t"><b>Módulo: Compras y Órdenes de Compra</b></div></div>
+  <div class="row"><div class="n">7</div><div class="t"><b>Módulo: Servicios y Órdenes de Servicio</b></div></div>
+  <div class="row"><div class="n">8</div><div class="t"><b>Módulo: Nóminas de Obra</b></div></div>
+  <div class="row"><div class="n">9</div><div class="t"><b>Módulo: Planificación LPS</b></div></div>
+  <div class="row"><div class="n">10</div><div class="t"><b>Módulo: Clientes y Proveedores</b></div></div>
+  <div class="row"><div class="n">11</div><div class="t"><b>Módulo: Valorizaciones</b></div></div>
+  <div class="row"><div class="n">12</div><div class="t"><b>Módulo: Control de Costos</b></div></div>
+  <div class="row"><div class="n">13</div><div class="t"><b>Módulo: Contabilidad y Dashboard Ejecutivo</b></div></div>
+  <div class="row"><div class="n">14</div><div class="t"><b>Módulo: Auditoría</b></div></div>
+  <div class="row"><div class="n">15</div><div class="t"><b>KIA — Asistente de Inteligencia Artificial</b></div></div>
+  <div class="row"><div class="n">16</div><div class="t"><b>App Móvil Kostruye+</b> — Almacén y Compras desde el campo</div></div>
+  <div class="row"><div class="n">17</div><div class="t"><b>Administración y Configuración</b></div></div>
+  <div class="row"><div class="n">18</div><div class="t"><b>Glosario de Términos</b></div></div>
+</section>
+
+<!-- ===================== CAP 1 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 1</div>
+    <h1>Introducción a Kostruye+</h1><div class="sub">Qué es, para qué sirve y cómo acceder</div></div>
+  <p class="lead">Kostruye+ es una plataforma SaaS diseñada específicamente para empresas constructoras que buscan
+    digitalizar y centralizar toda su gestión de obras. Elimina el uso de planillas Excel, consolida la información
+    en tiempo real y permite tomar decisiones basadas en datos precisos.</p>
+  <h2>¿Por qué Kostruye+?</h2>
+  <ul>
+    <li>Un solo login para acceder a todos los módulos de tu empresa</li>
+    <li>Datos en tiempo real, sin necesidad de actualizar archivos manualmente</li>
+    <li>Acceso desde cualquier dispositivo con conexión a internet</li>
+    <li>Roles y permisos por usuario para proteger información sensible</li>
+    <li>Asistente de inteligencia artificial (KIA) integrado en todas las páginas</li>
+  </ul>
+  <h2>Los 11 módulos de la plataforma</h2>
+  <p>Kostruye+ ofrece once módulos completamente integrados entre sí. Un dato ingresado en cualquier módulo
+    se refleja automáticamente en el Dashboard y Contabilidad sin pasos adicionales.</p>
+  <table>
+    <tr><th style="width:32%">Módulo</th><th>Descripción</th></tr>
+    <tr><td>Presupuesto de Obra</td><td>Estructura por capítulos, ítems y APU. Comparativo presupuesto vs. real.</td></tr>
+    <tr><td>Almacén / Stock</td><td>Entradas y salidas con trazabilidad completa y alertas de reposición.</td></tr>
+    <tr><td>Compras y OC</td><td>Órdenes de compra con flujo de aprobación y comparativo de precios.</td></tr>
+    <tr><td>Servicios</td><td>Órdenes de servicio para subcontratos y trabajos tercerizados.</td></tr>
+    <tr><td>Nóminas de Obra</td><td>Asistencia diaria, planilla semanal, horas extras y liquidaciones.</td></tr>
+    <tr><td>Planificación LPS</td><td>Last Planner System: lookahead a 4 semanas, restricciones y PPC.</td></tr>
+    <tr><td>Clientes y Proveedores</td><td>Directorio centralizado con historial y saldos en tiempo real.</td></tr>
+    <tr><td>Valorizaciones</td><td>Facturación mensual al cliente con avance por partida y PDF profesional.</td></tr>
+    <tr><td>Control de Costos</td><td>Desviaciones presupuesto vs. real. Curva S y análisis de variación.</td></tr>
+    <tr><td>Contabilidad</td><td>KPIs financieros, facturación electrónica SUNAT y estado de resultado.</td></tr>
+    <tr><td>Auditoría</td><td>Registro inmutable de todas las acciones del equipo por proyecto.</td></tr>
+  </table>
+  <div class="callout tip">Todos los módulos comparten la misma base de datos. No hay exportaciones ni archivos
+    intermedios: la información fluye automáticamente entre módulos.</div>
+</section>
+
+<!-- ===================== CAP 2 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 2</div>
+    <h1>Planes y Suscripción</h1><div class="sub">Elige el plan que mejor se adapta a tu empresa</div></div>
+  <p class="lead">Kostruye+ ofrece dos planes de pago diseñados para acompañar a tu empresa según su escala, además
+    de un piloto gratuito. Todos incluyen acceso web sin instalación, actualizaciones automáticas y soporte técnico.</p>
+  <h2>Comparativo de planes</h2>
+  <table class="center no-break">
+    <tr><th style="width:40%;text-align:left">Característica</th><th>Piloto Gratis</th><th>Pro<br>S/ 1,099/mes</th><th>Enterprise<br>S/ 3,699/mes</th></tr>
+    <tr><td>Proyectos activos</td><td>1 proyecto</td><td>Ilimitados</td><td>Ilimitados</td></tr>
+    <tr><td>Módulo Presupuesto</td><td>Básico</td><td>Completo</td><td>Completo</td></tr>
+    <tr><td>Módulo Almacén / Stock</td><td>Básico</td><td>Completo</td><td>Completo</td></tr>
+    <tr><td>Módulo Compras y OC</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Servicios</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Nóminas</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Valorizaciones</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Control de Costos</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Contabilidad</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Módulo Auditoría</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Dashboard ejecutivo</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>KIA — Asistente IA</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Exportación PDF y CSV</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Alertas automáticas</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Usuarios adicionales</td><td class="x">✗</td><td>Ilimitados</td><td>Ilimitados</td></tr>
+    <tr><td>Facturación electrónica SUNAT</td><td class="x">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Integración CORFID (fideicomiso)</td><td class="x">✗</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>Gestión multi-empresa</td><td class="x">✗</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>Gerente de cuenta dedicado</td><td class="x">✗</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>Onboarding y migración de datos</td><td class="x">✗</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>SLA garantizado</td><td>—</td><td>—</td><td>99.9 %</td></tr>
+    <tr><td>Soporte</td><td>Email</td><td>Prioritario 24/7</td><td>Dedicado 24/7</td></tr>
+  </table>
+  <h3>Plan Pro — S/ 1,099 / mes</h3>
+  <p>Diseñado para constructoras activas que gestionan múltiples obras simultáneamente. Desbloquea todos los
+    módulos operativos y el asistente KIA.</p>
+  <ul>
+    <li>Proyectos e ítems ilimitados</li>
+    <li>Todos los módulos operativos habilitados</li>
+    <li>KIA — Asistente de IA con acceso a todos los datos</li>
+    <li>Facturación electrónica SUNAT integrada</li>
+    <li>Exportación de reportes en PDF y CSV</li>
+    <li>Alertas automáticas de sobre-gasto y stock crítico</li>
+    <li>Usuarios ilimitados con roles y permisos</li>
+    <li>Soporte prioritario 24/7</li>
+  </ul>
+  <h3>Plan Enterprise — S/ 3,699 / mes</h3>
+  <p>Para grupos constructores y holding companies que necesitan gestionar múltiples empresas desde un solo
+    panel. Incluye todo lo del Plan Pro más servicios personalizados.</p>
+  <ul>
+    <li>Todo lo incluido en el Plan Pro</li>
+    <li>Panel multi-empresa: administra varias razones sociales en un solo login</li>
+    <li>Integración CORFID para gestión de fideicomiso</li>
+    <li>Gerente de cuenta dedicado con reuniones de seguimiento</li>
+    <li>Onboarding guiado y migración de datos desde Excel u otros sistemas</li>
+    <li>Integraciones a medida con ERP y plataformas externas</li>
+    <li>SLA garantizado de 99.9 % de disponibilidad mensual</li>
+  </ul>
+</section>
+
+<!-- ===================== CAP 3 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 3</div>
+    <h1>Primeros pasos</h1><div class="sub">Acceso, navegación y roles de usuario</div></div>
+  <h2>Cómo ingresar al sistema</h2>
+  <p>Al contratar Kostruye+, KREO IA Studio te entregará la <b>URL personalizada de tu organización</b> junto con
+    las credenciales de acceso del Administrador. Desde esa URL podrás invitar a los demás miembros de tu equipo
+    en la sección Configuración → Miembros.</p>
+  <div class="callout tip">Si olvidaste tu contraseña, usa la opción «Olvidé mi contraseña» en la pantalla de inicio
+    de sesión. Se enviará un correo de recuperación a tu dirección registrada.</div>
+  <h2>Navegación principal</h2>
+  <p>Una vez dentro del sistema verás el panel lateral izquierdo con la navegación:</p>
+  <table>
+    <tr><th style="width:28%">Sección</th><th>Descripción</th></tr>
+    <tr><td>Proyectos</td><td>Lista de todas las obras activas de la organización</td></tr>
+    <tr><td>Clientes</td><td>Directorio de clientes y propietarios de obras</td></tr>
+    <tr><td>Proveedores</td><td>Directorio de proveedores y subcontratistas</td></tr>
+    <tr><td>Configuración</td><td>Gestión de la organización y miembros (solo Administrador)</td></tr>
+  </table>
+  <p>Al hacer clic en un proyecto, el menú lateral muestra los módulos disponibles para esa obra específica según tu rol.</p>
+  <h2>Roles y permisos</h2>
+  <p>Kostruye+ maneja tres niveles de acceso por usuario:</p>
+  <table>
+    <tr><th style="width:24%">Rol</th><th>Descripción</th></tr>
+    <tr><td>Administrador</td><td>Acceso total: todos los módulos de todos los proyectos, gestión de la organización y configuración</td></tr>
+    <tr><td>Contador</td><td>Acceso a módulos financieros: Presupuesto, Compras, Servicios, Nóminas, Valorizaciones, Control de Costos, Contabilidad, Auditoría</td></tr>
+    <tr><td>Usuario</td><td>Acceso operativo: Dashboard, Almacén y Planificación LPS</td></tr>
+  </table>
+  <h3>Matriz de acceso por módulo</h3>
+  <table class="center no-break">
+    <tr><th style="text-align:left">Módulo</th><th>Administrador</th><th>Contador</th><th>Usuario</th></tr>
+    <tr><td>Proyectos</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+    <tr><td>Presupuesto</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Compras / OC</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Servicios</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Nóminas</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Valorizaciones</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Control de Costos</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Contabilidad</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Almacén</td><td class="check">✓</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>Lean / LPS</td><td class="check">✓</td><td class="x">✗</td><td class="check">✓</td></tr>
+    <tr><td>Auditoría</td><td class="check">✓</td><td class="check">✓</td><td class="x">✗</td></tr>
+    <tr><td>Configuración</td><td class="check">✓</td><td class="x">✗</td><td class="x">✗</td></tr>
+  </table>
+  <p>Un Administrador puede cambiar el rol de cualquier miembro desde Configuración → Miembros. Los cambios aplican inmediatamente.</p>
+</section>
+
+<!-- ===================== CAP 4 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 4</div>
+    <h1>Módulo: Presupuesto de Obra</h1><div class="sub">Control total del presupuesto por capítulos e ítems</div></div>
+  <p class="lead">El módulo de Presupuesto es el núcleo financiero de cada proyecto. Permite estructurar el presupuesto
+    de venta por capítulos y partidas, ingresar metrados y precios unitarios, y comparar en tiempo real lo
+    presupuestado vs. lo real.</p>
+  <h2>Conceptos clave</h2>
+  <table>
+    <tr><th style="width:28%">Término</th><th>Definición</th></tr>
+    <tr><td>Capítulo</td><td>Agrupación de partidas (ej. Obras Preliminares, Estructuras, Arquitectura)</td></tr>
+    <tr><td>Partida</td><td>Ítem de trabajo con código, descripción, unidad, metrado y precio unitario</td></tr>
+    <tr><td>Parcial</td><td>Total de una partida = metrado × precio unitario</td></tr>
+    <tr><td>Presupuesto Venta</td><td>Total del presupuesto ofertado al cliente final</td></tr>
+    <tr><td>Presupuesto Meta</td><td>Costo objetivo interno de ejecución de la obra</td></tr>
+    <tr><td>APU</td><td>Análisis de Precios Unitarios: descomposición del precio por recursos</td></tr>
+    <tr><td>Costo Directo</td><td>Suma de los parciales de todas las partidas, sin gastos generales ni utilidad</td></tr>
+  </table>
+  <h2>Crear y organizar el presupuesto</h2>
+  <h3>Agregar capítulos</h3>
+  <p>Haz clic en <b>Capítulo</b> en la barra superior. Se creará automáticamente un nuevo capítulo numerado. Edita
+    el código y el nombre directamente en la tabla.</p>
+  <ul>
+    <li>Los capítulos se numeran secuencialmente: 01, 02, 03…</li>
+    <li>El nombre del capítulo es editable directamente en la celda</li>
+    <li>Arrastra para reordenar los capítulos</li>
+  </ul>
+  <h3>Agregar partidas</h3>
+  <p>Dentro de cada capítulo, haz clic en <b>Partida</b> para agregar ítems. Completa los campos:</p>
+  <ul>
+    <li>Código de partida (ej. 01.01, 01.02…)</li>
+    <li>Descripción del trabajo</li>
+    <li>Unidad de medida (m², m³, kg, und, glb…)</li>
+    <li>Metrado (cantidad)</li>
+    <li>Precio unitario (S/)</li>
+  </ul>
+  <div class="callout tip">Al crear partidas manualmente, el <b>Parcial</b> se calcula automáticamente (metrado × precio
+    unitario) y se actualiza al modificar cualquiera de los dos. Al <b>importar</b> un presupuesto S10, el sistema
+    conserva el parcial exacto impreso en tu documento original, de modo que el total cuadre al céntimo.</div>
+  <h2>Análisis de Precios Unitarios (APU)</h2>
+  <p>Cada partida puede tener su propio APU detallado. Accede al APU haciendo clic en el ícono de desglose junto a la
+    partida. El APU se compone de:</p>
+  <ul>
+    <li>Mano de Obra — personal directo e indirecto</li>
+    <li>Materiales — insumos y materiales necesarios</li>
+    <li>Equipos — maquinaria y herramientas</li>
+    <li>Subcontratos — trabajos tercerizados</li>
+  </ul>
+  <p>El sistema calcula automáticamente el precio unitario de la partida a partir del APU. Al actualizar cualquier
+    recurso del APU, el precio se actualiza en toda la cadena de cálculo.</p>
+
+  <h2>Importar presupuesto: Excel S10 o PDF</h2>
+  <p>Puedes cargar un presupuesto completo en segundos en lugar de digitarlo partida por partida. Kostruye+ admite
+    dos vías de importación:</p>
+  <h3>Importar desde Excel S10 <span style="color:var(--green)">(recomendado)</span></h3>
+  <p>En S10: <b>Archivo → Exportar → Excel (.xlsx)</b>. Luego carga el archivo en Kostruye+. El sistema mapea
+    automáticamente códigos, descripciones, unidades, metrados y precios. Es el método más preciso y seguro.</p>
+  <h3>Importar desde PDF</h3>
+  <p>Pulsa el botón <b>Importar PDF (OCR)</b> y sube el PDF de tu presupuesto S10. El sistema muestra una vista previa
+    con el total leído antes de confirmar la importación.</p>
+  <ul>
+    <li><b>PDFs digitales</b> (exportados directamente desde S10): el lector extrae <b>todas</b> las partidas y
+      <b>verifica automáticamente</b> que la suma coincida con el <b>COSTO DIRECTO</b> impreso. Si cuadra al céntimo,
+      verás el sello verde «Extracción verificada al céntimo».</li>
+    <li><b>Presupuestos de gran tamaño</b> (carreteras y obras con decenas de miles de partidas): la carga se realiza
+      por lotes de forma automática, sin perder precisión ni truncar partidas.</li>
+    <li><b>PDFs escaneados</b>: la lectura es posible pero puede introducir errores menores de reconocimiento. Si la
+      suma no coincide con el COSTO DIRECTO, el sistema lo advierte en color ámbar para que revises antes de confirmar.</li>
+  </ul>
+  <div class="callout warn"><b>Recomendación.</b> Para máxima exactitud usa siempre el <b>Excel S10</b>. La importación
+    por PDF es muy práctica y, en PDFs digitales, llega al céntimo; pero un PDF escaneado puede contener errores
+    mínimos de lectura. Revisa siempre que la suma coincida con tu COSTO DIRECTO antes de confirmar.</div>
+</section>
+
+<!-- ===================== CAP 5 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 5</div>
+    <h1>Módulo: Control de Stock / Almacén</h1><div class="sub">Trazabilidad completa de materiales y alertas de reposición</div></div>
+  <p class="lead">El módulo de Almacén gestiona el inventario de materiales de cada obra con trazabilidad completa: cada
+    movimiento queda registrado con fecha, proveedor, cantidad, guía y partida asociada.</p>
+  <h2>Entradas de materiales</h2>
+  <ul>
+    <li>Selecciona el material de la lista o crea uno nuevo</li>
+    <li>Ingresa la cantidad recibida y la unidad de medida</li>
+    <li>Registra el proveedor y el número de guía de remisión</li>
+    <li>Opcionalmente, asocia la entrada a una orden de compra existente</li>
+  </ul>
+  <p>Cada entrada queda vinculada automáticamente al proveedor, permitiendo rastrear el historial de compras por
+    material y comparar precios históricos.</p>
+  <h2>Salidas de materiales</h2>
+  <ul>
+    <li>Registra la cantidad y el material retirado</li>
+    <li>Asocia la salida a una partida del presupuesto para control real vs. presupuestado</li>
+    <li>Indica el responsable que retira el material</li>
+  </ul>
+  <p>Las salidas asociadas a partidas alimentan automáticamente el costo real de la obra, visible en el módulo de
+    Control de Costos y Contabilidad.</p>
+  <h2>Kardex y método PPP</h2>
+  <p>El sistema calcula el costo promedio ponderado (PPP) de cada material considerando todas las entradas. El kardex
+    muestra el historial completo de movimientos con saldos actualizados en tiempo real.</p>
+  <h2>Alertas de stock mínimo</h2>
+  <p>Configura el stock mínimo de cada material. Cuando el inventario cae por debajo del umbral, KIA te alertará
+    proactivamente y el panel mostrará el material en estado crítico.</p>
+</section>
+
+<!-- ===================== CAP 6 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 6</div>
+    <h1>Módulo: Compras y Órdenes de Compra</h1><div class="sub">Flujo completo desde solicitud hasta entrega</div></div>
+  <p class="lead">El módulo de Compras gestiona todo el ciclo de adquisiciones: desde la solicitud interna hasta la
+    recepción del material, con aprobación, seguimiento de estado y comparativo de precios entre proveedores.</p>
+  <h2>Flujo de una Orden de Compra</h2>
+  <table>
+    <tr><th style="width:24%">Estado</th><th>Descripción</th></tr>
+    <tr><td>Borrador</td><td>OC en preparación, pendiente de revisión interna</td></tr>
+    <tr><td>Pendiente</td><td>OC enviada al proveedor, esperando confirmación</td></tr>
+    <tr><td>Aprobada</td><td>OC confirmada, material en proceso de entrega</td></tr>
+    <tr><td>Entregada</td><td>Material recibido conforme en almacén</td></tr>
+    <tr><td>Cancelada</td><td>OC anulada por cualquier motivo</td></tr>
+  </table>
+  <h2>Crear una Orden de Compra</h2>
+  <ul>
+    <li>Haz clic en <b>Nueva OC</b> y selecciona el proveedor</li>
+    <li>Agrega los ítems con descripción, cantidad, unidad y precio unitario</li>
+    <li>El sistema calcula el total automáticamente con IGV</li>
+    <li>Asigna una fecha de entrega esperada</li>
+    <li>Guarda como Borrador o envía directamente al proveedor</li>
+  </ul>
+  <h2>Comparativo de precios</h2>
+  <p>Para materiales recurrentes, el sistema muestra el historial de precios por proveedor, permitiendo comparar y
+    seleccionar la mejor oferta. Esto reduce costos y mejora la negociación con el tiempo.</p>
+</section>
+
+<!-- ===================== CAP 7 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 7</div>
+    <h1>Módulo: Servicios y Órdenes de Servicio</h1><div class="sub">Control de subcontratos y trabajos tercerizados</div></div>
+  <p class="lead">El módulo de Servicios gestiona los contratos de servicio y trabajos tercerizados de cada obra. A
+    diferencia de las Órdenes de Compra (para materiales), las Órdenes de Servicio se usan para subcontratistas,
+    alquiler de equipos, consultorías y cualquier prestación de servicio.</p>
+  <h2>¿Cuándo usar Servicios vs. Compras?</h2>
+  <table>
+    <tr><th style="width:60%">Situación</th><th>Módulo a usar</th></tr>
+    <tr><td>Compra de cemento, acero, pintura…</td><td>Compras y OC</td></tr>
+    <tr><td>Subcontrato de instalaciones eléctricas</td><td>Servicios</td></tr>
+    <tr><td>Alquiler de grúa o andamio</td><td>Servicios</td></tr>
+    <tr><td>Servicio de topografía o consultoría</td><td>Servicios</td></tr>
+    <tr><td>Compra de herramientas y EPP</td><td>Compras y OC</td></tr>
+  </table>
+  <h2>Crear una Orden de Servicio</h2>
+  <ul>
+    <li>Haz clic en <b>Nueva OS</b> y selecciona el proveedor de servicio</li>
+    <li>Describe el servicio a contratar: alcance, unidad y precio</li>
+    <li>Asigna el período de ejecución (fecha inicio y fin)</li>
+    <li>Vincula la OS a una partida del presupuesto para control de costos</li>
+    <li>Cambia el estado a medida que avanza: Borrador → Activo → Completado</li>
+  </ul>
+  <h2>Seguimiento y control</h2>
+  <p>Cada Orden de Servicio muestra el avance de ejecución y el costo comprometido. Los gastos de servicios se
+    consolidan automáticamente en el módulo de Control de Costos y Contabilidad para el cálculo del resultado
+    financiero de la obra.</p>
+  <table>
+    <tr><th style="width:24%">Estado</th><th>Descripción</th></tr>
+    <tr><td>Borrador</td><td>OS en preparación</td></tr>
+    <tr><td>Activo</td><td>Servicio en ejecución</td></tr>
+    <tr><td>Completado</td><td>Servicio finalizado y conformado</td></tr>
+    <tr><td>Cancelado</td><td>OS anulada</td></tr>
+  </table>
+</section>
+
+<!-- ===================== CAP 8 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 8</div>
+    <h1>Módulo: Nóminas de Obra</h1><div class="sub">Control de personal diario, planilla semanal y liquidaciones</div></div>
+  <p class="lead">El módulo de Nóminas digitaliza la gestión del personal de obra: registro de asistencia diaria,
+    cálculo automático de planillas semanales, horas extras y liquidaciones.</p>
+  <h2>Registro de asistencia diaria</h2>
+  <ul>
+    <li>Ingresa diariamente los trabajadores presentes en obra</li>
+    <li>Registra la jornada: normal, medio día, horas extras</li>
+    <li>Clasifica por categoría: operario, oficial, peón, técnico</li>
+    <li>El sistema valida que no se dupliquen registros por día</li>
+  </ul>
+  <h2>Planilla semanal</h2>
+  <p>Al final de cada semana, el sistema genera automáticamente la planilla con:</p>
+  <ul>
+    <li>Total de días y horas trabajadas por trabajador</li>
+    <li>Cálculo de remuneración según categoría y jornada</li>
+    <li>Horas extras con recargo correspondiente (25 % y 35 %)</li>
+    <li>Descuentos aplicables (tardanzas, adelantos)</li>
+    <li>Total neto a pagar por trabajador</li>
+  </ul>
+  <div class="callout tip">La planilla semanal puede exportarse en PDF. El total acumulado se refleja automáticamente
+    en Contabilidad como gasto directo de mano de obra.</div>
+  <h2>Períodos y cierre de nómina</h2>
+  <ul>
+    <li>Cada período tiene estado: Borrador o Cerrada</li>
+    <li>Al cerrar un período, los montos se consolidan en Contabilidad</li>
+    <li>Un período cerrado no puede modificarse sin autorización del Administrador</li>
+  </ul>
+</section>
+
+<!-- ===================== CAP 9 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 9</div>
+    <h1>Módulo: Planificación LPS</h1><div class="sub">Last Planner System digitalizado para control semanal de obra</div></div>
+  <p class="lead">El módulo Lean digitaliza la metodología Last Planner System (LPS), el estándar internacional de
+    planificación colaborativa en construcción. Permite gestionar el lookahead a 4 semanas, registrar restricciones
+    y calcular automáticamente el PPC.</p>
+  <h2>¿Qué es el Last Planner System?</h2>
+  <p>El LPS es una metodología de planificación basada en compromisos confiables. Su premisa es que el plan semanal
+    lo hacen quienes realmente ejecutan el trabajo, comprometiéndose solo con lo que saben que pueden cumplir.</p>
+  <h2>Lookahead a 4 semanas</h2>
+  <ul>
+    <li>Actividades planificadas por semana con responsables asignados</li>
+    <li>Identificación temprana de restricciones que podrían bloquear el trabajo</li>
+    <li>Visualización en tabla o diagrama por semana</li>
+  </ul>
+  <h2>Registro de restricciones</h2>
+  <p>Una restricción es todo lo que impide que una actividad se ejecute según el plan. Regístralas y gestiónalas con:</p>
+  <ul>
+    <li>Tipo: materiales, subcontratos, diseño, permisos, información</li>
+    <li>Estado: Pendiente, En proceso, Levantada</li>
+    <li>Responsable y fecha límite de levantamiento</li>
+  </ul>
+  <h2>PPC — Porcentaje de Plan Cumplido</h2>
+  <p>El PPC es el indicador clave del LPS. Mide qué porcentaje de actividades comprometidas en la semana anterior se
+    completaron realmente. Un PPC saludable está por encima del 80 %.</p>
+  <div class="callout tip">El sistema calcula el PPC automáticamente al cerrar cada semana. El histórico de PPC por
+    proyecto está disponible en el dashboard del módulo.</div>
+</section>
+
+<!-- ===================== CAP 10 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 10</div>
+    <h1>Módulo: Clientes y Proveedores</h1><div class="sub">Directorio centralizado con historial de transacciones</div></div>
+  <p class="lead">El módulo centraliza toda la información de contacto y el historial de transacciones de las partes con
+    las que trabaja tu constructora.</p>
+  <h2>Gestión de clientes</h2>
+  <ul>
+    <li>Datos de contacto: nombre, RUC, dirección, teléfono, correo</li>
+    <li>Tipo de cliente: empresa, persona natural, entidad pública</li>
+    <li>Historial de proyectos asociados al cliente</li>
+    <li>Valorizaciones emitidas y su estado de cobro</li>
+    <li>Saldo pendiente de cobro en tiempo real</li>
+  </ul>
+  <h2>Gestión de proveedores</h2>
+  <ul>
+    <li>Datos completos: razón social, RUC, contacto comercial, banco</li>
+    <li>Historial de órdenes de compra y servicios por proveedor</li>
+    <li>Comparativo de precios históricos por material</li>
+    <li>Estado de cuentas: saldo pendiente de pago</li>
+    <li>Categorías: materiales, servicios, subcontratos, equipos</li>
+  </ul>
+  <h2>Búsqueda y filtros</h2>
+  <p>El directorio permite búsqueda en tiempo real por nombre, RUC o tipo. Los filtros por categoría y estado
+    (activo/inactivo) facilitan la gestión de una cartera amplia de contactos.</p>
+</section>
+
+<!-- ===================== CAP 11 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 11</div>
+    <h1>Módulo: Valorizaciones</h1><div class="sub">Facturación mensual al cliente con avance por partida</div></div>
+  <p class="lead">El módulo de Valorizaciones genera los documentos de cobro mensual al cliente, detallando el avance
+    físico ejecutado por partida del presupuesto. Incluye el flujo de aprobación y la exportación en PDF profesional.</p>
+  <h2>Flujo de una valorización</h2>
+  <table>
+    <tr><th style="width:24%">Estado</th><th>Descripción</th></tr>
+    <tr><td>Borrador</td><td>Valorización en preparación, editando avances por partida</td></tr>
+    <tr><td>En revisión</td><td>Enviada al cliente para revisión y conformidad</td></tr>
+    <tr><td>Aprobada</td><td>Aprobada y contabilizada como ingreso de la obra</td></tr>
+  </table>
+  <div class="callout tip">Solo las valorizaciones en estado «Aprobada» se contabilizan como ingreso en el módulo de Contabilidad.</div>
+  <h2>Crear una valorización</h2>
+  <ul>
+    <li>Haz clic en <b>Nueva valorización</b></li>
+    <li>Define el período: nombre, fecha inicio y fecha fin</li>
+    <li>El sistema carga automáticamente todas las partidas del presupuesto</li>
+    <li>Ingresa el porcentaje de avance de cada partida en el período</li>
+    <li>El sistema calcula el avance acumulado y el monto del período</li>
+    <li>Guarda y cambia el estado a En revisión cuando esté lista</li>
+  </ul>
+  <h2>Fórmula polinómica y Factor K</h2>
+  <p>Para contratos con reajuste de precios, Kostruye+ implementa la fórmula polinómica según la normativa peruana
+    (Ley de Contrataciones del Estado). Configura los monomios y coeficientes en la pestaña Parámetros del proyecto.</p>
+  <ul>
+    <li>Define los monomios: código de índice INEI, elemento y coeficiente (a, b, c…)</li>
+    <li>Los índices INEI se actualizan mensualmente desde la fuente oficial del INEI</li>
+    <li>El sistema calcula el Factor K (Ir/Io) para cada período valorizado</li>
+    <li>El monto reajustado se incluye en el PDF de valorización</li>
+  </ul>
+  <h2>Exportación PDF</h2>
+  <p>Cada valorización puede exportarse como PDF profesional con logo de la empresa, detalle por partida, avance
+    acumulado, Factor K aplicado y totales. El PDF es apto para presentación directa al cliente.</p>
+</section>
+
+<!-- ===================== CAP 12 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 12</div>
+    <h1>Módulo: Control de Costos</h1><div class="sub">Desviaciones presupuesto vs. real en tiempo real</div></div>
+  <p class="lead">El módulo de Control de Costos es el panel de alerta temprana del proyecto. Compara en tiempo real el
+    presupuesto planificado contra el costo real ejecutado, identificando desviaciones por partida, capítulo y
+    categoría de gasto.</p>
+  <h2>Panel de desviaciones</h2>
+  <p>La vista principal muestra una tabla con cada partida del presupuesto y su comparativo:</p>
+  <table>
+    <tr><th style="width:30%">Columna</th><th>Descripción</th></tr>
+    <tr><td>Presupuesto</td><td>Monto presupuestado original para la partida</td></tr>
+    <tr><td>Real acumulado</td><td>Gasto real registrado (compras + servicios + nóminas asociados)</td></tr>
+    <tr><td>Variación (S/)</td><td>Diferencia absoluta: Real − Presupuesto</td></tr>
+    <tr><td>Variación (%)</td><td>Porcentaje de desviación respecto al presupuesto</td></tr>
+    <tr><td>Estado</td><td>Dentro del presupuesto / Alerta / Sobre-ejecutado</td></tr>
+  </table>
+  <h2>Semáforo de desviaciones</h2>
+  <table>
+    <tr><th style="width:40%">Color</th><th>Condición</th></tr>
+    <tr><td>Verde</td><td>Gasto real ≤ 90 % del presupuesto</td></tr>
+    <tr><td>Amarillo (Alerta)</td><td>Gasto real entre 90 % y 100 % del presupuesto</td></tr>
+    <tr><td>Rojo (Sobre-ejecutado)</td><td>Gasto real supera el presupuesto</td></tr>
+  </table>
+  <h2>Curva S de avance</h2>
+  <p>La curva S superpone el avance físico planificado contra el avance real ejecutado. Permite identificar si el
+    proyecto está adelantado, atrasado o en curso respecto al cronograma contractual.</p>
+  <h2>Comparativo por categoría</h2>
+  <p>El desglose por categoría muestra el gasto real acumulado separado por:</p>
+  <ul>
+    <li>Materiales (compras de almacén)</li>
+    <li>Servicios (órdenes de servicio)</li>
+    <li>Mano de obra directa (nóminas)</li>
+    <li>Equipos y herramientas</li>
+  </ul>
+  <div class="callout tip">El Control de Costos se alimenta automáticamente de todos los módulos: no hay datos que
+    ingresar manualmente. Cada OC aprobada, salida de almacén y nómina cerrada actualiza el cuadro en tiempo real.</div>
+</section>
+
+<!-- ===================== CAP 13 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 13</div>
+    <h1>Módulo: Contabilidad y Dashboard Ejecutivo</h1><div class="sub">Vista gerencial con KPIs en tiempo real</div></div>
+  <p class="lead">El módulo de Contabilidad consolida automáticamente todos los movimientos financieros del proyecto:
+    ingresos por valorizaciones aprobadas, gastos por órdenes de compra, servicios y nóminas. Proporciona una visión
+    gerencial instantánea del estado financiero.</p>
+  <h2>Panel de KPIs</h2>
+  <table>
+    <tr><th style="width:30%">Indicador</th><th>Descripción</th></tr>
+    <tr><td>Ingreso contratado</td><td>Total del presupuesto de venta (contrato con el cliente)</td></tr>
+    <tr><td>Costo meta</td><td>Presupuesto interno de ejecución objetivo</td></tr>
+    <tr><td>Costo comprometido</td><td>OCs aprobadas + servicios + gastos directos registrados</td></tr>
+    <tr><td>Valorizado aprobado</td><td>Suma de valorizaciones en estado Aprobada</td></tr>
+    <tr><td>Margen estimado</td><td>Valorizado aprobado menos costo comprometido</td></tr>
+  </table>
+  <h2>Facturación Electrónica SUNAT</h2>
+  <p>Kostruye+ permite emitir comprobantes de pago electrónicos válidos ante la SUNAT directamente desde el módulo de
+    Contabilidad, pestaña Facturación. La integración opera a través del microservicio KREO-SUNAT, que firma
+    digitalmente los documentos y los transmite a los servidores de SUNAT en tiempo real.</p>
+  <h3>Tipos de comprobantes disponibles</h3>
+  <table>
+    <tr><th style="width:30%">Tipo</th><th style="width:14%">Código</th><th>Descripción</th></tr>
+    <tr><td>Factura electrónica</td><td>01</td><td>Para clientes empresariales con RUC</td></tr>
+    <tr><td>Boleta de venta</td><td>03</td><td>Para personas naturales con DNI</td></tr>
+    <tr><td>Nota de Crédito</td><td>07</td><td>Corrección o anulación de una factura emitida</td></tr>
+    <tr><td>Nota de Débito</td><td>08</td><td>Cargo adicional sobre una factura ya emitida</td></tr>
+    <tr><td>Guía de Remisión</td><td>09</td><td>Traslado de bienes entre almacenes o al cliente</td></tr>
+  </table>
+  <h3>Cómo emitir un comprobante</h3>
+  <ul>
+    <li>Ir a Contabilidad → pestaña Facturación en el proyecto</li>
+    <li>Hacer clic en <b>Nuevo comprobante</b> y seleccionar el tipo</li>
+    <li>Ingresar los datos del receptor: RUC o DNI y razón social</li>
+    <li>Agregar las líneas de detalle: descripción, cantidad y precio unitario</li>
+    <li>El sistema calcula automáticamente el IGV (18 %) y el total</li>
+    <li>Hacer clic en <b>Emitir</b> — el documento se firma y envía a SUNAT en segundos</li>
+    <li>Descargar el PDF del comprobante y el XML para tus archivos</li>
+  </ul>
+  <div class="callout warn"><b>Prerequisito:</b> configura las credenciales SOL de tu empresa en Configuración →
+    pestaña SUNAT antes de emitir el primer comprobante.</div>
+</section>
+
+<!-- ===================== CAP 14 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 14</div>
+    <h1>Módulo: Auditoría</h1><div class="sub">Registro inmutable de todas las acciones del equipo</div></div>
+  <p class="lead">El módulo de Auditoría registra automáticamente cada acción realizada dentro del proyecto: creaciones,
+    ediciones, eliminaciones, cambios de estado y aprobaciones. El registro es inmutable — ningún usuario puede
+    modificar o eliminar entradas del log.</p>
+  <h2>¿Qué se registra?</h2>
+  <table>
+    <tr><th style="width:30%">Acción</th><th>Ejemplos</th></tr>
+    <tr><td>Crear</td><td>Nueva OC, nueva partida, nuevo trabajador, nueva valorización</td></tr>
+    <tr><td>Editar</td><td>Cambio de precio, edición de metrado, actualización de datos</td></tr>
+    <tr><td>Eliminar</td><td>Borrado de registro, anulación de documento</td></tr>
+    <tr><td>Cambio de estado</td><td>OC Borrador → Aprobada, Valorización → Aprobada</td></tr>
+    <tr><td>Aprobación</td><td>Aprobación de OC, conformidad de valorización</td></tr>
+    <tr><td>Acceso</td><td>Inicio y cierre de sesión de cada usuario</td></tr>
+  </table>
+  <h2>Información registrada por cada evento</h2>
+  <ul>
+    <li>Fecha y hora exacta del evento (timestamp UTC)</li>
+    <li>Usuario que realizó la acción (correo y nombre)</li>
+    <li>Tipo de acción y módulo afectado</li>
+    <li>Datos anteriores vs. datos nuevos (diff) para ediciones</li>
+    <li>Proyecto y organización asociados</li>
+  </ul>
+  <h2>Filtros y búsqueda</h2>
+  <ul>
+    <li>Rango de fechas</li>
+    <li>Usuario específico</li>
+    <li>Tipo de acción (crear / editar / eliminar / aprobar)</li>
+    <li>Módulo (compras, almacén, nóminas, etc.)</li>
+  </ul>
+  <h2>Casos de uso frecuentes</h2>
+  <ul>
+    <li>Verificar quién aprobó una Orden de Compra y cuándo</li>
+    <li>Rastrear cambios en el presupuesto para detectar alteraciones no autorizadas</li>
+    <li>Demostrar ante el cliente o auditor externo la trazabilidad de cada decisión</li>
+    <li>Investigar discrepancias entre lo registrado y lo ejecutado en obra</li>
+  </ul>
+  <div class="callout tip">El acceso al módulo de Auditoría está restringido a roles Administrador y Contador. Los
+    usuarios con rol Usuario no pueden ver el log.</div>
+</section>
+
+<!-- ===================== CAP 15 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 15</div>
+    <h1>KIA — Asistente de Inteligencia Artificial</h1><div class="sub">Tu copiloto inteligente para la gestión de obras</div></div>
+  <p class="lead">KIA (Kostruye IA) es el asistente de inteligencia artificial integrado en Kostruye+. Está disponible
+    en todas las páginas del sistema mediante el botón flotante en la esquina inferior derecha. KIA puede consultar
+    datos reales de tus proyectos y brindarte análisis, resúmenes y alertas en lenguaje natural.</p>
+  <h2>Cómo usar KIA</h2>
+  <p>Haz clic en el botón <b>KIA</b> en la esquina inferior derecha de cualquier página. Se abrirá el panel de chat
+    donde puedes escribir tu consulta en lenguaje natural. KIA interpreta tu pregunta, consulta los datos y responde
+    de forma clara y concisa.</p>
+  <h2>Capacidades — Herramientas de datos</h2>
+  <table>
+    <tr><th style="width:34%">Herramienta</th><th>Qué hace</th></tr>
+    <tr><td>get_projects</td><td>Lista todos los proyectos con estado, presupuesto, fechas y ubicación</td></tr>
+    <tr><td>get_project_budget</td><td>Obtiene el presupuesto completo con capítulos, partidas y totales</td></tr>
+    <tr><td>get_purchase_orders</td><td>Lista OCs con estado, proveedor, monto y fechas</td></tr>
+    <tr><td>get_service_orders</td><td>Lista órdenes de servicio con estado y montos</td></tr>
+    <tr><td>get_payroll</td><td>Obtiene nóminas y costos de mano de obra por período</td></tr>
+    <tr><td>get_valuations</td><td>Lista valorizaciones con avance, monto y estado</td></tr>
+    <tr><td>get_warehouse</td><td>Consulta el inventario actual y movimientos de almacén</td></tr>
+    <tr><td>get_workers</td><td>Información del personal de obra registrado</td></tr>
+    <tr><td>get_clients</td><td>Datos de clientes y su historial de proyectos</td></tr>
+    <tr><td>get_inei_indices</td><td>Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPC) del período vigente</td></tr>
+    <tr><td>get_reajuste_formulas</td><td>Obtiene las fórmulas polinómicas de reajuste (Factor K) y sus monomios por proyecto</td></tr>
+  </table>
+  <h2>Preguntas frecuentes a KIA</h2>
+  <h3>Presupuesto y costos</h3>
+  <ul>
+    <li>«¿Cuál es el presupuesto total de las obras activas?»</li>
+    <li>«¿Hay partidas con sobregasto en el proyecto Las Palmas?»</li>
+    <li>«¿Cuánto hemos valorizado este mes?»</li>
+  </ul>
+  <h3>Almacén</h3>
+  <ul>
+    <li>«¿Qué materiales tenemos en stock bajo?»</li>
+    <li>«¿Cuántas unidades de cemento quedan en almacén?»</li>
+  </ul>
+  <h3>Nóminas</h3>
+  <ul>
+    <li>«¿Cuánto se ha pagado en nóminas este mes?»</li>
+    <li>«¿Cuál es el costo de mano de obra acumulado en Plaza Norte?»</li>
+  </ul>
+  <h3>Índices INEI y reajuste</h3>
+  <ul>
+    <li>«¿Cuál es el índice INEI de mano de obra del último período?»</li>
+    <li>«¿Qué Factor K aplica a la valorización de este mes?»</li>
+  </ul>
+  <h2>Detección proactiva de anomalías</h2>
+  <p>KIA no solo responde preguntas: también detecta y alerta sobre situaciones críticas:</p>
+  <ul>
+    <li>Órdenes de compra pendientes con más de 30 días sin atención</li>
+    <li>Partidas con gasto real que supera el presupuesto</li>
+    <li>Materiales en almacén por debajo del stock mínimo</li>
+    <li>Valorizaciones en borrador con más de un mes sin aprobar</li>
+    <li>Proyectos con margen negativo estimado</li>
+  </ul>
+  <div class="callout tip">KIA responde siempre en español y formatea los montos en soles (S/) con separadores de
+    miles. Si detecta una anomalía mientras busca datos para tu consulta, te la menciona proactivamente aunque no la
+    hayas preguntado.</div>
+</section>
+
+<!-- ===================== CAP 16 — APP MÓVIL ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 16</div>
+    <h1>App Móvil Kostruye+</h1><div class="sub">Almacén y Compras desde el campo, en tu celular</div></div>
+  <p class="lead">Kostruye+ cuenta con una aplicación móvil nativa (Android e iOS) para que el equipo de campo
+    registre movimientos de almacén y gestione órdenes de compra desde la obra, sin necesidad de ir a la oficina.
+    Los datos se sincronizan en tiempo real con la plataforma web — son la misma base de datos.</p>
+  <h2>¿Qué puedo hacer desde el celular?</h2>
+  <table>
+    <tr><th style="width:30%">Módulo</th><th>Funciones disponibles en la app móvil</th></tr>
+    <tr><td>Dashboard</td><td>KPIs del proyecto activo: presupuesto, costo comprometido, valorizado y margen estimado</td></tr>
+    <tr><td>Almacén</td><td>Consultar Kardex, registrar ingresos de material y emitir vales de salida</td></tr>
+    <tr><td>Compras</td><td>Ver lista de Órdenes de Compra y cambiar su estado en campo (ej. Pendiente → Entregada)</td></tr>
+  </table>
+  <div class="callout ok"><b>Mismos datos, tiempo real.</b> Cualquier ingreso de material que registres en el celular
+    aparece inmediatamente en la web, y viceversa. No hay sincronización manual ni exportaciones.</div>
+  <h2>Cómo acceder</h2>
+  <ul>
+    <li>Al contratar Kostruye+, KREO IA Studio te proporcionará el enlace de descarga de la app.</li>
+    <li>Inicia sesión con las mismas credenciales que usas en la plataforma web.</li>
+    <li>Selecciona tu organización y el proyecto activo — la app recuerda tu última selección.</li>
+  </ul>
+  <h2>Módulos disponibles actualmente</h2>
+  <p>La app móvil se encuentra en desarrollo activo. Los módulos de campo ya disponibles son:</p>
+  <ul>
+    <li><b>Almacén completo</b> — Kardex con historial de movimientos, registro de ingresos de material (proveedor, guía, cantidad) y emisión de vales de salida asociados a partidas.</li>
+    <li><b>Compras</b> — Lista de todas las OC del proyecto con detalle de ítems, montos y estado; cambio de estado directamente desde obra.</li>
+  </ul>
+  <h2>Próximamente</h2>
+  <ul>
+    <li>Registro de asistencia diaria (Nóminas) desde el celular</li>
+    <li>Consulta de valorizaciones y avance por partida</li>
+    <li>KIA móvil — consulta al asistente IA desde campo</li>
+  </ul>
+  <div class="callout tip">Para consultas sobre la disponibilidad de la app o el enlace de descarga, contacta a
+    KREO IA Studio: <b>kreoiastudioperu@gmail.com</b></div>
+</section>
+
+<!-- ===================== CAP 17 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 17</div>
+    <h1>Administración y Configuración</h1><div class="sub">Gestión de organización, miembros, SUNAT y fideicomiso</div></div>
+  <p class="lead">La sección de Configuración está disponible exclusivamente para usuarios con rol Administrador. Desde
+    aquí se gestiona la información de la organización, los miembros del equipo y las integraciones externas.</p>
+  <h2>Pestaña Organización</h2>
+  <ul>
+    <li>Nombre de la empresa — editable y sincronizado en toda la plataforma</li>
+    <li>ID de organización — identificador único, útil para soporte técnico</li>
+    <li>Plan activo — muestra el plan contratado (Piloto, Pro, Enterprise)</li>
+    <li>Logo de la empresa — sube el logo en PNG/JPG para personalizar la plataforma</li>
+  </ul>
+  <h2>Pestaña Miembros</h2>
+  <p>El Administrador puede gestionar todos los miembros del equipo:</p>
+  <ul>
+    <li>Ver lista completa con correo electrónico y rol asignado</li>
+    <li>Cambiar rol: usa el selector junto a cada miembro (Administrador / Contador / Usuario)</li>
+    <li>Invitar nuevo miembro: ingresa el correo y selecciona el rol</li>
+    <li>Eliminar miembro: el usuario pierde acceso inmediatamente</li>
+  </ul>
+  <p>Tu usuario aparece marcado como «Tú» y no puede ser modificado ni eliminado por ti mismo.</p>
+  <h2>Pestaña SUNAT — Configuración de facturación electrónica</h2>
+  <p>Configura las credenciales SOL (Sunat Online) de tu empresa para habilitar la facturación electrónica. Este paso
+    es obligatorio antes de emitir el primer comprobante.</p>
+  <ul>
+    <li>RUC de la empresa (11 dígitos)</li>
+    <li>Usuario SOL — el número de RUC sin los ceros iniciales, más el usuario SUNAT</li>
+    <li>Clave SOL — contraseña de acceso al portal SUNAT</li>
+    <li>Las credenciales se transmiten cifradas con AES-256 al servidor KREO-SUNAT y nunca se almacenan en texto plano</li>
+  </ul>
+  <div class="callout tip">Una vez configuradas las credenciales, el indicador SUNAT mostrará estado «Configurado». Si
+    el estado es «No configurado», los botones de emisión de comprobantes permanecerán deshabilitados.</div>
+  <h2>Pestaña Fideicomiso (Plan Enterprise)</h2>
+  <p>La integración con CORFID permite gestionar proyectos bajo esquema de fideicomiso inmobiliario con DH Consultores.
+    Disponible solo en el Plan Enterprise.</p>
+  <p><b>Flujo de activación:</b></p>
+  <ul>
+    <li>El Administrador KREO activa la funcionalidad de fideicomiso para tu organización</li>
+    <li>Accede a Proyectos → [Proyecto] → Configuración → pestaña Fideicomiso</li>
+    <li>Ingresa el RUC de la constructora y acepta la declaración jurada</li>
+    <li>DH Consultores recibe la solicitud y activa el trust</li>
+    <li>Una vez activado, el proyecto queda bajo el esquema de fideicomiso</li>
+  </ul>
+</section>
+
+<!-- ===================== CAP 18 ===================== -->
+<section class="chapter">
+  <div class="chapter-head"><div class="tag">Capítulo 18</div>
+    <h1>Glosario de Términos</h1><div class="sub">Definiciones clave del sistema y de la industria</div></div>
+  <table>
+    <tr><th style="width:22%">Término</th><th>Definición</th></tr>
+    <tr><td>APU</td><td>Análisis de Precios Unitarios — descomposición del costo de una partida por recursos</td></tr>
+    <tr><td>CORFID</td><td>Sistema de gestión de fideicomisos de DH Consultores integrado con Kostruye+</td></tr>
+    <tr><td>Costo Directo</td><td>Suma de los parciales de todas las partidas del presupuesto, sin gastos generales ni utilidad</td></tr>
+    <tr><td>Curva S</td><td>Gráfica que superpone el avance planificado vs. real a lo largo del tiempo</td></tr>
+    <tr><td>Dashboard</td><td>Tablero de control con indicadores clave en tiempo real</td></tr>
+    <tr><td>Factor K</td><td>Coeficiente de reajuste calculado con la fórmula polinómica (Ir/Io)</td></tr>
+    <tr><td>Fideicomiso</td><td>Estructura legal donde un fiduciario gestiona los fondos del proyecto</td></tr>
+    <tr><td>Índice INEI</td><td>Índice Unificado de Precios de la Construcción publicado mensualmente por el INEI</td></tr>
+    <tr><td>KIA</td><td>Kostruye IA — asistente de inteligencia artificial integrado en la plataforma</td></tr>
+    <tr><td>KPI</td><td>Key Performance Indicator — indicador clave de rendimiento</td></tr>
+    <tr><td>Kardex</td><td>Registro cronológico de entradas y salidas de un material en almacén</td></tr>
+    <tr><td>LPS</td><td>Last Planner System — metodología de planificación colaborativa en construcción</td></tr>
+    <tr><td>Lookahead</td><td>Planificación a 4 semanas que anticipa restricciones y recursos</td></tr>
+    <tr><td>OC</td><td>Orden de Compra — documento formal para adquirir materiales o insumos</td></tr>
+    <tr><td>OS</td><td>Orden de Servicio — documento para contratar subcontratos o servicios</td></tr>
+    <tr><td>PPC</td><td>Porcentaje de Plan Cumplido — indicador semanal de confiabilidad del LPS</td></tr>
+    <tr><td>PPP</td><td>Precio Promedio Ponderado — método de valoración de inventario</td></tr>
+    <tr><td>RUC</td><td>Registro Único de Contribuyentes — identificación fiscal en Perú</td></tr>
+    <tr><td>S10</td><td>Software estándar de presupuestos de obra en el Perú; Kostruye+ importa sus presupuestos por Excel o PDF</td></tr>
+    <tr><td>SaaS</td><td>Software as a Service — software entregado por internet sin instalación local</td></tr>
+    <tr><td>SOL</td><td>Sunat Online — sistema de acceso a servicios electrónicos de la SUNAT</td></tr>
+    <tr><td>SUNAT</td><td>Superintendencia Nacional de Aduanas y de Administración Tributaria</td></tr>
+    <tr><td>Stock mínimo</td><td>Cantidad mínima de un material en almacén antes de emitir alerta</td></tr>
+    <tr><td>Tenant</td><td>Empresa cliente que usa Kostruye+ bajo su propia identidad</td></tr>
+    <tr><td>Valorización</td><td>Documento de cobro mensual al cliente con el avance físico ejecutado</td></tr>
+    <tr><td>Variación</td><td>Diferencia entre el presupuesto planificado y el costo real ejecutado</td></tr>
+  </table>
+  <div class="callout ok" style="margin-top:24px; text-align:center">
+    <div style="font-size:15pt; color:var(--navy); font-weight:700">KOSTRUYE+</div>
+    <div style="font-size:11pt">Tu constructora, sin límites.</div>
+    <div style="margin-top:6px; color:var(--muted)">Para soporte técnico o consultas: konstruye.site · kreoiastudioperu@gmail.com</div>
+  </div>
+</section>
+
+</body>
+</html>

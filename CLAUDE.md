@@ -36,7 +36,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Tablas | TanStack React Table v8 |
 | Charts | Recharts |
 | Toasts | Sonner |
-| IA (KIA) | OpenAI `gpt-4o-mini` — `app/api/ai/chat/route.ts` |
+| IA (KIA) | Anthropic `claude-haiku-4-5` — `app/api/ai/chat/route.ts` |
 | Widget ventas | Lemon Slice (Alanis) — `agent_07cc9bf1bd0a14f3` — **solo en landing** |
 | Deploy | Docker + nginx-proxy + acme-companion (SSL auto) |
 
@@ -75,9 +75,10 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 ## KIA — Asistente IA
 
 - **Ubicación:** `app/(dashboard)/layout.tsx` → `<AiChat />` (aparece en todo el dashboard)
-- **API:** `app/api/ai/chat/route.ts` — OpenAI `gpt-4o-mini`
+- **API:** `app/api/ai/chat/route.ts` — Anthropic `claude-haiku-4-5` (loop agéntico, máx 5 rondas)
 - **Context-aware:** auto-detecta `projectId` del URL, lo inyecta en system prompt
-- **Herramientas:** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`
+- **Herramientas:** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`, `get_inei_indices`, `get_reajuste_formulas`
+- **Conoce** la importación de presupuestos S10 (Excel/PDF exacto al céntimo), índices INEI y Fórmula Polinómica (ver system prompt)
 - ⚠️ **NO está en la landing** — solo en el dashboard de la app
 
 ## Alanis (Lemon Slice widget ventas)
@@ -167,7 +168,7 @@ CORFID_API_URL=https://corfid.dhconsultores.site
 CORFID_TENANT_SLUG=hd-consultores
 CORFID_WEBHOOK_SECRET=<secret>
 ADMIN_TOKEN=<token>                # admin panel /admin
-OPENAI_API_KEY=<key>               # KIA chat
+ANTHROPIC_API_KEY=<key>            # KIA chat (claude-haiku-4-5)
 ```
 
 > ⚠️ `ADMIN_TOKEN` tiene fallback hardcodeado en 3 routes (`app/api/admin/clients/*`, `upload-logo`). Es pre-existente — pendiente rotar y quitar fallback.

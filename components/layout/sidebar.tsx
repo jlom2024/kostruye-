@@ -200,6 +200,14 @@ export function Sidebar({ projectId, projectName }: SidebarProps) {
             Configuración
           </Link>
         )}
+        <a
+          href="/Manual-Kostruye-Plus.pdf"
+          download="Manual-Kostruye-Plus.pdf"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-white/8 hover:text-white transition-colors"
+        >
+          <BookOpen className="h-4 w-4" />
+          Manual de usuario
+        </a>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-white/8 hover:text-white transition-colors"
