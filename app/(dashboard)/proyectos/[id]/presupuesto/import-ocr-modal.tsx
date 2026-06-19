@@ -90,33 +90,60 @@ export function ImportOcrModal({
     setError(null);
 
     try {
-      setProgress(`Importando ${stats?.totalItems ?? ""} partidas...`);
-
-      // Importación masiva en un solo round-trip vía RPC: limpia, inserta y
-      // recalcula totales con el rollup desactivado (rápido y exacto, escala a
-      // presupuestos enormes). Guarda el "total" (parcial) de cada partida.
-      const { data, error: rpcErr } = await sb.rpc("import_budget", {
-        p_budget_id: budgetId,
-        p_chapters: extracted.chapters.map((c) => ({
-          code: c.code,
-          name: c.name,
-          items: c.items.map((i) => ({
-            item_code:   i.item_code,
-            description: i.description,
-            unit:        i.unit || "und",
-            quantity:    i.quantity || 0,
-            unit_price:  i.unit_price || 0,
-            total:       i.total ?? null,
-          })),
+      // Importación por LOTES — escala a presupuestos enormes (carreteras
+      // 200-500M / cientos de miles de partidas) sin reventar el tamaño del
+      // payload. Cada lote inserta con el rollup apagado; se recalcula al final.
+      const MAX_ITEMS_PER_BATCH = 4000;
+      const toRpcChapter = (c: ExtractedChapter) => ({
+        code: c.code,
+        name: c.name,
+        items: c.items.map((i) => ({
+          item_code:   i.item_code,
+          description: i.description,
+          unit:        i.unit || "und",
+          quantity:    i.quantity || 0,
+          unit_price:  i.unit_price || 0,
+          total:       i.total ?? null,
         })),
       });
 
-      if (rpcErr) throw new Error(rpcErr.message);
+      // Agrupar capítulos en lotes acotados por número de partidas
+      const batches: ExtractedChapter[][] = [];
+      let current: ExtractedChapter[] = [];
+      let currentItems = 0;
+      for (const c of extracted.chapters) {
+        if (currentItems > 0 && currentItems + c.items.length > MAX_ITEMS_PER_BATCH) {
+          batches.push(current);
+          current = [];
+          currentItems = 0;
+        }
+        current.push(c);
+        currentItems += c.items.length;
+      }
+      if (current.length) batches.push(current);
+
+      const totalItems = stats?.totalItems ?? extracted.chapters.reduce((s, c) => s + c.items.length, 0);
+      let done = 0;
+      for (let b = 0; b < batches.length; b++) {
+        const { error: chunkErr } = await sb.rpc("import_budget_chunk", {
+          p_budget_id: budgetId,
+          p_chapters: batches[b].map(toRpcChapter),
+          p_wipe: b === 0, // el primer lote limpia los datos previos
+        });
+        if (chunkErr) throw new Error(chunkErr.message);
+        done += batches[b].reduce((s, c) => s + c.items.length, 0);
+        setProgress(`Importando partidas... ${done.toLocaleString("es-PE")} / ${totalItems.toLocaleString("es-PE")}`);
+      }
+
+      // Recalcular totales una sola vez
+      setProgress("Calculando totales...");
+      const { data, error: finErr } = await sb.rpc("import_budget_finalize", { p_budget_id: budgetId });
+      if (finErr) throw new Error(finErr.message);
 
       const inserted = data as { chapters: number; items: number; total: number } | null;
       setPhase("done");
       toast.success(
-        `${inserted?.items ?? stats?.totalItems ?? 0} partidas importadas — total S/ ${
+        `${inserted?.items ?? totalItems} partidas importadas — total S/ ${
           (inserted?.total ?? 0).toLocaleString("es-PE", { minimumFractionDigits: 2 })
         }`
       );
