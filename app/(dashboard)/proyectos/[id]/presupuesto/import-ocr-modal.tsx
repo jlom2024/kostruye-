@@ -107,17 +107,15 @@ export function ImportOcrModal({
         let sortItem = 0;
         for (const item of chapter.items) {
           sortItem++;
-          const total = Number((item.quantity * item.unit_price).toFixed(2));
           const { error: itemErr } = await sb.from("budget_items").insert({
-            budget_id:  budgetId,
-            chapter_id: chap.id,
-            item_code:  item.item_code,
+            budget_id:   budgetId,
+            chapter_id:  chap.id,
+            item_code:   item.item_code,
             description: item.description,
-            unit:       item.unit || "und",
-            quantity:   item.quantity || 0,
-            unit_price: item.unit_price || 0,
-            total,
-            sort_order: sortItem * 10,
+            unit:        item.unit || "und",
+            quantity:    item.quantity || 0,
+            unit_price:  item.unit_price || 0,
+            sort_order:  sortItem * 10,
           });
           if (itemErr) throw new Error(`Partida ${item.item_code}: ${itemErr.message}`);
         }
