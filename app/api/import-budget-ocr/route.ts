@@ -171,6 +171,19 @@ async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise
   return chapters;
 }
 
+// ── Recalculate budget total server-side ──────────────────────────────────
+export async function PATCH(req: NextRequest) {
+  const { createClient } = await import("@/lib/supabase/server");
+  const sb = await createClient();
+  const { searchParams } = new URL(req.url);
+  const budgetId = searchParams.get("budget_id");
+  if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+  const { data } = await sb.from("budget_items").select("total").eq("budget_id", budgetId).limit(100000);
+  const total = (data ?? []).reduce((s, i) => s + Number(i.total), 0);
+  await sb.from("budgets").update({ total }).eq("id", budgetId);
+  return NextResponse.json({ ok: true, total });
+}
+
 // ── Clear route (wipe before re-import) ───────────────────────────────────
 export async function DELETE(req: NextRequest) {
   const { createClient } = await import("@/lib/supabase/server");
