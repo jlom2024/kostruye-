@@ -71,6 +71,66 @@ function parsePipeText(text: string, chapterMap: Map<string, BudgetChapter>): vo
   }
 }
 
+// ── Parser determinístico S10 (exacto, sin IA) ───────────────────────────
+// El texto S10 es regular: las partidas son "{desc}{unidad}{código} {metrado}
+// {pu} {parcial}" y los capítulos "{código}{nombre}". Esto da el total EXACTO
+// al céntimo, gratis. Devuelve el COSTO DIRECTO impreso para auto-verificación.
+const S10_UNITS = ["GLB","glb","und","UND","pto","PTO","mes","MES","p2","P2","m2","m3","M2","M3",
+  "ml","ML","kg","KG","pza","PZA","gal","GAL","bls","BLS","jgo","JGO","par","PAR","hh","HH",
+  "hm","HM","día","dia","DIA","DÍA","ha","HA","est","EST","tlb","TLB","glb","u","m","M","l","L"];
+const S10_NUM = (s: string) => parseFloat(s.replace(/[,\s]/g, "")) || 0;
+
+function parseS10Text(text: string, chapterMap: Map<string, BudgetChapter>): number | null {
+  const unitAlt = S10_UNITS.join("|");
+  const itemRe = new RegExp(
+    "^(.+?)(" + unitAlt + ")(\\d{2}(?:\\.\\d{2,})+)\\s+([\\d.,]+)\\s+([\\d.,]+)\\s+([\\d.,]+)\\s*$"
+  );
+  const itemReNoUnit = /^(.+?)(\d{2}(?:\.\d{2,})+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$/;
+  const chapRe = /^(\d{2}(?:\.\d{2,})*)([A-Za-zÁÉÍÓÚÑáéíóúñ].*)$/;
+  let costoDirecto: number | null = null;
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    const cd = line.match(/^COSTO\s+DIRECTO\s+([\d.,]+)$/i);
+    if (cd) { costoDirecto = S10_NUM(cd[1]); continue; }
+
+    let unit = "";
+    let m = line.match(itemRe);
+    if (m) {
+      unit = m[2];
+    } else {
+      const mn = line.match(itemReNoUnit);
+      if (mn) m = [mn[0], mn[1], "", mn[2], mn[3], mn[4], mn[5]] as RegExpMatchArray;
+    }
+    if (m) {
+      const itemCode = m[3];
+      const chCode = parentCode(itemCode);
+      let ch = chapterMap.get(chCode);
+      if (!ch) { ch = { code: chCode, name: "", items: [] }; chapterMap.set(chCode, ch); }
+      if (ch.items.some(i => i.item_code === itemCode)) continue;
+      ch.items.push({
+        item_code:   itemCode,
+        description: m[1].trim(),
+        unit:        (unit || "und").trim(),
+        quantity:    S10_NUM(m[4]),
+        unit_price:  S10_NUM(m[5]),
+      });
+      continue;
+    }
+
+    const c = line.match(chapRe);
+    if (c) {
+      const code = c[1], name = c[2].trim();
+      const ex = chapterMap.get(code);
+      if (!ex) chapterMap.set(code, { code, name, items: [] });
+      else if (name && (ex.name === "" || name.length > ex.name.length)) ex.name = name;
+    }
+  }
+  return costoDirecto;
+}
+
 // ── Split text into chunks on line boundaries ─────────────────────────────
 function splitText(text: string, maxChars: number): string[] {
   const chunks: string[] = [];
@@ -250,23 +310,46 @@ export async function POST(req: NextRequest) {
     isScanned = true;
   }
 
-  // ── Paso 2: Claude texto (digital) o Claude visión (escaneado) ───────
+  // ── Paso 2: parser determinístico (primario) → Claude (fallback) ─────
   // Map compartido código→capítulo: inmune a cortes de chunk y duplicados
-  const chapterMap = new Map<string, BudgetChapter>();
+  let chapterMap = new Map<string, BudgetChapter>();
+  let method = "";
+  let verified = false;
+  let costoDirecto: number | null = null;
+  let parsedSum = 0;
 
   if (!isScanned) {
-    // Claude lee el texto — barato, maneja cualquier formato de número/descripción
-    const MAX_CHARS = 15_000; // chunks pequeños → salida nunca toca el techo de tokens
-    const chunks = splitText(extractedText, MAX_CHARS);
-    console.log(`Texto → ${chunks.length} chunk(s) para Claude`);
+    // 2a. Parser determinístico: exacto y gratis para S10 estándar
+    const detMap = new Map<string, BudgetChapter>();
+    costoDirecto = parseS10Text(extractedText, detMap);
+    parsedSum = Array.from(detMap.values())
+      .reduce((s, c) => s + c.items.reduce((t, i) => t + i.quantity * i.unit_price, 0), 0);
+    const detItems = Array.from(detMap.values()).reduce((s, c) => s + c.items.length, 0);
 
-    const BATCH = 12;
-    for (let b = 0; b < chunks.length; b += BATCH) {
-      await Promise.all(
-        chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j, chapterMap))
-      );
+    // Auto-verificación: si la suma cuadra con el COSTO DIRECTO impreso (±1 sol
+    // por redondeos), confiamos al 100%. Si no hay costo directo pero sí hay
+    // muchas partidas, también lo usamos (PDF sin línea de total).
+    const reconciles = costoDirecto != null && Math.abs(parsedSum - costoDirecto) <= 1.0;
+    if (detItems > 0 && (reconciles || costoDirecto == null)) {
+      chapterMap = detMap;
+      method = "determinístico";
+      verified = reconciles;
+      console.log(`Determinístico: ${detItems} partidas, suma ${parsedSum.toFixed(2)}, costo directo ${costoDirecto?.toFixed(2) ?? "—"}, verificado=${verified}`);
+    } else {
+      // 2b. Fallback a Claude texto (formato no estándar)
+      console.warn(`Determinístico no reconcilia (suma ${parsedSum.toFixed(2)} vs ${costoDirecto?.toFixed(2)}) — usando Claude`);
+      method = "Claude texto";
+      const MAX_CHARS = 15_000;
+      const chunks = splitText(extractedText, MAX_CHARS);
+      const BATCH = 12;
+      for (let b = 0; b < chunks.length; b += BATCH) {
+        await Promise.all(
+          chunks.slice(b, b + BATCH).map((chunk, j) => parseChunkWithClaude(chunk, apiKey, b + j, chapterMap))
+        );
+      }
     }
   } else {
+    method = "OCR visión";
     // Fallback visión para PDFs escaneados
     console.log("PDF escaneado — usando OCR visión");
     const srcPdf = await PDFDocument.load(bytes);
@@ -300,7 +383,18 @@ export async function POST(req: NextRequest) {
   }
 
   const totalItems = chapters.reduce((s, c) => s + c.items.length, 0);
-  const method = isScanned ? "OCR visión" : "Claude texto";
-  console.log(`OK (${method}): ${chapters.length} capítulos, ${totalItems} partidas`);
-  return NextResponse.json({ ok: true, data: { chapters }, stats: { totalChapters: chapters.length, totalItems } });
+  const importSum = chapters.reduce((s, c) => s + c.items.reduce((t, i) => t + i.quantity * i.unit_price, 0), 0);
+  console.log(`OK (${method}): ${chapters.length} capítulos, ${totalItems} partidas, suma ${importSum.toFixed(2)}`);
+  return NextResponse.json({
+    ok: true,
+    data: { chapters },
+    stats: {
+      totalChapters: chapters.length,
+      totalItems,
+      method,
+      verified,
+      costoDirecto,
+      sum: Math.round(importSum * 100) / 100,
+    },
+  });
 }

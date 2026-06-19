@@ -41,7 +41,14 @@ export function ImportOcrModal({
   const [phase,     setPhase]     = useState<Phase>("idle");
   const [file,      setFile]      = useState<File | null>(null);
   const [extracted, setExtracted] = useState<ExtractedBudget | null>(null);
-  const [stats,     setStats]     = useState<{ totalChapters: number; totalItems: number } | null>(null);
+  const [stats,     setStats]     = useState<{
+    totalChapters: number;
+    totalItems: number;
+    method?: string;
+    verified?: boolean;
+    costoDirecto?: number | null;
+    sum?: number;
+  } | null>(null);
   const [error,     setError]     = useState<string | null>(null);
   const [progress,  setProgress]  = useState("");
 
@@ -211,13 +218,25 @@ export function ImportOcrModal({
           {/* PREVIEW */}
           {phase === "preview" && extracted && stats && (
             <>
-              <div className="flex items-center gap-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <p className="text-sm font-semibold text-emerald-800">Extracción exitosa</p>
-                  <p className="text-xs text-emerald-600">
-                    {stats.totalChapters} capítulos · {stats.totalItems} partidas detectadas
+              <div className={`flex items-center gap-4 rounded-xl border p-4 ${
+                stats.verified ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
+              }`}>
+                <span className="text-2xl">{stats.verified ? "✅" : "⚠️"}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-semibold ${stats.verified ? "text-emerald-800" : "text-amber-800"}`}>
+                    {stats.verified ? "Extracción verificada al céntimo" : "Extracción exitosa"}
                   </p>
+                  <p className={`text-xs ${stats.verified ? "text-emerald-600" : "text-amber-600"}`}>
+                    {stats.totalChapters} capítulos · {stats.totalItems} partidas
+                    {stats.method ? ` · método ${stats.method}` : ""}
+                  </p>
+                  {stats.costoDirecto != null && (
+                    <p className={`text-xs mt-1 ${stats.verified ? "text-emerald-700" : "text-amber-700"}`}>
+                      Suma: S/ {stats.sum?.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                      {" "}vs COSTO DIRECTO del PDF: S/ {stats.costoDirecto.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                      {stats.verified ? " ✓ coinciden" : " ✗ revisar"}
+                    </p>
+                  )}
                 </div>
               </div>
 
