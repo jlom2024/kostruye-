@@ -125,12 +125,13 @@ export function ImportOcrModal({
         }
       }
 
-      // Recalculate budget total
-      const { data: allItems } = await sb
+      // Recalculate budget total via RPC to avoid Supabase 1000-row default limit
+      const { data: sumData } = await sb
         .from("budget_items")
-        .select("total")
-        .eq("budget_id", budgetId);
-      const newTotal = (allItems ?? []).reduce((s, i) => s + Number(i.total), 0);
+        .select("total.sum()")
+        .eq("budget_id", budgetId)
+        .single();
+      const newTotal = Number((sumData as { sum: string } | null)?.sum ?? 0);
       await sb.from("budgets").update({ total: newTotal }).eq("id", budgetId);
 
       setPhase("done");
