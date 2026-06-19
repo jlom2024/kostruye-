@@ -32,9 +32,11 @@ const UNIT_TOKENS = [
 ].join("|");
 
 // Partida: {desc}{unidad}{código.con.puntos} {qty} {pu}
+// Números pueden tener coma O espacio como separador de miles: 10,672.00 o 10 672.00
 // String.raw evita ambigüedad de escapes en template literals
+const NUM = String.raw`\d[\d,]*(?:\s\d{3})*(?:\.\d+)?`;
 const ITEM_RE = new RegExp(
-  String.raw`^(.+?)(${UNIT_TOKENS})(\d{2}(?:\.\d{2,})+)\s+([\d,]+\.?\d+)\s+([\d,]+\.?\d+)`,
+  String.raw`^(.+?)(${UNIT_TOKENS})(\d{2}(?:\.\d{2,})+)\s+(${NUM})\s+(${NUM})`,
   "i"
 );
 
@@ -44,7 +46,7 @@ const ITEM_RE = new RegExp(
 const CHAPTER_RE = /^(\d{2}(?:\.\d{2,})*)\s?([A-ZÁÉÍÓÚÑ].+)/i;
 
 function parseNum(s: string): number {
-  return parseFloat(s.replace(/,/g, "")) || 0;
+  return parseFloat(s.replace(/[,\s]/g, "")) || 0;
 }
 
 function parseS10Text(text: string): BudgetChapter[] {
