@@ -1,153 +1,98 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const tools: OpenAI.Chat.ChatCompletionTool[] = [
+const ANTHROPIC_TOOLS = [
   {
-    type: "function",
-    function: {
-      name: "get_projects",
-      description: "Lista todos los proyectos de la organización con estado, presupuesto y fechas",
-      parameters: { type: "object", properties: {}, required: [] },
+    name: "get_projects",
+    description: "Lista todos los proyectos de la organización con estado, presupuesto y fechas",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "get_project_budget",
+    description: "Obtiene las partidas del presupuesto de un proyecto con montos y gastos reales",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
     },
   },
   {
-    type: "function",
-    function: {
-      name: "get_project_budget",
-      description: "Obtiene las partidas del presupuesto de un proyecto con montos y gastos reales",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
+    name: "get_purchase_orders",
+    description: "Lista las órdenes de compra de un proyecto con proveedor, monto y estado",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_payroll",
+    description: "Obtiene las nóminas/planillas de un proyecto con montos y fechas",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_valuations",
+    description: "Lista las valorizaciones de un proyecto con montos y estados",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_clients",
+    description: "Lista los clientes de la organización",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "get_warehouse",
+    description: "Consulta el stock o inventario del almacén de un proyecto",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_service_orders",
+    description: "Lista las órdenes de servicio de un proyecto (subcontratos, equipos, transporte) con montos y estados",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_workers",
+    description: "Lista el personal (empleados/trabajadores) de un proyecto con su cargo/categoría, DNI, salario y estado",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
+    },
+  },
+  {
+    name: "get_inei_indices",
+    description: "Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPCs). Úsalo cuando el usuario pregunte por índices INEI, valores para la fórmula polinómica, el índice de mano de obra, acero, cemento, etc.",
+    input_schema: {
+      type: "object",
+      properties: {
+        index_code: { type: "string", description: "Código del índice (ej: '47' mano de obra, '03' acero corrugado). Omitir para obtener todos." },
       },
+      required: [],
     },
   },
   {
-    type: "function",
-    function: {
-      name: "get_purchase_orders",
-      description: "Lista las órdenes de compra de un proyecto con proveedor, monto y estado",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_payroll",
-      description: "Obtiene las nóminas/planillas de un proyecto con montos y fechas",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_valuations",
-      description: "Lista las valorizaciones de un proyecto con montos y estados",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_clients",
-      description: "Lista los clientes de la organización",
-      parameters: { type: "object", properties: {}, required: [] },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_warehouse",
-      description: "Consulta el stock o inventario del almacén de un proyecto",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_service_orders",
-      description: "Lista las órdenes de servicio de un proyecto (subcontratos, equipos, transporte) con montos y estados",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_workers",
-      description: "Lista el personal (empleados/trabajadores) de un proyecto con su cargo/categoría, DNI, salario y estado",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_inei_indices",
-      description: "Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPCs). Úsalo cuando el usuario pregunte por índices INEI, valores para la fórmula polinómica, el índice de mano de obra, acero, cemento, etc. Retorna los valores del período más reciente disponible.",
-      parameters: {
-        type: "object",
-        properties: {
-          index_code: {
-            type: "string",
-            description: "Código del índice (ej: '47' mano de obra, '03' acero corrugado, '21' cemento). Omitir para obtener todos.",
-          },
-        },
-        required: [],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_reajuste_formulas",
-      description: "Obtiene las fórmulas polinómicas de reajuste (Factor K) de un proyecto con sus monomios e índices INEI asignados",
-      parameters: {
-        type: "object",
-        properties: {
-          project_id: { type: "string", description: "UUID del proyecto" },
-        },
-        required: ["project_id"],
-      },
+    name: "get_reajuste_formulas",
+    description: "Obtiene las fórmulas polinómicas de reajuste (Factor K) de un proyecto con sus monomios e índices INEI asignados",
+    input_schema: {
+      type: "object",
+      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+      required: ["project_id"],
     },
   },
 ];
@@ -163,7 +108,6 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
       return data ?? [];
     }
     case "get_project_budget": {
-      // budget_items no tiene project_id directo — se accede via budget_id
       const { data: budgets } = await supabase
         .from("budgets")
         .select("id, budget_type, total")
@@ -188,18 +132,17 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
       };
     }
     case "get_purchase_orders": {
-      // Campo correcto: po_number (no oc_number), supplier via join
       const { data } = await supabase
         .from("purchase_orders")
         .select("id, po_number, status, total, issue_date, suppliers(name)")
         .eq("project_id", args.project_id)
         .order("issue_date", { ascending: false });
       return (data ?? []).map(p => ({
-        po_number:     p.po_number,
-        supplier:      (p.suppliers as { name: string } | null)?.name ?? "—",
-        total:         p.total,
-        status:        p.status,
-        issue_date:    p.issue_date,
+        po_number:  p.po_number,
+        supplier:   (p.suppliers as { name: string } | null)?.name ?? "—",
+        total:      p.total,
+        status:     p.status,
+        issue_date: p.issue_date,
       }));
     }
     case "get_payroll": {
@@ -233,18 +176,17 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
         .eq("project_id", args.project_id)
         .order("created_at", { ascending: false });
       return (data ?? []).map(o => ({
-        os_number:    o.os_number,
-        type:         o.service_type,
-        description:  o.description,
-        supplier:     (o.suppliers as { name: string } | null)?.name ?? "—",
-        amount:       o.amount,
-        status:       o.status,
-        issue_date:   o.issue_date,
+        os_number:       o.os_number,
+        type:            o.service_type,
+        description:     o.description,
+        supplier:        (o.suppliers as { name: string } | null)?.name ?? "—",
+        amount:          o.amount,
+        status:          o.status,
+        issue_date:      o.issue_date,
         completion_date: o.completion_date,
       }));
     }
     case "get_warehouse": {
-      // Usar la vista stock_levels que tiene current_stock, total_in, total_out, low_stock
       const { data } = await supabase
         .from("stock_levels")
         .select("name, unit, current_stock, total_in, total_out, low_stock, min_stock")
@@ -263,7 +205,6 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
       return data;
     }
     case "get_inei_indices": {
-      // Período más reciente disponible
       const { data: latest } = await supabase
         .from("inei_indices")
         .select("period_year, period_month")
@@ -315,6 +256,16 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
   }
 }
 
+type AnthropicMessage = {
+  role: "user" | "assistant";
+  content: string | AnthropicContent[];
+};
+
+type AnthropicContent =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, string> }
+  | { type: "tool_result"; tool_use_id: string; content: string };
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -329,11 +280,10 @@ export async function POST(request: NextRequest) {
   if (!membership) return NextResponse.json({ error: "No org" }, { status: 403 });
 
   const { messages, projectId } = await request.json() as {
-    messages: OpenAI.Chat.ChatCompletionMessageParam[];
+    messages: { role: "user" | "assistant"; content: string }[];
     projectId?: string | null;
   };
 
-  // Si viene projectId, resolvemos el nombre del proyecto para el contexto
   let projectContext = "";
   if (projectId) {
     const { data: proj } = await supabase
@@ -365,65 +315,71 @@ MÓDULOS QUE CONOCES:
 - Contabilidad: facturación electrónica SUNAT
 - Auditoría: log de cambios multi-tenant
 
-ÍNDICES INEI (IUPCs — Índices Unificados de Precios de la Construcción):
+ÍNDICES INEI (IUPCs):
 - Norma vigente: R.J. 016-2026-INEI. Base: Diciembre 2025 = 100. Área 1 = Lima Metropolitana.
-- Se usan en la Fórmula Polinómica de Reajuste (D.S. 011-79-VC) para calcular el Factor K de cada valorización.
-- Índices clave: 02=Acero liso, 03=Acero corrugado, 04=Agregados, 17=Cemento Portland tipo I, 21=Cemento Portland IP, 39=Índice General de Precios al Consumidor, 43=Madera para encofrado, 44=Madera para carpintería, 47=Mano de obra, 47-1=MO alta especialización, 48=Maquinaria liviana, 49=Maquinaria pesada, 54=Pintura látex, 65=Tubería de acero, 66=Tubería PVC.
-- Cuando pregunten por un índice específico, usa get_inei_indices con el código o nombre para dar el valor actualizado.
+- Índices clave: 02=Acero liso, 03=Acero corrugado, 17=Cemento Portland tipo I, 21=Cemento Portland IP, 39=IPC General, 47=Mano de obra, 48=Maquinaria liviana, 49=Maquinaria pesada.
 
 FÓRMULA POLINÓMICA (Factor K):
-- K = Σ(Ci × Ir_i / Io_i) donde Ci = coeficiente del monomio, Io = valor del índice en el mes base (fecha de contrato), Ir = valor del índice en el mes de la valorización.
-- Monto de reajuste = (K − 1) × monto valorizado.
-- Para ver las fórmulas de un proyecto, usa get_reajuste_formulas.
+- K = Σ(Ci × Ir_i / Io_i). Monto de reajuste = (K − 1) × monto valorizado.
 
 Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.${projectContext}`;
 
-  const msgs: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt },
-    ...messages,
-  ];
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 500 });
 
-  let response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: msgs,
-    tools,
-    tool_choice: "auto",
-  });
+  const msgs: AnthropicMessage[] = messages.map(m => ({ role: m.role, content: m.content }));
 
   // Agentic loop — max 5 rounds
   for (let i = 0; i < 5; i++) {
-    const choice = response.choices[0];
-    if (choice.finish_reason !== "tool_calls") break;
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: msgs,
+        tools: ANTHROPIC_TOOLS,
+      }),
+    });
 
-    const toolCalls = choice.message.tool_calls ?? [];
-    msgs.push(choice.message);
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Anthropic KIA error:", err);
+      return NextResponse.json({ error: "Error en KIA" }, { status: 502 });
+    }
+
+    const data = await res.json();
+    const stopReason: string = data.stop_reason;
+    const content: AnthropicContent[] = data.content;
+
+    if (stopReason !== "tool_use") {
+      const text = content.find((b) => b.type === "text");
+      return NextResponse.json({ content: (text as { type: "text"; text: string })?.text ?? "Sin respuesta." });
+    }
+
+    // Process tool calls
+    const toolUses = content.filter((b) => b.type === "tool_use") as { type: "tool_use"; id: string; name: string; input: Record<string, string> }[];
+
+    msgs.push({ role: "assistant", content });
 
     const toolResults = await Promise.all(
-      toolCalls.map(async (tc) => {
-        const result = await runTool(
-          tc.function.name,
-          JSON.parse(tc.function.arguments) as Record<string, string>,
-          supabase,
-          membership.organization_id
-        );
+      toolUses.map(async (tu) => {
+        const result = await runTool(tu.name, tu.input, supabase, membership.organization_id);
         return {
-          role: "tool" as const,
-          tool_call_id: tc.id,
+          type: "tool_result" as const,
+          tool_use_id: tu.id,
           content: JSON.stringify(result),
         };
       })
     );
 
-    msgs.push(...toolResults);
-
-    response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: msgs,
-      tools,
-      tool_choice: "auto",
-    });
+    msgs.push({ role: "user", content: toolResults });
   }
 
-  const content = response.choices[0]?.message?.content ?? "No pude generar una respuesta.";
-  return NextResponse.json({ content });
+  return NextResponse.json({ content: "No pude completar la consulta." });
 }
