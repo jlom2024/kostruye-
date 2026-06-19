@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       model:      "claude-sonnet-4-6",
-      max_tokens: 8192,
+      max_tokens: 16000,
       messages: [{
         role: "user",
         content: [
@@ -128,7 +128,8 @@ export async function POST(req: NextRequest) {
     const totalChapters = extracted.chapters.length;
 
     return NextResponse.json({ ok: true, data: extracted, stats: { totalChapters, totalItems } });
-  } catch {
+  } catch (e) {
+    console.error("OCR JSON parse error:", e, "| stop_reason:", anthropicData.stop_reason, "| text length:", rawText.length, "| matched:", jsonMatch?.[1]?.slice(-200));
     return NextResponse.json({ error: "La respuesta del OCR no es JSON válido" }, { status: 422 });
   }
 }
