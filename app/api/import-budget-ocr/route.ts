@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PDFDocument } from "pdf-lib";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
 
@@ -13,90 +13,43 @@ type BudgetItem = {
 };
 type BudgetChapter = { code: string; name: string; items: BudgetItem[] };
 
-// ── S10 text parser ────────────────────────────────────────────────────────
-// En S10 el formato real es:
-//   Capítulo: {código}{descripción}          ej: "01.01.01CONSTRUCCIONES PROVISIONALES"
-//   Partida:  {descripción}{unidad}{código} {metrado} {pu} {parcial}
-//             ej: "ALMACEN Y OFICINAmes01.01.01.01 18.00 1,733.28 31,199.04"
-
-// Unidades ordenadas: más largas primero para evitar match parcial de "m" antes de "mes"
-const UNIT_TOKENS = [
-  "mes","m2","m3","ml","km","ha",
-  "hh","hm","hd","he",
-  "tn","ton","kg","lb","gal","lt","lts",
-  "glb","und","unid","pza","jgo","pto","rll","rol","bls","sac","bolsa",
-  "pie2","pie3","p2","p3","pulg","plg",
-  "vje","viaje",
-  "día","dia","sem","eq",
-  "m",  // letra sola al final
-].join("|");
-
-// Partida: {desc}{unidad}{código.con.puntos} {qty} {pu}
-// Números pueden tener coma O espacio como separador de miles: 10,672.00 o 10 672.00
-// String.raw evita ambigüedad de escapes en template literals
-const NUM = String.raw`\d[\d,]*(?:\s\d{3})*(?:\.\d+)?`;
-const ITEM_RE = new RegExp(
-  String.raw`^(.+?)(${UNIT_TOKENS})(\d{2}(?:\.\d{2,})+)\s+(${NUM})\s+(${NUM})`,
-  "i"
-);
-
-// Capítulo: código seguido de descripción (con o sin espacio)
-// ej: "01.01.01CONSTRUCCIONES PROVISIONALES" o "01 OBRAS CIVILES"
-// El ? en \s? permite ambos casos, y [A-Z...] evita falsos positivos con números
-const CHAPTER_RE = /^(\d{2}(?:\.\d{2,})*)\s?([A-ZÁÉÍÓÚÑ].+)/i;
-
-function parseNum(s: string): number {
-  return parseFloat(s.replace(/[,\s]/g, "")) || 0;
+// ── Service-role Supabase client (bypasses RLS) ───────────────────────────
+function adminClient() {
+  return createSupabaseAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 }
 
-function parseS10Text(text: string): BudgetChapter[] {
+// ── Parse Claude pipe-format response ────────────────────────────────────
+function parsePipeText(text: string): BudgetChapter[] {
   const chapters: BudgetChapter[] = [];
   let current: BudgetChapter | null = null;
-  let pendingDesc = "";  // acumula descripción multi-línea
-
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    // ¿Es una partida completa?
-    const candidate = pendingDesc ? pendingDesc + line : line;
-    const itemMatch = candidate.match(ITEM_RE);
-    if (itemMatch) {
-      if (!current) {
-        current = { code: itemMatch[3].split(".")[0], name: "SIN CAPÍTULO", items: [] };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (line.startsWith("C|")) {
+      const p = line.split("|");
+      if (p.length >= 3) {
+        current = { code: p[1].trim(), name: p.slice(2).join("|").trim(), items: [] };
         chapters.push(current);
       }
-      current.items.push({
-        item_code:   itemMatch[3],
-        description: itemMatch[1].trim(),
-        unit:        itemMatch[2].toLowerCase(),
-        quantity:    parseNum(itemMatch[4]),
-        unit_price:  parseNum(itemMatch[5]),
-      });
-      pendingDesc = "";
-      continue;
-    }
-
-    // ¿Es un capítulo? (empieza con código)
-    const chapMatch = line.match(CHAPTER_RE);
-    if (chapMatch) {
-      pendingDesc = "";
-      current = { code: chapMatch[1], name: chapMatch[2].trim(), items: [] };
-      chapters.push(current);
-      continue;
-    }
-
-    // ¿Parece inicio de descripción multi-línea? (no es número ni total)
-    if (!/^[\d\s,.$]+$/.test(line) && line.length > 3) {
-      pendingDesc = (pendingDesc + line + " ").slice(0, 400);
-    } else {
-      pendingDesc = "";
+    } else if (line.startsWith("I|") && current) {
+      const p = line.split("|");
+      if (p.length >= 6) {
+        current.items.push({
+          item_code:   p[1].trim(),
+          description: p[2].trim(),
+          unit:        p[3].trim() || "und",
+          quantity:    parseFloat(p[4].replace(/[,\s]/g, "")) || 0,
+          unit_price:  parseFloat(p[5].replace(/[,\s]/g, "")) || 0,
+        });
+      }
     }
   }
-
-  return chapters.filter(c => c.code && c.name);
+  return chapters.filter(c => c.code);
 }
 
-// ── Merge chapters (mismo código → fusionar items) ────────────────────────
+// ── Merge chapters (same code → merge items) ──────────────────────────────
 function mergeChapters(groups: BudgetChapter[][]): BudgetChapter[] {
   const map = new Map<string, BudgetChapter>();
   for (const list of groups) {
@@ -117,35 +70,73 @@ function mergeChapters(groups: BudgetChapter[][]): BudgetChapter[] {
   return Array.from(map.values());
 }
 
-// ── Claude OCR fallback (para páginas escaneadas sin texto) ───────────────
-const OCR_PROMPT = `Analiza este fragmento de presupuesto de construcción formato S10 (Perú).
-Extrae TODOS los capítulos y partidas visibles.
+// ── Split text into chunks on line boundaries ─────────────────────────────
+function splitText(text: string, maxChars: number): string[] {
+  const chunks: string[] = [];
+  const lines = text.split("\n");
+  let current = "";
+  for (const line of lines) {
+    if (current.length + line.length + 1 > maxChars && current.length > 0) {
+      chunks.push(current);
+      current = line + "\n";
+    } else {
+      current += line + "\n";
+    }
+  }
+  if (current.trim()) chunks.push(current);
+  return chunks;
+}
 
-Responde SOLO con líneas en este formato (sin texto adicional):
+// ── Claude text parser (cheap — no vision, no PDF beta) ──────────────────
+const TEXT_PROMPT = `Analiza este texto extraído de un presupuesto de construcción formato S10 (Perú).
+Extrae TODOS los capítulos y partidas que encuentres.
+
+FORMATO DE RESPUESTA (solo estas líneas, sin texto adicional):
 C|<código>|<nombre del capítulo>
 I|<código>|<descripción>|<unidad>|<metrado>|<precio unitario>
 
-Ejemplo:
-C|01|OBRAS PRELIMINARES
-I|01.01|MOVILIZACION DE EQUIPOS|GLB|1.00|5000.00`;
+REGLAS:
+- Capítulos: códigos numéricos como 01, 01.01, 01.01.01 seguidos de texto descriptivo
+- Partidas: códigos hoja tipo 01.01.01.01 con unidad, metrado y precio unitario
+- Los números pueden usar coma O espacio como separador de miles (10,672.00 o 10 672.00) — normalízalos sin separador
+- Si la descripción ocupa múltiples líneas, únelas en una sola
+- NO incluyas filas de totales, subtotales, gastos generales, IGV ni encabezados de columna
+- Si no encuentras partidas en algún fragmento, igual devuelve los capítulos que identifiques`;
 
-function parsePipeText(text: string): BudgetChapter[] {
-  const chapters: BudgetChapter[] = [];
-  let current: BudgetChapter | null = null;
-  for (const raw of text.split("\n")) {
-    const line = raw.trim();
-    if (line.startsWith("C|")) {
-      const p = line.split("|");
-      if (p.length >= 3) { current = { code: p[1], name: p.slice(2).join("|"), items: [] }; chapters.push(current); }
-    } else if (line.startsWith("I|") && current) {
-      const p = line.split("|");
-      if (p.length >= 6) {
-        current.items.push({ item_code: p[1], description: p[2], unit: p[3] || "und", quantity: parseFloat(p[4]) || 0, unit_price: parseFloat(p[5]) || 0 });
-      }
-    }
+async function parseChunkWithClaude(text: string, apiKey: string, idx: number): Promise<BudgetChapter[]> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 8192,
+      messages: [{ role: "user", content: `${TEXT_PROMPT}\n\nTEXTO A ANALIZAR:\n${text}` }],
+    }),
+  });
+  if (!res.ok) {
+    console.error(`Claude text chunk ${idx} error:`, (await res.text()).slice(0, 200));
+    return [];
   }
-  return chapters.filter(c => c.code);
+  const data = await res.json();
+  const responseText: string = data.content?.[0]?.text ?? "";
+  const chapters = parsePipeText(responseText);
+  console.log(`Chunk ${idx}: ${chapters.length} caps, ${chapters.reduce((s, c) => s + c.items.length, 0)} items`);
+  return chapters;
 }
+
+// ── Claude vision OCR fallback (for scanned PDFs) ────────────────────────
+import { PDFDocument } from "pdf-lib";
+
+const OCR_PROMPT = `Analiza este fragmento de presupuesto de construcción formato S10 (Perú).
+Extrae TODOS los capítulos y partidas visibles.
+
+FORMATO (solo estas líneas):
+C|<código>|<nombre del capítulo>
+I|<código>|<descripción>|<unidad>|<metrado>|<precio unitario>`;
 
 async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise<BudgetChapter[]> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -169,30 +160,28 @@ async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise
   const data = await res.json();
   const text: string = data.content?.[0]?.text ?? "";
   const chapters = parsePipeText(text);
-  console.log(`OCR chunk ${idx}: ${chapters.length} caps, ${chapters.reduce((s,c) => s+c.items.length, 0)} items`);
+  console.log(`OCR chunk ${idx}: ${chapters.length} caps, ${chapters.reduce((s, c) => s + c.items.length, 0)} items`);
   return chapters;
 }
 
-// ── Recalculate budget total server-side ──────────────────────────────────
+// ── Recalculate budget total (server-side) ────────────────────────────────
 export async function PATCH(req: NextRequest) {
-  const { createClient } = await import("@/lib/supabase/server");
-  const sb = await createClient();
   const { searchParams } = new URL(req.url);
   const budgetId = searchParams.get("budget_id");
   if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+  const sb = adminClient();
   const { data } = await sb.from("budget_items").select("total").eq("budget_id", budgetId).limit(100000);
   const total = (data ?? []).reduce((s, i) => s + Number(i.total), 0);
   await sb.from("budgets").update({ total }).eq("id", budgetId);
   return NextResponse.json({ ok: true, total });
 }
 
-// ── Clear route (wipe before re-import) ───────────────────────────────────
+// ── Wipe budget data (server-side, bypasses RLS) ──────────────────────────
 export async function DELETE(req: NextRequest) {
-  const { createClient } = await import("@/lib/supabase/server");
-  const sb = await createClient();
   const { searchParams } = new URL(req.url);
   const budgetId = searchParams.get("budget_id");
   if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+  const sb = adminClient();
   await sb.from("budget_items").delete().eq("budget_id", budgetId);
   await sb.from("budget_chapters").delete().eq("budget_id", budgetId);
   await sb.from("budgets").update({ total: 0 }).eq("id", budgetId);
@@ -216,72 +205,68 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // ── Paso 1: extracción de texto (gratis, sin IA) ──────────────────────
-  let textChapters: BudgetChapter[] = [];
+  // ── Paso 1: extraer texto del PDF ────────────────────────────────────
+  let extractedText = "";
   let isScanned = false;
 
   try {
     const parsed = await pdfParse(buffer);
-    const extractedText = parsed.text;
+    extractedText = parsed.text;
     const charCount = extractedText.replace(/\s/g, "").length;
-
-    console.log(`PDF text: ${charCount} chars extraídos de ${parsed.numpages} páginas`);
-
-    if (charCount > 500) {
-      // PDF digital — parsear directamente
-      textChapters = parseS10Text(extractedText);
-      console.log(`S10 parser: ${textChapters.length} capítulos, ${textChapters.reduce((s,c)=>s+c.items.length,0)} partidas`);
-    } else {
-      isScanned = true;
-      console.log("PDF escaneado detectado — usando OCR");
-    }
+    console.log(`PDF: ${charCount} chars, ${parsed.numpages} páginas`);
+    if (charCount < 500) isScanned = true;
   } catch (e) {
     console.error("pdf-parse error:", e);
     isScanned = true;
   }
 
-  // Si el parser extrajo partidas, devolver directamente
-  const textItems = textChapters.reduce((s, c) => s + c.items.length, 0);
-  if (!isScanned && textItems > 0) {
-    const totalChapters = textChapters.length;
-    console.log(`OCR OK (texto): ${totalChapters} capítulos, ${textItems} partidas — sin costo de API`);
-    return NextResponse.json({ ok: true, data: { chapters: textChapters }, stats: { totalChapters, totalItems: textItems } });
+  // ── Paso 2: Claude texto (digital) o Claude visión (escaneado) ───────
+  let chapters: BudgetChapter[] = [];
+
+  if (!isScanned) {
+    // Claude lee el texto — barato, maneja cualquier formato de número/descripción
+    const MAX_CHARS = 400_000; // ~100K tokens, bien dentro del contexto de Haiku
+    const chunks = splitText(extractedText, MAX_CHARS);
+    console.log(`Texto → ${chunks.length} chunk(s) para Claude`);
+
+    const results = await Promise.all(
+      chunks.map((chunk, i) => parseChunkWithClaude(chunk, apiKey, i))
+    );
+    chapters = mergeChapters(results);
+  } else {
+    // Fallback visión para PDFs escaneados
+    console.log("PDF escaneado — usando OCR visión");
+    const srcPdf = await PDFDocument.load(bytes);
+    const totalPages = srcPdf.getPageCount();
+    const CHUNK = 5;
+    const count = Math.ceil(totalPages / CHUNK);
+
+    const buffers = await Promise.all(
+      Array.from({ length: count }, async (_, i) => {
+        const start = i * CHUNK;
+        const end = Math.min(start + CHUNK, totalPages);
+        const pdf = await PDFDocument.create();
+        const pages = await pdf.copyPages(srcPdf, Array.from({ length: end - start }, (_, j) => start + j));
+        pages.forEach(p => pdf.addPage(p));
+        return Buffer.from(await pdf.save()).toString("base64");
+      })
+    );
+
+    const BATCH = 5;
+    const allResults: BudgetChapter[][] = [];
+    for (let b = 0; b < buffers.length; b += BATCH) {
+      const res = await Promise.all(buffers.slice(b, b + BATCH).map((buf, j) => ocrChunk(buf, apiKey, b + j)));
+      allResults.push(...res);
+    }
+    chapters = mergeChapters(allResults);
   }
 
-  // ── Paso 2: fallback OCR con Claude (solo para PDFs escaneados) ───────
-  if (!apiKey) return NextResponse.json({ error: "PDF escaneado requiere ANTHROPIC_API_KEY" }, { status: 500 });
-
-  const srcPdf = await PDFDocument.load(bytes);
-  const totalPages = srcPdf.getPageCount();
-  const CHUNK = 5;
-  const count = Math.ceil(totalPages / CHUNK);
-
-  console.log(`OCR fallback: ${totalPages} páginas → ${count} chunks`);
-
-  const buffers = await Promise.all(
-    Array.from({ length: count }, async (_, i) => {
-      const start = i * CHUNK;
-      const end = Math.min(start + CHUNK, totalPages);
-      const pdf = await PDFDocument.create();
-      const pages = await pdf.copyPages(srcPdf, Array.from({ length: end - start }, (_, j) => start + j));
-      pages.forEach(p => pdf.addPage(p));
-      return Buffer.from(await pdf.save()).toString("base64");
-    })
-  );
-
-  const BATCH = 5;
-  const allResults: BudgetChapter[][] = [];
-  for (let b = 0; b < buffers.length; b += BATCH) {
-    const res = await Promise.all(buffers.slice(b, b + BATCH).map((buf, j) => ocrChunk(buf, apiKey, b + j)));
-    allResults.push(...res);
-  }
-
-  const chapters = mergeChapters(allResults);
   if (chapters.length === 0) {
     return NextResponse.json({ error: "No se pudo identificar estructura de presupuesto en el PDF" }, { status: 422 });
   }
 
   const totalItems = chapters.reduce((s, c) => s + c.items.length, 0);
-  console.log(`OCR OK (Claude): ${chapters.length} capítulos, ${totalItems} partidas`);
+  const method = isScanned ? "OCR visión" : "Claude texto";
+  console.log(`OK (${method}): ${chapters.length} capítulos, ${totalItems} partidas`);
   return NextResponse.json({ ok: true, data: { chapters }, stats: { totalChapters: chapters.length, totalItems } });
 }
