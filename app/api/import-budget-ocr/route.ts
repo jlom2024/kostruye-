@@ -185,10 +185,25 @@ export async function PATCH(req: NextRequest) {
   const budgetId = searchParams.get("budget_id");
   if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
   const sb = adminClient();
-  const { data } = await sb.from("budget_items").select("total").eq("budget_id", budgetId).limit(100000);
-  const total = (data ?? []).reduce((s, i) => s + Number(i.total), 0);
+  // Paginar: .limit() no garantiza traer todo (PostgREST capa la respuesta).
+  const PAGE = 1000;
+  let from = 0;
+  let total = 0;
+  let n = 0;
+  for (;;) {
+    const { data, error } = await sb
+      .from("budget_items")
+      .select("total")
+      .eq("budget_id", budgetId)
+      .range(from, from + PAGE - 1);
+    if (error || !data) break;
+    total += data.reduce((s, i) => s + Number(i.total), 0);
+    n += data.length;
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
   await sb.from("budgets").update({ total }).eq("id", budgetId);
-  return NextResponse.json({ ok: true, total });
+  return NextResponse.json({ ok: true, total, items: n });
 }
 
 // ── Wipe budget data (server-side, bypasses RLS) ──────────────────────────

@@ -150,17 +150,29 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
   // ── Load chapters + items ──────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [{ data: chaps }, { data: items }] = await Promise.all([
-      supabase
-        .from("budget_chapters")
-        .select("*")
-        .eq("budget_id", budgetId)
-        .order("sort_order"),
-      supabase
-        .from("budget_items")
-        .select("*")
-        .eq("budget_id", budgetId)
-        .order("sort_order"),
+    // Supabase limita a 1000 filas por defecto; paginamos para traer TODO
+    // (presupuestos grandes tienen miles de partidas/capítulos).
+    const fetchAll = async (table: "budget_chapters" | "budget_items") => {
+      const PAGE = 1000;
+      let from = 0;
+      const acc: Record<string, unknown>[] = [];
+      for (;;) {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("budget_id", budgetId)
+          .order("sort_order")
+          .range(from, from + PAGE - 1);
+        if (error || !data) break;
+        acc.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return acc;
+    };
+    const [chaps, items] = await Promise.all([
+      fetchAll("budget_chapters"),
+      fetchAll("budget_items"),
     ]);
 
     const chaptersWithItems: Chapter[] = (chaps ?? []).map((c) => ({
