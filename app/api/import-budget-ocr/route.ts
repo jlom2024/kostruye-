@@ -171,6 +171,19 @@ async function ocrChunk(base64Pdf: string, apiKey: string, idx: number): Promise
   return chapters;
 }
 
+// ── Clear route (wipe before re-import) ───────────────────────────────────
+export async function DELETE(req: NextRequest) {
+  const { createClient } = await import("@/lib/supabase/server");
+  const sb = await createClient();
+  const { searchParams } = new URL(req.url);
+  const budgetId = searchParams.get("budget_id");
+  if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+  await sb.from("budget_items").delete().eq("budget_id", budgetId);
+  await sb.from("budget_chapters").delete().eq("budget_id", budgetId);
+  await sb.from("budgets").update({ total: 0 }).eq("id", budgetId);
+  return NextResponse.json({ ok: true });
+}
+
 // ── Main route ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;

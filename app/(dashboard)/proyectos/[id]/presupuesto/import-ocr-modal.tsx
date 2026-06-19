@@ -82,9 +82,8 @@ export function ImportOcrModal({
     setError(null);
 
     try {
-      // Limpiar datos previos antes de insertar
-      await sb.from("budget_items").delete().eq("budget_id", budgetId);
-      await sb.from("budget_chapters").delete().eq("budget_id", budgetId);
+      // Limpiar datos previos vía API (server-side, bypasa RLS)
+      await fetch(`/api/import-budget-ocr?budget_id=${budgetId}`, { method: "DELETE" });
 
       let sortChapter = 0;
       for (const chapter of extracted.chapters) {
