@@ -70,6 +70,16 @@ export function ImportS10Modal({
     setError(null);
 
     try {
+      // 0. Reemplazar: limpiar el presupuesto actual antes de re-importar.
+      // Nadie reimporta queriendo duplicar — el default seguro es reemplazar.
+      // budget_items → apu_lines cae por CASCADE; chapters se borra después
+      // (budget_items.chapter_id es NO ACTION).
+      setProgress("Limpiando presupuesto anterior...");
+      const { error: delItemsErr } = await sb.from("budget_items").delete().eq("budget_id", budgetId);
+      if (delItemsErr) throw new Error(`No se pudo limpiar el presupuesto anterior: ${delItemsErr.message}`);
+      const { error: delChapErr } = await sb.from("budget_chapters").delete().eq("budget_id", budgetId);
+      if (delChapErr) throw new Error(`No se pudo limpiar el presupuesto anterior: ${delChapErr.message}`);
+
       // 1. Importar catálogo de recursos (opcional)
       if (importRes && parsed.resources.length > 0) {
         setProgress("Importando catálogo de recursos...");
