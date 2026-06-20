@@ -28,6 +28,22 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-20 — Antu (Claude Opus 4.8) — Fix import Excel S10: detección adaptativa de columnas
+
+### Cambios
+- `app/api/import-budget-s10/route.ts`: el importador leía columnas por **posición fija** (`row[0]=código`) y fallaba ("No se detectaron capítulos ni partidas") cuando el export de S10 traía el código/precio en otras columnas.
+- Agregado `findHeader`/`mapHeader`: detectan la fila de encabezado y mapean cada columna por su **título** (Item/Descripción/Und/Metrado/Precio/Parcial). Fallback al layout posicional clásico si no hay encabezado.
+- Commit `27426cf`, deploy en VPS (git reset --hard + docker build --no-cache).
+
+### Estado al cerrar
+- ✅ Importa el Excel de prueba "Presupuesto digital Mishquipata.xlsx": 8 capítulos, 122 partidas, S/ 27,749,281.42.
+- ✅ Misma lógica implementada en KREO-SEACE (otro proyecto, parser de presupuestos del expediente).
+
+### ⚠️ Cuidado
+- La extracción de **APU** (líneas de recurso por partida) sigue leyendo columnas por posición (cuadrilla/rendimiento). El archivo de prueba no traía APU. Si aparece un Excel con APU y columnas corridas, hay que hacer adaptativa también esa parte.
+
+---
+
 ## 2026-06-17 (noche) — Antu (Claude Sonnet 4.6) — KIA: INEI + fórmula polinómica
 
 ### Cambios
