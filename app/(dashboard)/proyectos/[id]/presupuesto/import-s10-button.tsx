@@ -33,6 +33,7 @@ export function ImportS10Button({
           onImported={() => {
             setOpen(false);
             onImported?.();
+            window.location.reload(); // refrescar la vista del presupuesto (igual que el importador OCR)
           }}
         />
       )}
