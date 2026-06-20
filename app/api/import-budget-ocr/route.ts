@@ -25,10 +25,9 @@ function adminClient() {
   );
 }
 
-// Capítulo padre de un código de partida: "01.01.01.01" → "01.01.01"
-function parentCode(itemCode: string): string {
-  const parts = itemCode.split(".");
-  return parts.length > 1 ? parts.slice(0, -1).join(".") : itemCode;
+// Capítulo raíz: primer segmento antes del primer punto ("04.01.01.01" → "04", "I.01.02" → "I")
+function rootCode(code: string): string {
+  return code.split(".")[0];
 }
 
 // ── Parse Claude pipe-format response ────────────────────────────────────
@@ -42,6 +41,9 @@ function parsePipeText(text: string, chapterMap: Map<string, BudgetChapter>): vo
       const p = line.split("|");
       if (p.length >= 3) {
         const code = p[1].trim();
+        // Solo registrar capítulos raíz (sin punto). Sub-capítulos ("04.01", "05.01.01")
+        // se ignoran — sus partidas se agrupan bajo el raíz via rootCode().
+        if (code.includes(".")) continue;
         const name = p.slice(2).join("|").trim();
         const ex = chapterMap.get(code);
         if (ex) {
@@ -55,7 +57,7 @@ function parsePipeText(text: string, chapterMap: Map<string, BudgetChapter>): vo
       if (p.length >= 6) {
         const itemCode = p[1].trim();
         if (!itemCode) continue;
-        const chCode = parentCode(itemCode);
+        const chCode = rootCode(itemCode);
         let ch = chapterMap.get(chCode);
         if (!ch) { ch = { code: chCode, name: "", items: [] }; chapterMap.set(chCode, ch); }
         // evitar duplicar la misma partida
@@ -107,7 +109,7 @@ function parseS10Text(text: string, chapterMap: Map<string, BudgetChapter>): num
     }
     if (m) {
       const itemCode = m[3];
-      const chCode = parentCode(itemCode);
+      const chCode = rootCode(itemCode);
       let ch = chapterMap.get(chCode);
       if (!ch) { ch = { code: chCode, name: "", items: [] }; chapterMap.set(chCode, ch); }
       // OJO: no deduplicar por código — en S10 un mismo código puede repetirse
@@ -126,6 +128,7 @@ function parseS10Text(text: string, chapterMap: Map<string, BudgetChapter>): num
     const c = line.match(chapRe);
     if (c) {
       const code = c[1], name = c[2].trim();
+      if (code.includes(".")) continue; // sub-capítulo → ignorar, sus items ya van al raíz
       const ex = chapterMap.get(code);
       if (!ex) chapterMap.set(code, { code, name, items: [] });
       else if (name && (ex.name === "" || name.length > ex.name.length)) ex.name = name;
