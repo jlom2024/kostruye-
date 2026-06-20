@@ -91,6 +91,32 @@ function isApuSection(desc: string): boolean {
   return /^(mano\s*de\s*obra|materiales?|equipos?|herramientas?|subcontratos?|otros?)/i.test(desc.trim());
 }
 
+// Detecta columnas por su encabezado (adaptativo: el orden/posición varía entre
+// exports de S10). Devuelve la fila de encabezado y el mapa de columnas.
+type ColMap = { code?: number; desc?: number; unit?: number; qty?: number; pu?: number; parcial?: number };
+function mapHeader(row: unknown[]): ColMap {
+  const col: ColMap = {};
+  row.forEach((raw, i) => {
+    const h = str(raw).toLowerCase();
+    if (!h) return;
+    if (col.code == null && /^item$|^c[oó]digo$|^partida$/.test(h)) col.code = i;
+    else if (col.desc == null && /descrip/.test(h)) col.desc = i;
+    else if (col.unit == null && /^und|unidad/.test(h)) col.unit = i;
+    else if (col.qty == null && /metrado|cantidad|^cant/.test(h)) col.qty = i;
+    else if (col.parcial == null && /parcial|importe|^total/.test(h)) col.parcial = i;
+    else if (col.pu == null && /precio/.test(h)) col.pu = i;
+  });
+  return col;
+}
+function findHeader(rows: unknown[][]): { hIdx: number; col: ColMap } {
+  for (let i = 0; i < Math.min(rows.length, 25); i++) {
+    const c = mapHeader(rows[i]);
+    if (c.desc != null && c.qty != null && (c.pu != null || c.parcial != null)) return { hIdx: i, col: c };
+  }
+  // Fallback al layout posicional clásico de S10 venta
+  return { hIdx: -1, col: { code: 0, desc: 1, unit: 2, qty: 3, pu: 4, parcial: 5 } };
+}
+
 // ── Parser principal ─────────────────────────────────────────────────────────
 function parseS10Excel(buffer: Buffer): S10Budget {
   const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
@@ -116,22 +142,21 @@ function parseS10Excel(buffer: Buffer): S10Budget {
   let apuSection = "";   // sección activa de APU
   let inApu = false;
 
-  for (const row of rows) {
+  // Detección adaptativa de columnas del presupuesto (posición varía por export)
+  const { hIdx, col } = findHeader(rows);
+
+  for (let ri = 0; ri < rows.length; ri++) {
+    if (ri <= hIdx) continue;              // saltar todo hasta el encabezado
+    const row = rows[ri];
     if (row.every((c) => str(c) === "")) continue; // skip blank rows
 
-    // Detectar columnas dinámicamente: S10 puede tener entre 6 y 10 columnas
-    // Layout típico S10 venta:
-    //   [0]=Código  [1]=Descripción  [2]=Und  [3]=Metrado  [4]=P.U.  [5]=Parcial
-    // Layout APU dentro de presupuesto:
-    //   [0]=Código  [1]=Descripción  [2]=Und  [3]=Cuadrilla  [4]=Cantidad  [5]=P.U.  [6]=Parcial
-
-    const colCode  = str(row[0]);
-    const colDesc  = str(row[1]);
-    const colUnit  = str(row[2]);
-    const colC3    = num(row[3]); // metrado o cuadrilla
-    const colC4    = num(row[4]); // P.U. o rendimiento/cantidad
-    const colC5    = num(row[5]); // parcial o P.U. (si hay 7 cols)
-    const colC6    = num(row[6]); // parcial (si hay 7 cols)
+    const colCode  = str(row[col.code ?? 0]);
+    const colDesc  = str(row[col.desc ?? 1]);
+    const colUnit  = col.unit != null ? str(row[col.unit]) : "";
+    const colC3    = num(row[3]); // (APU posicional: cuadrilla)
+    const colC4    = num(row[4]); // (APU posicional: rendimiento/cantidad)
+    const colC5    = num(row[5]); // (APU posicional: P.U.)
+    const colC6    = num(row[6]); // (APU posicional: parcial)
 
     // ── Capítulo ──────────────────────────────────────────────────
     if (isChapter(colCode, colDesc)) {
@@ -151,9 +176,8 @@ function parseS10Excel(buffer: Buffer): S10Budget {
     if (isItem(colCode) && colDesc.length > 0 && colUnit.length > 0) {
       inApu = false;
       apuSection = "";
-      // quantity y unit_price en presupuesto: col3=metrado, col4=P.U.
-      const qty = colC3;
-      const pu  = colC4 > 0 ? colC4 : colC5; // a veces P.U. está en col5
+      const qty = col.qty != null ? num(row[col.qty]) : 0;
+      const pu  = col.pu != null ? num(row[col.pu]) : 0;
       currentItem = {
         item_code:   colCode,
         description: colDesc,
