@@ -28,6 +28,23 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-06-20 — Antu (Claude Opus 4.8) — Fix import OCR: capítulos jerárquicos colapsados al raíz (adaptativo)
+
+### Cambios
+- `app/api/import-budget-ocr/route.ts`: el importador OCR registraba **cada nivel de jerarquía** como capítulo independiente (`04`, `04.01`, `04.01.01`...), dando **26 capítulos** en vez de los 8 reales del presupuesto Mishquipata.
+- Reemplazado `parentCode()` (subía un solo nivel) por `rootCode()` = primer segmento antes del primer punto. **Adaptativo**: no asume 2 dígitos, funciona con cualquier nomenclatura del cliente (`01`, `1`, `100`, `A`, `I.`...).
+- `parsePipeText` y `parseS10Text`: las líneas `C|` / capítulos con punto se ignoran como agrupadores; sus partidas se acumulan bajo el capítulo raíz vía `rootCode()`.
+- Commit `1ea203d`, push a master (deploy automático Vercel).
+
+### Estado al cerrar
+- ✅ Mismo fix aplicado en KREO-SEACE (`server/services/s10Parser.js`): Excel Mishquipata verificado **8 capítulos, 122 partidas, S/ 27,749,281.42** exacto al céntimo. Deploy en VPS.
+- ⚠️ El PDF escaneado `PRESUPUESTO.pdf` de Mishquipata da 121 partidas (1 menos) por calidad del OCR sobre imagen — para ese archivo el Excel sigue siendo la fuente correcta. El fix de capítulos sí aplica al OCR.
+
+### ⚠️ Cuidado
+- `rootCode()` agrupa por primer segmento. Si algún cliente usara códigos planos sin punto para partidas (raro en S10), cada partida sería su propio capítulo — no se ha visto en la práctica.
+
+---
+
 ## 2026-06-20 — Antu (Claude Opus 4.8) — Fix import Excel S10: detección adaptativa de columnas
 
 ### Cambios
