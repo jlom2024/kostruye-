@@ -1,5 +1,9 @@
-import { LayoutDashboard, Megaphone, Calendar, BarChart3, Users, Settings, Zap, Building2 } from 'lucide-react'
+'use client'
+
+import { LayoutDashboard, Megaphone, Calendar, BarChart3, Users, Settings, Zap, Building2, Bell } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -8,56 +12,84 @@ const navItems = [
   { href: '/calendar', icon: Calendar, label: 'Calendario' },
   { href: '/analytics', icon: BarChart3, label: 'Analítica' },
   { href: '/leads', icon: Users, label: 'Leads' },
-  { href: '/settings', icon: Settings, label: 'Configuración' },
 ]
+
+function NavLink({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) {
+  const pathname = usePathname()
+  const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
+        active
+          ? 'bg-violet-100 text-violet-700 font-medium'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+      )}
+    >
+      <Icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-violet-600' : '')} />
+      {label}
+    </Link>
+  )
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+        {/* Logo */}
         <div className="p-5 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">PubliCool</p>
+              <p className="text-sm font-black text-gray-900">PubliCool</p>
               <p className="text-xs text-gray-400">KREO IA Studio</p>
             </div>
-          </div>
+          </Link>
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {navItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-violet-50 hover:text-violet-700 transition-colors"
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </Link>
+          {navItems.map((item) => (
+            <NavLink key={item.href} {...item} />
           ))}
         </nav>
 
-        <div className="p-3 border-t border-gray-100">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
-            <div className="w-7 h-7 bg-violet-200 rounded-full flex items-center justify-center text-xs font-bold text-violet-700">
+        {/* Bottom */}
+        <div className="p-3 border-t border-gray-100 space-y-1">
+          <NavLink href="/settings" icon={Settings} label="Configuración" />
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 mt-2">
+            <div className="w-7 h-7 bg-violet-200 rounded-full flex items-center justify-center text-xs font-black text-violet-700 flex-shrink-0">
               A
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-700 truncate">Antu</p>
-              <p className="text-xs text-gray-400">Admin</p>
+              <p className="text-xs font-semibold text-gray-700 truncate">Mi organización</p>
+              <p className="text-xs text-gray-400">Plan Free</p>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50">
-        {children}
-      </main>
+      {/* Main */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end gap-3 flex-shrink-0">
+          <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <Bell className="w-4 h-4" />
+          </button>
+          <div className="w-8 h-8 bg-violet-200 rounded-full flex items-center justify-center text-xs font-black text-violet-700">
+            A
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
