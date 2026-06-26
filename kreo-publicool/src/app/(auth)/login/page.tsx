@@ -1,63 +1,51 @@
-import { Megaphone } from 'lucide-react'
+import { Zap } from 'lucide-react'
+import Link from 'next/link'
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
-              <Megaphone className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">KREO-PubliCool</h1>
-              <p className="text-xs text-gray-500">by KREO IA Studio</p>
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#050510] px-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+            <Zap className="w-4 h-4 text-white" />
           </div>
-
-          <h2 className="text-2xl font-semibold text-center text-gray-800 mb-1">
-            Bienvenido de vuelta
-          </h2>
-          <p className="text-sm text-gray-500 text-center mb-8">
-            Ingresa a tu cuenta para gestionar tus campañas
-          </p>
-
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                placeholder="tu@empresa.com"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-violet-600 text-white py-2.5 rounded-lg font-medium hover:bg-violet-700 transition-colors"
-            >
-              Ingresar
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            ¿No tienes cuenta?{' '}
-            <a href="/register" className="text-violet-600 font-medium hover:underline">
-              Regístrate gratis
-            </a>
-          </p>
+          <span className="font-black text-white text-lg">KREO-PubliCool</span>
         </div>
+
+        <h2 className="text-2xl font-black text-white text-center mb-1">Bienvenido de vuelta</h2>
+        <p className="text-sm text-white/40 text-center mb-8">Ingresa para gestionar tus campañas</p>
+
+        <form className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">Correo electrónico</label>
+            <input
+              type="email"
+              placeholder="tu@empresa.com"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">Contraseña</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] shadow-lg shadow-violet-900/40"
+          >
+            Ingresar
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-white/30 mt-6">
+          ¿No tienes cuenta?{' '}
+          <Link href="/register" className="text-violet-400 font-medium hover:underline">
+            Regístrate gratis
+          </Link>
+        </p>
       </div>
     </div>
   )
