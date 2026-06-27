@@ -1,5 +1,12 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Zap, Check } from 'lucide-react'
 import Link from 'next/link'
+import { createBrowserClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import { slugify } from '@/lib/utils'
 
 const perks = [
   '7 días gratis sin tarjeta',
@@ -9,6 +16,71 @@ const perks = [
 ]
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const [form, setForm] = useState({ firstName: '', lastName: '', company: '', email: '', password: '' })
+  const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (form.password.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres')
+      return
+    }
+    setLoading(true)
+    const supabase = createBrowserClient()
+    const fullName = `${form.firstName} ${form.lastName}`.trim()
+    const orgSlug = slugify(form.company || form.email.split('@')[0])
+
+    const { error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: fullName,
+          company: form.company,
+          org_slug: orgSlug,
+        },
+        emailRedirectTo: `${location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      toast.error(error.message)
+      setLoading(false)
+      return
+    }
+
+    setDone(true)
+    setLoading(false)
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#050510] px-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="w-16 h-16 bg-violet-600/20 border border-violet-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Check className="w-8 h-8 text-violet-400" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-3">Revisa tu correo</h2>
+          <p className="text-white/40 text-sm leading-relaxed mb-8">
+            Enviamos un enlace de confirmación a <span className="text-white/70">{form.email}</span>.
+            Haz clic en el enlace para activar tu cuenta.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all"
+          >
+            Volver al login
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex bg-[#050510]">
       {/* Left panel — form */}
@@ -26,13 +98,16 @@ export default function RegisterPage() {
             Sin tarjeta de crédito · 7 días de prueba completa
           </p>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">Nombre</label>
                 <input
                   type="text"
+                  value={form.firstName}
+                  onChange={set('firstName')}
                   placeholder="Antu"
+                  required
                   className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
@@ -40,6 +115,8 @@ export default function RegisterPage() {
                 <label className="block text-xs font-medium text-white/50 mb-1.5">Apellido</label>
                 <input
                   type="text"
+                  value={form.lastName}
+                  onChange={set('lastName')}
                   placeholder="Apellido"
                   className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
@@ -49,7 +126,10 @@ export default function RegisterPage() {
               <label className="block text-xs font-medium text-white/50 mb-1.5">Empresa / Agencia</label>
               <input
                 type="text"
+                value={form.company}
+                onChange={set('company')}
                 placeholder="KREO IA Studio"
+                required
                 className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
@@ -57,7 +137,10 @@ export default function RegisterPage() {
               <label className="block text-xs font-medium text-white/50 mb-1.5">Correo electrónico</label>
               <input
                 type="email"
+                value={form.email}
+                onChange={set('email')}
                 placeholder="tu@empresa.com"
+                required
                 className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
@@ -65,16 +148,20 @@ export default function RegisterPage() {
               <label className="block text-xs font-medium text-white/50 mb-1.5">Contraseña</label>
               <input
                 type="password"
+                value={form.password}
+                onChange={set('password')}
                 placeholder="Mínimo 8 caracteres"
+                required
                 className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] shadow-lg shadow-violet-900/40 mt-2"
+              disabled={loading}
+              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] shadow-lg shadow-violet-900/40 mt-2"
             >
-              Crear cuenta gratis
+              {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
             </button>
           </form>
 
