@@ -1,4 +1,6 @@
-import { createClient } from './server'
+import { createClient, createServiceClient } from './server'
+import { slugify } from '@/lib/utils'
+import type { User } from '@supabase/supabase-js'
 import type { Organization } from '@/types/database'
 
 export async function getCurrentUser() {
@@ -7,16 +9,75 @@ export async function getCurrentUser() {
   return user
 }
 
+const MEMBER_SELECT = 'org_id, role, organizations(id, name, slug, plan, logo_url)'
+
+/**
+ * Creates an organization + admin membership for a user that doesn't have one
+ * yet. Mirrors the bootstrap in /auth/callback so that signing in by
+ * email/password (which never hits the callback) still lands on the dashboard
+ * instead of looping back to /login. Idempotent: no-op if a membership exists.
+ */
+async function ensureOrgForUser(user: User) {
+  const service = await createServiceClient()
+
+  const { data: existing } = await service
+    .from('organization_members')
+    .select('org_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) return
+
+  const meta = user.user_metadata ?? {}
+  const orgName =
+    (meta.company as string) || (meta.full_name as string) || user.email?.split('@')[0] || 'Mi Empresa'
+  let slug = slugify(orgName)
+
+  const { data: slugClash } = await service
+    .from('organizations')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (slugClash) slug = `${slug}-${Date.now()}`
+
+  const { data: org } = await service
+    .from('organizations')
+    .insert({ name: orgName, slug })
+    .select('id')
+    .single()
+
+  if (org) {
+    await service.from('organization_members').insert({
+      org_id: org.id,
+      user_id: user.id,
+      role: 'admin',
+    })
+  }
+}
+
 export async function getCurrentOrg() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: member } = await supabase
+  let { data: member } = await supabase
     .from('organization_members')
-    .select('org_id, role, organizations(id, name, slug, plan, logo_url)')
+    .select(MEMBER_SELECT)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
+
+  // First login without an org yet → create one on the fly
+  if (!member) {
+    await ensureOrgForUser(user)
+    const retry = await supabase
+      .from('organization_members')
+      .select(MEMBER_SELECT)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    member = retry.data
+  }
 
   if (!member) return null
 
