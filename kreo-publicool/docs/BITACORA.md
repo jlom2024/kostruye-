@@ -19,6 +19,9 @@
 - **FIX choque de rutas** — landing (`app/page.tsx`) y home del dashboard (`(dashboard)/page.tsx`) resolvían ambos a `/`. El home del dashboard se movió a **`/dashboard`**; la landing redirige a `/dashboard` si hay sesión; login/callback → `/dashboard`
 - **FIX RLS (migración 002)** — `001` activó RLS sin política SELECT en `organization_members` (y otras) → el cliente no leía su membresía → rebote al login. `002_rls_read_policies.sql` agrega SELECT a `organization_members`, `social_accounts`, `content_variants`, `post_metrics`, `campaign_metrics`, `lead_forms`, `competitors`
 - **Seed demo** — `supabase/seed_demo.sql`: usuario confirmado + org + 1 marca + 2 cuentas + 4 campañas + posts/métricas + 24 leads + 2 competidores (re-ejecutable)
+- **Landing siempre visible en `/`** — se quitó el redirect forzado a `/dashboard` (el dueño puede ver su propia landing aunque tenga sesión)
+- **CI/CD auto-deploy** — `.github/workflows/deploy-publicool.yml`: en cada push a la rama (paths `kreo-publicool/**`) GitHub entra al VPS por SSH y hace `git reset` + `docker compose up -d --build`. Usa el **environment** `VPS_PASSWORD` (secret = contraseña root del VPS). No recrea `.env` (persiste en el VPS)
+- **Footer** — "KREO IA Studio" enlaza a `https://kreoia.site`
 
 ### Estado al terminar — ✅ EN PRODUCCIÓN
 - **URL:** `http://2.24.72.21:3005` — app corriendo en Docker en el VPS
@@ -27,7 +30,9 @@
 - Migraciones aplicadas en Supabase: `001` + `002` + `seed_demo`
 
 ### Notas operativas
-- **Redeploy:** `cd /opt/kreo-publicool && git fetch origin <branch> && git reset --hard origin/<branch> && cd kreo-publicool && docker compose up -d --build`
+- **Redeploy automático:** cada push del agente a la rama dispara el workflow → deploy solo. (Manual: Actions → "Deploy KREO-PubliCool" → Run, o re-run del último run.)
+- **Redeploy manual (SSH):** `cd /opt/kreo-publicool && git fetch origin <branch> && git reset --hard origin/<branch> && cd kreo-publicool && docker compose up -d --build`
+- **Secret CI:** environment `VPS_PASSWORD` en GitHub (Settings → Environments) con la contraseña root del VPS
 - El sandbox del agente **no tiene salida de red** al VPS ni a la Supabase de PubliCool (cuenta `kreoiastudioperu`) — el deploy y los SQL los ejecuta Comando; el agente prepara scripts/commits
 - Warning inofensivo `attribute 'version' is obsolete` en `docker-compose.yml` (Docker lo ignora)
 
