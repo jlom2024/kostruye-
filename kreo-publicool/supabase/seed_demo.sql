@@ -55,7 +55,7 @@ BEGIN
       v_email, crypt(v_password, gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Antu Demo","company":"KREO IA Studio"}'::jsonb,
+      '{"full_name":"Comando","company":"KREO IA Studio"}'::jsonb,
       now(), now(),
       '', '', '', ''
     );
