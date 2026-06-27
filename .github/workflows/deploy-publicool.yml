@@ -14,6 +14,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: VPS_PASSWORD
     steps:
       - name: Redeploy en el VPS vía SSH
         uses: appleboy/ssh-action@v1.0.3
