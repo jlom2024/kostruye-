@@ -64,12 +64,20 @@ export function CreateCampaignWizard() {
   const onSubmit = async (data: FormData) => {
     setLoading(true)
     try {
-      // TODO: connect to Supabase
-      await new Promise((r) => setTimeout(r, 1000))
-      toast.success('Campaña creada correctamente')
-      router.push('/campaigns')
-    } catch {
-      toast.error('Error al crear la campaña')
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error ?? 'Error desconocido')
+      }
+      const { id } = await res.json()
+      toast.success('Campaña creada')
+      router.push(`/campaigns/${id}/content`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al crear la campaña')
     } finally {
       setLoading(false)
     }
