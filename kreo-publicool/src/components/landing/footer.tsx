@@ -10,14 +10,31 @@ export default function Footer() {
             <Zap className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="font-black text-white">PubliCool</span>
-          <span className="text-white/20 text-sm">by KREO IA Studio</span>
+          <a
+            href="https://kreoia.site"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/20 text-sm hover:text-white/60 transition-colors"
+          >
+            by KREO IA Studio
+          </a>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-white/30">
           <Link href="/login" className="hover:text-white/60 transition-colors">Ingresar</Link>
           <Link href="/register" className="hover:text-white/60 transition-colors">Registro</Link>
           <a href="#precios" className="hover:text-white/60 transition-colors">Precios</a>
-          <span>© {new Date().getFullYear()} KREO IA Studio</span>
+          <span>
+            © {new Date().getFullYear()}{' '}
+            <a
+              href="https://kreoia.site"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white/60 transition-colors"
+            >
+              KREO IA Studio
+            </a>
+          </span>
         </div>
       </div>
     </footer>
