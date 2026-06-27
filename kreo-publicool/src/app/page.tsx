@@ -13,10 +13,8 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <Ticker />
-      <section id="features">
-        <FeaturesBento />
-      </section>
-      <section id="como-funciona">
+      <FeaturesBento />
+      <section id="como-funciona" className="scroll-mt-20">
         <HowItWorks />
       </section>
       <Pricing />
