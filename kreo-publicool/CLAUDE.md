@@ -29,7 +29,22 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js + React + S
 | IA visual | (por definir — Replicate / Stability AI) |
 | Video | (por definir — Remotion / Creatomate) |
 | Colas | Redis + BullMQ (futuro) |
-| Deploy | Docker + VPS (por definir) |
+| Deploy | Docker en VPS `2.24.72.21` → `http://2.24.72.21:3005` (`/opt/kreo-publicool`) |
+
+---
+
+## Producción
+
+| Campo | Valor |
+|-------|-------|
+| **URL** | `http://2.24.72.21:3005` (pendiente dominio + SSL) |
+| VPS | `2.24.72.21` — `/opt/kreo-publicool/kreo-publicool` |
+| Supabase | `hfiwflvxogktwsqkitpl` (cuenta `kreoiastudioperu@gmail.com`) |
+| Login demo | `demo@publicool.app` / `DemoPubliCool2026` |
+| Redeploy | `cd /opt/kreo-publicool && git fetch origin <branch> && git reset --hard origin/<branch> && cd kreo-publicool && docker compose up -d --build` |
+| Migraciones aplicadas | `001_initial_schema` + `002_rls_read_policies` + `seed_demo` |
+
+> Home del dashboard vive en **`/dashboard`** (la landing usa `/`). Migración `002` añade políticas RLS de lectura que faltaban en `001`.
 
 ---
 
