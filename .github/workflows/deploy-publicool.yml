@@ -1,0 +1,71 @@
+name: Deploy KREO-PubliCool
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm'
+        required: true
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'deploy'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 2.24.72.21
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          timeout: 600s
+          script: |
+            set -e
+            echo "=== Deploy KREO-PubliCool ==="
+
+            REPO_DIR=/opt/kreo-publicool
+            BRANCH=claude/kreo-publicool-local-setup-80h91y
+            REPO=https://github.com/jlom2024/kostruye-
+
+            # Clone or update full repo
+            if [ -d "$REPO_DIR/.git" ]; then
+              git -C $REPO_DIR fetch origin $BRANCH
+              git -C $REPO_DIR checkout -B $BRANCH origin/$BRANCH
+            else
+              git clone --branch $BRANCH $REPO $REPO_DIR
+            fi
+
+            # Work inside the app subfolder
+            APP_DIR=$REPO_DIR/kreo-publicool
+            cd $APP_DIR
+
+            # Write .env with all credentials
+            cat > .env << 'ENVEOF'
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.PUBLICOOL_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PUBLICOOL_SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.PUBLICOOL_SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_APP_URL=http://2.24.72.21:3005
+            ANTHROPIC_API_KEY=${{ secrets.PUBLICOOL_ANTHROPIC_API_KEY }}
+            INSTAGRAM_APP_ID=
+            INSTAGRAM_APP_SECRET=
+            FACEBOOK_APP_ID=
+            FACEBOOK_APP_SECRET=
+            TIKTOK_CLIENT_KEY=
+            TIKTOK_CLIENT_SECRET=
+            LINKEDIN_CLIENT_ID=
+            LINKEDIN_CLIENT_SECRET=
+            TWITTER_CLIENT_ID=
+            TWITTER_CLIENT_SECRET=
+            ENVEOF
+
+            echo ".env escrito en $APP_DIR"
+
+            # Deploy with Docker Compose
+            docker compose down 2>/dev/null || true
+            docker compose up -d --build
+
+            echo ""
+            echo "=== Deploy completo ==="
+            echo "URL: http://2.24.72.21:3005"
