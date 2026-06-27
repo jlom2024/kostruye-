@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .from('organization_members')
     .select('org_id, role, organizations(id, name, slug, plan)')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const org = member?.organizations as { id: string; name: string; plan: string } | null
   const meta = user.user_metadata ?? {}

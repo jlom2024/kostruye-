@@ -27,7 +27,7 @@ function LoginForm() {
       setLoading(false)
       return
     }
-    const next = searchParams.get('next') ?? '/'
+    const next = searchParams.get('next') ?? '/dashboard'
     router.push(next)
     router.refresh()
   }

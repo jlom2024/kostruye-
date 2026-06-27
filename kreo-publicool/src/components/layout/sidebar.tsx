@@ -8,7 +8,7 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 const navItems = [
-  { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/brands', icon: Building2, label: 'Marcas' },
   { href: '/campaigns', icon: Megaphone, label: 'Campañas' },
   { href: '/calendar', icon: Calendar, label: 'Calendario' },
@@ -18,7 +18,7 @@ const navItems = [
 
 function NavLink({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) {
   const pathname = usePathname()
-  const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+  const active = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 
   return (
     <Link
@@ -59,7 +59,7 @@ export function DashboardSidebar({ orgName, orgPlan, userInitial, userEmail }: S
     <aside className="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
       {/* Logo */}
       <div className="p-5 border-b border-gray-100">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
             <Zap className="w-4 h-4 text-white" />
           </div>
