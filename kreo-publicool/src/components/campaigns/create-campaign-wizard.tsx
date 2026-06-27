@@ -33,11 +33,11 @@ const objectives = [
 ] as const
 
 const networks = [
-  { value: 'instagram', label: 'Camera', icon: Camera, color: 'text-pink-500 border-pink-200 bg-pink-50' },
-  { value: 'facebook', label: 'Globe', icon: Globe, color: 'text-blue-600 border-blue-200 bg-blue-50' },
+  { value: 'instagram', label: 'Instagram', icon: Camera, color: 'text-pink-500 border-pink-200 bg-pink-50' },
+  { value: 'facebook', label: 'Facebook', icon: Globe, color: 'text-blue-600 border-blue-200 bg-blue-50' },
   { value: 'tiktok', label: 'TikTok', icon: Music2, color: 'text-gray-900 border-gray-200 bg-gray-50' },
   { value: 'linkedin', label: 'LinkedIn', icon: Briefcase, color: 'text-blue-700 border-blue-200 bg-blue-50' },
-  { value: 'twitter', label: 'X / X', icon: X, color: 'text-gray-900 border-gray-200 bg-gray-50' },
+  { value: 'twitter', label: 'X / Twitter', icon: X, color: 'text-gray-900 border-gray-200 bg-gray-50' },
 ] as const
 
 const steps = ['Campaña', 'Redes', 'Calendario', 'Resumen']

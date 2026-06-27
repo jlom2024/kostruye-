@@ -14,11 +14,11 @@ interface GeneratedVariant {
 }
 
 const networkConfig: Record<SocialNetwork, { label: string; icon: React.ElementType; color: string }> = {
-  instagram: { label: 'Camera', icon: Camera, color: 'text-pink-500' },
-  facebook: { label: 'Globe', icon: Globe, color: 'text-blue-600' },
+  instagram: { label: 'Instagram', icon: Camera, color: 'text-pink-500' },
+  facebook: { label: 'Facebook', icon: Globe, color: 'text-blue-600' },
   tiktok: { label: 'TikTok', icon: Music2, color: 'text-gray-900' },
   linkedin: { label: 'LinkedIn', icon: Briefcase, color: 'text-blue-700' },
-  twitter: { label: 'X / X', icon: X, color: 'text-gray-900' },
+  twitter: { label: 'X / Twitter', icon: X, color: 'text-gray-900' },
 }
 
 const formats: { value: ContentFormat; label: string }[] = [

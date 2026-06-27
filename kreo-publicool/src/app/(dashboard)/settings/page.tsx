@@ -1,11 +1,11 @@
 import { Settings, Camera, Globe, Music2, Briefcase, X, Plus, CheckCircle, AlertCircle } from 'lucide-react'
 
 const socialNetworks = [
-  { id: 'instagram', label: 'Camera', icon: Camera, color: 'text-pink-500 bg-pink-50 border-pink-200', desc: 'Publica imágenes, reels, stories y carruseles', connected: false },
-  { id: 'facebook', label: 'Globe', icon: Globe, color: 'text-blue-600 bg-blue-50 border-blue-200', desc: 'Publica en páginas y grupos de Globe', connected: false },
+  { id: 'instagram', label: 'Instagram', icon: Camera, color: 'text-pink-500 bg-pink-50 border-pink-200', desc: 'Publica imágenes, reels, stories y carruseles', connected: false },
+  { id: 'facebook', label: 'Facebook', icon: Globe, color: 'text-blue-600 bg-blue-50 border-blue-200', desc: 'Publica en páginas y grupos de Facebook', connected: false },
   { id: 'tiktok', label: 'TikTok', icon: Music2, color: 'text-gray-900 bg-gray-50 border-gray-200', desc: 'Sube videos cortos y gestiona tu cuenta', connected: false },
   { id: 'linkedin', label: 'LinkedIn', icon: Briefcase, color: 'text-blue-700 bg-blue-50 border-blue-200', desc: 'Publica en tu perfil y páginas de empresa', connected: false },
-  { id: 'twitter', label: 'X / X', icon: X, color: 'text-gray-900 bg-gray-50 border-gray-200', desc: 'Tweets, threads y media', connected: false },
+  { id: 'twitter', label: 'X / Twitter', icon: X, color: 'text-gray-900 bg-gray-50 border-gray-200', desc: 'Tweets, threads y media', connected: false },
 ]
 
 export default function SettingsPage() {
