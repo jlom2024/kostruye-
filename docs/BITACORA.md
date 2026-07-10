@@ -391,6 +391,32 @@ Flujo SUNAT (ahora correcto):
 
 ---
 
+## 2026-07-10 — Houston (Gemini) — Rediseño de Pasarela de Pagos, App Móvil, Enlaces Legales, Fix Turbopack & Deploy Exitoso
+
+### Cambios
+**Código:**
+- **Pasarela de Pagos (`/pagar`):** Rediseño total de [app/pagar/page.tsx](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/app/pagar/page.tsx) con la estética minimalista y premium de "Tres Mares" (colores navy, sand y copper). Botón de WhatsApp actualizado a cobre/naranja mate (`#B8733D`) con hover cobre claro (`#C9844E`). Header minimalista con logo corporativo adaptado para fondos claros.
+- **Sección App Móvil:** Creada sección responsiva de dos columnas en la landing [app/page.tsx](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/app/page.tsx#L1320-L1370) con mockup (`public/app-mockup.png`) ilustrativo, detallando las funcionalidades de campo (Tareo con GPS, Kardex/Almacén y aprobación de órdenes).
+- **Páginas Legales:** Creadas páginas de [Términos de Servicio](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/app/legal/terminos/page.tsx) y [Política de Privacidad](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/app/legal/privacidad/page.tsx).
+- **Middleware:** Modificado [middleware.ts](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/middleware.ts#L15) para excluir `/legal` de la autenticación de Supabase, evitando errores 500 para usuarios anónimos.
+- **Correos y Enlaces:** Actualizadas referencias de contacto a `mailto:info@kreoia.site` y enlazado "KREO IA Studio" del footer a `https://kreoia.site`.
+- **Configuración de Compilación:** Corregido bug en [next.config.ts](file:///d:/Empresas/KREO%20Studio/Kostruye+/kostruye-plus/next.config.ts#L7-L9) donde la ruta absoluta local de desarrollo de Windows para `turbopack.root` rompía la compilación en contenedores Docker Linux. Se hizo condicional (`process.platform === "win32"`).
+
+### Infraestructura & Despliegue
+- **SSH Conexión:** Resuelto bloqueo de autenticación interactiva en el VPS (`2.24.72.21`) utilizando la clave privada personal del desarrollador `antu_kostruye` (ubicada en `~/.ssh/antu_kostruye` en la máquina local de Comando) en lugar de la clave del repositorio.
+- **Deploy Exitoso:** Actualizado el repositorio en el VPS a la última versión de `master` y recreado con éxito el contenedor de producción mediante `docker compose up -d --build`.
+
+### Estado al cerrar
+- ✅ App compilada y desplegada en producción en `https://konstruye.site`.
+- ✅ Pasarela de pagos totalmente funcional con diseño limpio claro: `https://konstruye.site/pagar?plan=pro`.
+- ✅ Páginas legales operativas de acceso público sin credenciales.
+
+### ⚠️ Cuidado para el siguiente agente
+- **Deploy SSH:** Para conectarse por SSH al VPS `2.24.72.21` de producción, usar la clave privada `C:\Users\jlom2\.ssh\antu_kostruye` del entorno local del usuario. No usar la de la carpeta `VPS` ya que el servidor la rechaza y plink se quedará colgado interactivamente pidiendo password.
+- **Turbopack:** Mantener `turbopack.root` condicional para evitar que se caigan los builds automáticos en Linux.
+
+---
+
 ## Convención para futuros agentes
 
 Cuando termines una sesión de trabajo en este proyecto, **agrega una entrada aquí** con:

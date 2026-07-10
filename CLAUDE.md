@@ -17,9 +17,9 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Campo | Valor |
 |-------|-------|
 | **URL producción** | `https://konstruye.site` |
-| VPS | `2.24.72.21` — `/opt/kostruye-plus/` |
+| VPS | `2.24.72.21` — `/opt/kostruye-plus/` (Acceso vía llave `C:\Users\jlom2\.ssh\antu_kostruye` local) |
 | GitHub | `https://github.com/jlom2024/kostruye-` rama `master` |
-| Deploy | `git reset --hard origin/master && docker compose up -d --build` |
+| Deploy | `ssh -n -i C:\Users\jlom2\.ssh\antu_kostruye -o StrictHostKeyChecking=no root@2.24.72.21 "git -C /opt/kostruye-plus fetch --prune origin && git -C /opt/kostruye-plus reset --hard origin/master && cd /opt/kostruye-plus && docker compose up -d --build"` |
 
 > ⚠️ `kreo-crm.site` es el dominio de `kreo-epr-landing` — NO es Kostruye+.
 
@@ -195,6 +195,7 @@ ANTHROPIC_API_KEY=<key>            # KIA chat (claude-haiku-4-5)
 - **Toasts:** `sonner`
 - **Estilos:** Tailwind v4, `cn()` de `lib/utils.ts`
 - `ignoreBuildErrors: true` en `next.config.ts` — errores `never` pre-existentes en tipos, no son nuevos
+- `turbopack.root` condicional en `next.config.ts` — solo inyectado en Windows (`win32`) para no romper el build Docker en Linux.
 
 ---
 
