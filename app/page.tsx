@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { JoshyWidget } from "@/components/joshy-widget";
 
 export const metadata: Metadata = {
@@ -54,520 +55,1309 @@ export default function Landing() {
   return (
     <>
       <style>{`
+        /* ── RESET & BASE ESTILO TRES MARES ── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #030712 !important; color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; overflow-x: hidden; }
+        body { 
+          background: #FFFFFF !important; 
+          color: #1A1A1A; 
+          font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; 
+          overflow-x: hidden;
+          -webkit-font-smoothing: antialiased;
+        }
         html { scroll-behavior: smooth; }
 
-        /* ── Scroll animations ── */
-        .reveal { opacity: 0; transform: translateY(48px); transition: opacity 0.75s cubic-bezier(.22,1,.36,1), transform 0.75s cubic-bezier(.22,1,.36,1); }
-        .reveal.up { opacity: 1; transform: translateY(0); }
-        .reveal-left { opacity: 0; transform: translateX(-48px); transition: opacity 0.75s cubic-bezier(.22,1,.36,1), transform 0.75s cubic-bezier(.22,1,.36,1); }
-        .reveal-left.up { opacity: 1; transform: translateX(0); }
-        .reveal-scale { opacity: 0; transform: scale(0.88); transition: opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1); }
-        .reveal-scale.up { opacity: 1; transform: scale(1); }
-        .d1 { transition-delay: 0.08s; }
-        .d2 { transition-delay: 0.16s; }
-        .d3 { transition-delay: 0.24s; }
-        .d4 { transition-delay: 0.32s; }
-        .d5 { transition-delay: 0.40s; }
-        .d6 { transition-delay: 0.48s; }
-        .d7 { transition-delay: 0.56s; }
-        .d8 { transition-delay: 0.64s; }
-
-        /* ── Keyframes ── */
-        @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:.3} }
-        @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes floatRev { 0%,100%{transform:translateY(0)} 50%{transform:translateY(10px)} }
-        @keyframes growBar  { from{transform:scaleY(0)} to{transform:scaleY(1)} }
-        @keyframes fillW    { from{width:0} }
-        @keyframes shimmer  { 0%{background-position:-200% center} 100%{background-position:200% center} }
-        @keyframes glow     { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.8;transform:scale(1.06)} }
-
-        /* ── Gradient text ── */
-        .g-amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .g-blue  { background:linear-gradient(135deg,#3b82f6,#60a5fa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-
-        /* ── NAV ── */
-        .nav { position:fixed; top:0; left:0; right:0; z-index:200; height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 60px; background:rgba(3,7,18,.8); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,255,255,.06); }
-        .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-        .nav-logo-text { font-weight:900; font-size:16px; letter-spacing:-.5px; color:#fff; }
-        .nav-logo-text span { color:#f59e0b; }
-        .nav-links { display:flex; gap:32px; list-style:none; }
-        .nav-links a { color:#9ca3af; font-size:14px; font-weight:500; text-decoration:none; transition:color .2s; }
-        .nav-links a:hover { color:#fff; }
-        .nav-cta { display:inline-flex; align-items:center; gap:6px; background:#f59e0b; color:#000; border:none; padding:8px 20px; border-radius:8px; font-weight:700; font-size:14px; text-decoration:none; transition:background .2s,transform .2s; }
-        .nav-cta:hover { background:#fbbf24; transform:translateY(-1px); }
-        .nav-cta-alt { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.05); color:#fff; border:1px solid rgba(255,255,255,.1); padding:8px 20px; border-radius:8px; font-weight:600; font-size:14px; text-decoration:none; transition:background .2s,transform .2s; }
-        .nav-cta-alt:hover { background:rgba(255,255,255,.1); transform:translateY(-1px); }
-
-        /* ── HERO ── */
-        .hero { min-height:100svh; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#030712; }
-        .hero-photo { position:absolute; inset:0; z-index:0; background:url('/hero-construction.png') center center / cover no-repeat; opacity:.48; filter:saturate(0.75); }
-        .hero-photo-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(to bottom, rgba(3,7,18,.3) 0%, rgba(3,7,18,.08) 40%, rgba(3,7,18,.08) 60%, rgba(3,7,18,.45) 100%); }
-
-        /* Orbs de luz animados — z:3 encima del overlay, debajo del contenido */
-        .hero-orb { position:absolute; border-radius:50%; filter:blur(70px); pointer-events:none; z-index:3; mix-blend-mode:screen; }
-        .hero-orb1 { width:650px; height:650px; background:radial-gradient(circle, rgba(245,158,11,.55) 0%, transparent 60%); top:-100px; left:-80px; animation:orbMove1 20s ease-in-out infinite; }
-        .hero-orb2 { width:550px; height:550px; background:radial-gradient(circle, rgba(139,92,246,.45) 0%, transparent 60%); bottom:-80px; right:-60px; animation:orbMove2 25s ease-in-out infinite; }
-        .hero-orb3 { width:420px; height:420px; background:radial-gradient(circle, rgba(59,130,246,.38) 0%, transparent 60%); top:30%; left:50%; transform:translateX(-50%); animation:orbMove3 17s ease-in-out infinite; }
-        @keyframes orbMove1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(80px,60px) scale(1.1)} 66%{transform:translate(-40px,80px) scale(.95)} }
-        @keyframes orbMove2 { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(-70px,-80px) scale(1.08)} 70%{transform:translate(40px,-40px) scale(1.12)} }
-        @keyframes orbMove3 { 0%,100%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-45%) scale(1.15)} }
-
-        /* Grid sutil — z:1 debajo del dashboard */
-        .hero-grid { position:absolute; inset:0; z-index:1; pointer-events:none;
-          background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
-          background-size:64px 64px;
-          mask-image:radial-gradient(ellipse 90% 80% at 50% 50%,black 20%,transparent 80%);
-          animation:gridPulse 10s ease-in-out infinite;
-        }
-        @keyframes gridPulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
-
-        /* Sweep de luz diagonal — z:4 encima de los orbs */
-        .hero-sweep { position:absolute; inset:0; z-index:4; pointer-events:none; overflow:hidden; }
-        .hero-sweep::before { content:''; position:absolute; top:0; left:-120%; width:50%; height:100%;
-          background:linear-gradient(105deg,transparent 30%,rgba(245,158,11,.09) 50%,transparent 70%);
-          animation:sweep 11s linear infinite;
-        }
-        @keyframes sweep { to{left:150%} }
-
-
-        /* Overlay oscuro sobre el dashboard — menos agresivo para que se vea más */
-        .hero-overlay { position:absolute; inset:0; z-index:2; pointer-events:none;
-          background:
-            radial-gradient(ellipse 70% 55% at 50% 50%, rgba(3,7,18,.68) 0%, rgba(3,7,18,.3) 55%, transparent 100%),
-            linear-gradient(to bottom, rgba(3,7,18,.45) 0%, rgba(3,7,18,.15) 50%, rgba(3,7,18,.55) 100%);
-        }
-        .hero-overlay::after { content:''; position:absolute; inset:0;
-          background: linear-gradient(90deg, rgba(3,7,18,.5) 0%, transparent 25%, transparent 75%, rgba(3,7,18,.5) 100%);
+        /* ── VARIABLES DE DISEÑO (TRES MARES PALETTE) ── */
+        :root {
+          --color-navy: #0A3D5C;
+          --color-navy-dark: #072B41;
+          --color-copper: #B8733D;
+          --color-copper-light: #C9844E;
+          --color-bg-light: #FFFFFF;
+          --color-bg-sand: #F5F3EF;
+          --color-text-dark: #1A1A1A;
+          --color-text-muted: #6B7280;
+          --color-border: #E5E1DB;
+          --font-serif: var(--font-serif), 'Playfair Display', Georgia, serif;
         }
 
-        /* Texto encima */
-        .hero-content { position:relative; z-index:3; text-align:center; max-width:760px; padding:80px 40px 80px; }
-        .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35); border-radius:100px; padding:6px 18px; margin-bottom:28px; color:#f59e0b; font-size:13px; font-weight:600; }
-        .hero-badge::before { content:''; width:6px; height:6px; background:#f59e0b; border-radius:50%; animation:blink 2s infinite; }
-        .hero-h1 { font-size:clamp(44px,6.5vw,88px); font-weight:900; letter-spacing:-3px; line-height:1.0; color:#fff; margin-bottom:20px; text-shadow:0 2px 40px rgba(0,0,0,.8); }
-        .hero-sub { color:#9ca3af; font-size:clamp(15px,1.8vw,19px); line-height:1.6; max-width:520px; margin:0 auto 36px; text-shadow:0 1px 20px rgba(0,0,0,.6); }
-        .hero-cta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:52px; justify-content:center; }
-        .btn-primary { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; padding:15px 32px; border-radius:12px; font-weight:700; font-size:16px; text-decoration:none; transition:transform .2s,box-shadow .2s; }
-        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 10px 40px rgba(245,158,11,.5); }
-        .btn-ghost { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.08); color:#fff; padding:15px 32px; border-radius:12px; font-weight:600; font-size:16px; text-decoration:none; border:1px solid rgba(255,255,255,.15); transition:background .2s; backdrop-filter:blur(8px); }
-        .btn-ghost:hover { background:rgba(255,255,255,.14); }
-        .hero-stats { display:flex; gap:48px; justify-content:center; }
-        .stat-n { font-size:30px; font-weight:900; color:#f59e0b; }
-        .stat-l { font-size:12px; color:#4b5563; margin-top:4px; }
+        h1, h2, h3 {
+          font-family: var(--font-serif);
+          font-weight: 400;
+          letter-spacing: -0.02em;
+          line-height: 1.15;
+          color: var(--color-navy);
+        }
 
-        /* ── APP PREVIEW shared ── */
-        .app-window { background:rgba(11,17,34,.95); border:1px solid rgba(255,255,255,.1); border-radius:16px; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.07); }
-        .app-bar { background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06); padding:11px 16px; display:flex; align-items:center; gap:12px; }
-        .dots { display:flex; gap:6px; }
-        .dot { width:10px; height:10px; border-radius:50%; }
-        .dot-r { background:#ef4444; }
-        .dot-y { background:#f59e0b; }
-        .dot-g { background:#22c55e; }
-        .bar-title { font-size:11px; color:#4b5563; font-family:monospace; margin-left:4px; }
-        .app-body { padding:16px; display:flex; flex-direction:column; gap:12px; }
+        /* ── PREMIUM ANIMATIONS (SCROLL-TRIGGERED REVEALS) ── */
+        .reveal { 
+          opacity: 0; 
+          transform: translateY(48px); 
+          transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
 
-        /* KPI row */
-        .kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
-        .kpi { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:11px; }
-        .kpi-l { font-size:9px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.8px; display:block; margin-bottom:4px; }
-        .kpi-v { font-size:18px; font-weight:900; color:#fff; display:block; }
-        .kpi-d { font-size:10px; font-weight:600; display:block; margin-top:3px; }
-        .kpi-g { color:#22c55e; }
-        .mini-bar { height:4px; background:rgba(255,255,255,.08); border-radius:2px; margin-top:7px; overflow:hidden; }
-        .mini-bar-fill { height:100%; border-radius:2px; animation:fillW 2.5s ease-out forwards; }
+        .reveal-left { 
+          opacity: 0; 
+          transform: translateX(-48px); 
+          transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .reveal-left.visible { opacity: 1; transform: translateX(0); }
 
-        /* Chart */
-        .chart-box { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:9px; padding:12px; }
-        .chart-label { font-size:9px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:12px; }
-        .bars { display:flex; align-items:flex-end; gap:5px; height:52px; }
-        .bar-item { flex:1; border-radius:3px 3px 0 0; animation:growBar 1.5s cubic-bezier(.22,1,.36,1) forwards; transform-origin:bottom; }
-        .bar-months { display:flex; gap:5px; margin-top:5px; }
-        .bar-month { flex:1; text-align:center; font-size:8px; color:#374151; }
+        .reveal-right { 
+          opacity: 0; 
+          transform: translateX(48px); 
+          transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .reveal-right.visible { opacity: 1; transform: translateX(0); }
 
-        /* Project rows */
-        .proj-list { display:flex; flex-direction:column; gap:6px; }
-        .proj-row { display:flex; align-items:center; justify-content:space-between; padding:8px 11px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05); border-radius:8px; }
-        .proj-name { font-size:11px; color:#e5e7eb; font-weight:600; }
-        .proj-sub  { font-size:10px; color:#4b5563; margin-top:1px; }
-        .badge { font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; }
-        .badge-g { background:rgba(34,197,94,.1); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
-        .badge-b { background:rgba(59,130,246,.1); color:#60a5fa; border:1px solid rgba(59,130,246,.2); }
-        .badge-a { background:rgba(245,158,11,.1); color:#f59e0b; border:1px solid rgba(245,158,11,.2); }
+        .reveal-scale { 
+          opacity: 0; 
+          transform: scale(0.95); 
+          transition: opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                      transform 1.6s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .reveal-scale.visible { opacity: 1; transform: scale(1); }
 
-        /* Notifs (solo desktop bg) */
-        .notif-icon { font-size:16px; }
-        .notif-text { font-size:10px; color:#f9fafb; font-weight:700; margin-top:2px; }
-        .notif-sub  { font-size:9px; color:#6b7280; }
+        /* Delay utilities para cascades */
+        .d1 { transition-delay: 0.1s; }
+        .d2 { transition-delay: 0.2s; }
+        .d3 { transition-delay: 0.3s; }
+        .d4 { transition-delay: 0.4s; }
+        .d5 { transition-delay: 0.5s; }
+        .d6 { transition-delay: 0.6s; }
 
-        /* ── SECTION commons ── */
-        .section { padding:100px 60px; }
-        .container { max-width:1200px; margin:0 auto; }
-        .section-label { display:inline-block; font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:#f59e0b; margin-bottom:14px; }
-        .section-h { font-size:clamp(26px,3.5vw,48px); font-weight:800; letter-spacing:-1px; line-height:1.1; color:#fff; }
-        .section-sub { color:#6b7280; font-size:15px; margin-top:12px; }
-        .divider { height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent); }
+        /* ── MÁSCARA DE IMAGEN REVEAL ── */
+        .img-mask-reveal {
+          position: relative;
+          overflow: hidden;
+          width: 100%;
+          height: 100%;
+        }
+        .img-mask-reveal::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--color-bg-sand);
+          transform: scaleX(1);
+          transform-origin: right;
+          transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .img-mask-reveal.visible::after {
+          transform: scaleX(0);
+        }
+        .img-mask-reveal img {
+          transform: scale(1.15);
+          transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .img-mask-reveal.visible img {
+          transform: scale(1);
+        }
 
-        /* ── FEATURES ── */
-        .feat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:48px; }
-        .feat-card { background:rgba(11,17,34,.7); border:1px solid rgba(255,255,255,.07); border-radius:16px; padding:24px; transition:border-color .3s,transform .3s; cursor:default; }
-        .feat-card:hover { border-color:rgba(245,158,11,.35); transform:translateY(-4px); }
-        .feat-icon { font-size:28px; margin-bottom:14px; }
-        .feat-title { font-size:14px; font-weight:700; margin-bottom:7px; }
-        .feat-desc  { font-size:12px; color:#6b7280; line-height:1.65; margin-bottom:14px; }
-        .feat-items { list-style:none; display:flex; flex-direction:column; gap:5px; }
-        .feat-items li { font-size:11px; color:#9ca3af; display:flex; align-items:center; gap:6px; }
-        .feat-items li::before { content:'→'; color:#f59e0b; font-size:9px; flex-shrink:0; }
+        /* ── SMART FIXED HEADER ── */
+        .header-nav {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 90px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 80px;
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid var(--color-border);
+          z-index: 1000;
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+        }
+        .header-nav.nav-hidden {
+          transform: translateY(-100%);
+        }
+        .header-nav.scrolled {
+          height: 75px;
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+          background: rgba(255, 255, 255, 0.95);
+        }
 
-        /* ── STEPS ── */
-        .steps-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; margin-top:48px; position:relative; }
-        .steps-grid::before { content:''; position:absolute; top:24px; left:12.5%; right:12.5%; height:1px; background:linear-gradient(90deg,transparent,rgba(245,158,11,.25) 20%,rgba(245,158,11,.25) 80%,transparent); }
-        .step { text-align:center; }
-        .step-num { width:48px; height:48px; border-radius:50%; background:rgba(245,158,11,.08); border:2px solid rgba(245,158,11,.35); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px; position:relative; z-index:1; }
-        .step-t { font-size:14px; font-weight:700; color:#f9fafb; margin-bottom:7px; }
-        .step-d { font-size:12px; color:#6b7280; line-height:1.6; }
+        .nav-logo-link {
+          display: flex;
+          align-items: center;
+          text-decoration: none;
+        }
+        .logo-image {
+          height: 42px;
+          width: auto;
+          object-fit: contain;
+          filter: brightness(0) opacity(0.85);
+          transition: all 0.3s ease;
+        }
+        .logo-image:hover {
+          filter: brightness(0) opacity(1);
+        }
 
-        /* ── PRICING ── */
-        .price-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:48px; align-items:start; max-width:760px; margin-left:auto; margin-right:auto; }
-        .price-card { background:rgba(11,17,34,.7); border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:28px; position:relative; transition:transform .3s,border-color .3s; }
-        .price-card:hover { transform:translateY(-5px); }
-        .price-card.popular { border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.04); }
-        .popular-tag { position:absolute; top:-13px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:20px; padding:4px 18px; font-size:10px; font-weight:800; color:#000; white-space:nowrap; letter-spacing:.5px; }
-        .plan-name { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
-        .plan-price-row { display:flex; align-items:baseline; gap:4px; margin-bottom:8px; }
-        .plan-price { font-size:40px; font-weight:900; color:#fff; }
-        .plan-period { font-size:13px; color:#6b7280; }
-        .plan-desc { font-size:12px; color:#6b7280; line-height:1.55; margin-bottom:24px; }
-        .plan-features { list-style:none; display:flex; flex-direction:column; gap:9px; margin-bottom:28px; }
-        .plan-features li { display:flex; align-items:center; gap:8px; font-size:13px; color:#d1d5db; }
-        .check { font-weight:700; }
-        .plan-btn { display:block; text-align:center; padding:13px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none; transition:opacity .2s,transform .2s; touch-action:manipulation; cursor:pointer; }
-        .plan-btn:hover { opacity:.9; transform:translateY(-1px); }
+        .nav-menu {
+          display: flex;
+          list-style: none;
+          gap: 40px;
+        }
+        .nav-menu a {
+          color: var(--color-text-dark);
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          position: relative;
+          padding: 6px 0;
+          transition: color 0.3s ease;
+        }
+        .nav-menu a::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 1px;
+          background: var(--color-copper);
+          transform: scaleX(0);
+          transform-origin: right;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-menu a:hover {
+          color: var(--color-copper);
+        }
+        .nav-menu a:hover::after {
+          transform: scaleX(1);
+          transform-origin: left;
+        }
+
+        /* Botones de acción */
+        .btn-action-outline {
+          display: inline-flex;
+          align-items: center;
+          padding: 10px 24px;
+          border: 1px solid var(--color-navy);
+          background: transparent;
+          color: var(--color-navy);
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-action-outline:hover {
+          background: var(--color-navy);
+          color: #FFFFFF;
+        }
+
+        .btn-action-solid {
+          display: inline-flex;
+          align-items: center;
+          padding: 10px 24px;
+          border: 1px solid var(--color-copper);
+          background: var(--color-copper);
+          color: #FFFFFF;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-action-solid:hover {
+          background: var(--color-copper-light);
+          border-color: var(--color-copper-light);
+          transform: translateY(-1px);
+        }
+
+        /* ── HERO CON PARALLAX & CURSOR FOLLOW ── */
+        .hero-section {
+          position: relative;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          padding: 120px 80px 80px;
+          background: var(--color-bg-sand);
+          overflow: hidden;
+        }
+        .hero-bg-wrapper {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          overflow: hidden;
+          opacity: 0.15;
+          filter: grayscale(1);
+        }
+        .hero-bg-image {
+          width: 100%;
+          height: 100%;
+          background: url('/hero-construction-bw.png') center center / cover no-repeat;
+          transform: scale(1.1);
+          transition: transform 0.1s ease-out; /* Para cursor follow */
+        }
+        .hero-grid-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          background-image: linear-gradient(var(--color-border) 1px, transparent 1px),
+                            linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+          background-size: 80px 80px;
+          opacity: 0.15;
+          mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+        }
+        .hero-container {
+          position: relative;
+          z-index: 3;
+          max-width: 1280px;
+          width: 100%;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1.2fr 0.8fr;
+          gap: 60px;
+          align-items: center;
+        }
+        .hero-badge-minimal {
+          display: inline-flex;
+          align-items: center;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--color-copper);
+          margin-bottom: 24px;
+        }
+        .hero-badge-minimal::before {
+          content: '';
+          width: 24px;
+          height: 1px;
+          background: var(--color-copper);
+          margin-right: 12px;
+        }
+        .hero-h1-editorial {
+          font-size: clamp(48px, 5.5vw, 80px);
+          line-height: 1.05;
+          margin-bottom: 28px;
+        }
+        .hero-h1-editorial span {
+          color: var(--color-copper);
+        }
+        .hero-desc-editorial {
+          font-size: clamp(16px, 1.3vw, 20px);
+          line-height: 1.6;
+          color: var(--color-text-dark);
+          max-width: 580px;
+          margin-bottom: 40px;
+          font-weight: 300;
+        }
+        .hero-ctas-editorial {
+          display: flex;
+          gap: 16px;
+        }
+        .hero-right-visual {
+          position: relative;
+          height: 520px;
+          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.08);
+          border: 1px solid var(--color-border);
+        }
+
+        /* ── SECCIÓN DE MÉTRICAS CON COUNTUP ── */
+        .metrics-section {
+          background: #FFFFFF;
+          padding: 100px 80px;
+          border-bottom: 1px solid var(--color-border);
+        }
+        .metrics-container {
+          max-width: 1280px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 40px;
+        }
+        .metric-card {
+          text-align: left;
+          position: relative;
+          padding-left: 24px;
+          border-left: 1px solid var(--color-border);
+        }
+        .metric-card:first-child {
+          border-left: none;
+          padding-left: 0;
+        }
+        .metric-number {
+          font-family: var(--font-serif);
+          font-size: clamp(48px, 4.5vw, 68px);
+          line-height: 1;
+          color: var(--color-navy);
+          margin-bottom: 12px;
+          font-weight: 300;
+        }
+        .metric-label {
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--color-text-muted);
+        }
+        .metric-desc {
+          font-size: 13px;
+          color: var(--color-text-muted);
+          margin-top: 8px;
+          line-height: 1.4;
+        }
+
+        /* ── GENERAL SECTIONS STYLE ── */
+        .editorial-section {
+          padding: 160px 80px;
+          background: #FFFFFF;
+        }
+        .editorial-section.alt-bg {
+          background: var(--color-bg-sand);
+        }
+        .editorial-container {
+          max-width: 1280px;
+          margin: 0 auto;
+        }
+        .section-header-editorial {
+          margin-bottom: 80px;
+          max-width: 700px;
+        }
+        .section-tag-editorial {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--color-copper);
+          display: block;
+          margin-bottom: 16px;
+        }
+        .section-title-editorial {
+          font-size: clamp(32px, 3.5vw, 54px);
+          line-height: 1.15;
+          margin-bottom: 24px;
+        }
+        .section-sub-editorial {
+          font-size: 16px;
+          line-height: 1.6;
+          color: var(--color-text-muted);
+          font-weight: 300;
+        }
+
+        /* ── MÓDULOS EN GRID MINIMALISTA ── */
+        .modules-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+        }
+        .module-card-editorial {
+          background: #FFFFFF;
+          border: 1px solid var(--color-border);
+          padding: 40px 32px;
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          flex-direction: column;
+          min-height: 320px;
+        }
+        .module-card-editorial:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
+          border-color: var(--color-copper);
+        }
+        .module-svg-icon {
+          width: 36px;
+          height: 36px;
+          stroke: var(--color-navy);
+          stroke-width: 1.5;
+          fill: none;
+          margin-bottom: 32px;
+          transition: stroke 0.3s ease;
+        }
+        .module-card-editorial:hover .module-svg-icon {
+          stroke: var(--color-copper);
+        }
+        .module-card-title {
+          font-family: var(--font-serif);
+          font-size: 20px;
+          color: var(--color-navy);
+          margin-bottom: 12px;
+        }
+        .module-card-desc {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--color-text-muted);
+          margin-bottom: 24px;
+          flex-grow: 1;
+        }
+        .module-card-list {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .module-card-list li {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--color-text-dark);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .module-card-list li::before {
+          content: '';
+          width: 4px;
+          height: 4px;
+          background: var(--color-copper);
+          border-radius: 50%;
+        }
+
+        /* ── PREVIEW DE DASHBOARD CON MÁSCARA ── */
+        .dashboard-preview-wrapper {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 80px;
+          align-items: center;
+          margin-top: 60px;
+        }
+        .dashboard-img-container {
+          position: relative;
+          box-shadow: 0 50px 100px rgba(0, 0, 0, 0.06);
+          border: 1px solid var(--color-border);
+          aspect-ratio: 16/10;
+        }
+        .dashboard-content-editorial {
+          padding-right: 40px;
+        }
+        .bullet-point-editorial {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 32px;
+        }
+        .bullet-number {
+          font-family: var(--font-serif);
+          font-size: 24px;
+          color: var(--color-copper);
+          line-height: 1;
+          margin-top: 2px;
+        }
+        .bullet-text strong {
+          display: block;
+          font-family: var(--font-serif);
+          font-size: 18px;
+          color: var(--color-navy);
+          margin-bottom: 6px;
+          font-weight: 400;
+        }
+        .bullet-text p {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--color-text-muted);
+        }
+
+        /* ── CÓMO FUNCIONA CON LÍNEA CONECTORA ── */
+        .steps-editorial-row {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 40px;
+          position: relative;
+          margin-top: 80px;
+        }
+        .steps-editorial-row::before {
+          content: '';
+          position: absolute;
+          top: 30px;
+          left: 0;
+          width: 100%;
+          height: 1px;
+          background: var(--color-border);
+          z-index: 1;
+        }
+        .step-progress-line {
+          position: absolute;
+          top: 30px;
+          left: 0;
+          width: 0%;
+          height: 1px;
+          background: var(--color-copper);
+          z-index: 2;
+          transition: width 2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .step-progress-line.visible {
+          width: 100%;
+        }
+        .step-editorial {
+          position: relative;
+          z-index: 3;
+          text-align: center;
+        }
+        .step-circle {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: #FFFFFF;
+          border: 1px solid var(--color-border);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 28px;
+          font-family: var(--font-serif);
+          font-size: 18px;
+          color: var(--color-navy);
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .step-editorial:hover .step-circle {
+          border-color: var(--color-copper);
+          background: var(--color-bg-sand);
+          color: var(--color-copper);
+          transform: scale(1.05);
+        }
+        .step-title-ed {
+          font-family: var(--font-serif);
+          font-size: 18px;
+          color: var(--color-navy);
+          margin-bottom: 12px;
+        }
+        .step-desc-ed {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--color-text-muted);
+          max-width: 240px;
+          margin: 0 auto;
+        }
+
+        /* ── KIA SECCIÓN IA CLARA ── */
+        .kia-editorial-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.1fr;
+          gap: 80px;
+          align-items: center;
+        }
+        .kia-chat-wrapper-ed {
+          background: #FFFFFF;
+          border: 1px solid var(--color-border);
+          border-radius: 4px;
+          box-shadow: 0 40px 90px rgba(0, 0, 0, 0.03);
+          overflow: hidden;
+        }
+        .kia-chat-head-ed {
+          background: var(--color-bg-sand);
+          border-bottom: 1px solid var(--color-border);
+          padding: 20px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .kia-avatar-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: var(--color-navy);
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .kia-title-status {
+          margin-left: 12px;
+          flex-grow: 1;
+        }
+        .kia-title-text {
+          font-family: var(--font-serif);
+          font-size: 15px;
+          color: var(--color-navy);
+        }
+        .kia-status-text {
+          font-size: 10px;
+          color: var(--color-text-muted);
+        }
+        .kia-chat-content-ed {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-height: 380px;
+          overflow-y: auto;
+        }
+        .kia-bubble {
+          max-width: 80%;
+          padding: 12px 16px;
+          font-size: 13px;
+          line-height: 1.55;
+          border-radius: 4px;
+        }
+        .kia-bubble-ai {
+          background: var(--color-bg-sand);
+          color: var(--color-text-dark);
+          border: 1px solid var(--color-border);
+          align-self: flex-start;
+        }
+        .kia-bubble-user {
+          background: var(--color-navy);
+          color: #FFFFFF;
+          align-self: flex-end;
+        }
+        .kia-bubble-title {
+          font-family: var(--font-serif);
+          font-weight: bold;
+          font-size: 13px;
+          display: block;
+          margin-bottom: 4px;
+          color: var(--color-copper);
+        }
+        .kia-chat-input-ed {
+          border-top: 1px solid var(--color-border);
+          padding: 16px 24px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: #FFFFFF;
+        }
+        .kia-input-fake-ed {
+          flex-grow: 1;
+          color: var(--color-text-muted);
+          font-size: 12px;
+        }
+
+        /* ── TARJETAS DE PLANES EDITORIALES ── */
+        .plans-grid-ed {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 32px;
+          max-width: 900px;
+          margin: 60px auto 0;
+        }
+        .plan-card-ed {
+          background: #FFFFFF;
+          border: 1px solid var(--color-border);
+          padding: 56px 48px;
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+        }
+        .plan-card-ed:hover {
+          border-color: var(--color-copper);
+          transform: translateY(-4px);
+          box-shadow: 0 40px 90px rgba(0, 0, 0, 0.04);
+        }
+        .plan-card-ed.popular-plan-ed {
+          background: var(--color-bg-sand);
+          border-color: var(--color-navy);
+        }
+        .plan-tag-ed {
+          position: absolute;
+          top: 24px;
+          right: 32px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--color-copper);
+        }
+        .plan-title-ed {
+          font-family: var(--font-serif);
+          font-size: 28px;
+          color: var(--color-navy);
+          margin-bottom: 8px;
+        }
+        .plan-price-ed {
+          font-family: var(--font-serif);
+          font-size: 48px;
+          color: var(--color-text-dark);
+          margin-bottom: 20px;
+          font-weight: 300;
+        }
+        .plan-price-ed span {
+          font-size: 14px;
+          font-family: var(--font-sans);
+          color: var(--color-text-muted);
+        }
+        .plan-desc-ed {
+          font-size: 13px;
+          color: var(--color-text-muted);
+          line-height: 1.6;
+          margin-bottom: 40px;
+        }
+        .plan-features-ed {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 48px;
+        }
+        .plan-features-ed li {
+          font-size: 13px;
+          color: var(--color-text-dark);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .plan-features-ed li svg {
+          width: 16px;
+          height: 16px;
+          stroke: var(--color-copper);
+          stroke-width: 2;
+          fill: none;
+          flex-shrink: 0;
+        }
 
         /* ── TESTIMONIAL ── */
-        .testi { background:rgba(245,158,11,.04); border:1px solid rgba(245,158,11,.12); border-radius:24px; padding:48px; text-align:center; max-width:680px; margin:56px auto 0; }
-        .testi blockquote { font-size:clamp(15px,2.2vw,21px); font-weight:600; color:#f9fafb; line-height:1.6; font-style:italic; margin-bottom:24px; }
-
-        /* ── CTA SECTION ── */
-        .cta-box { background:linear-gradient(135deg,rgba(245,158,11,.07),rgba(59,130,246,.04)); border:1px solid rgba(245,158,11,.15); border-radius:24px; padding:72px 48px; text-align:center; position:relative; overflow:hidden; }
-        .cta-box::before { content:''; position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:500px; height:400px; background:radial-gradient(circle,rgba(245,158,11,.1) 0%,transparent 70%); pointer-events:none; }
-        .cta-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:36px; margin-bottom:28px; }
-
-        /* ── FOOTER ── */
-        .footer { padding:36px 60px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,.06); }
-        .footer-links { display:flex; gap:24px; list-style:none; }
-        .footer-links a { color:#374151; font-size:13px; text-decoration:none; transition:color .2s; }
-        .footer-links a:hover { color:#9ca3af; }
-
-        /* ── KIA SECTION ── */
-        .kai-wrap { display:grid; grid-template-columns:1fr 1fr; gap:72px; align-items:center; margin-top:56px; }
-        .kai-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(139,92,246,.1); border:1px solid rgba(139,92,246,.3); border-radius:100px; padding:5px 16px; font-size:11px; font-weight:700; color:#a78bfa; letter-spacing:.5px; text-transform:uppercase; margin-bottom:20px; }
-        .kai-h { font-size:clamp(24px,3vw,40px); font-weight:800; letter-spacing:-1px; color:#fff; line-height:1.15; margin-bottom:14px; }
-        .kai-sub { color:#6b7280; font-size:15px; line-height:1.65; margin-bottom:28px; }
-        .kai-caps { list-style:none; display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
-        .kai-cap { display:flex; align-items:flex-start; gap:12px; }
-        .kai-cap-icon { flex-shrink:0; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; background:rgba(139,92,246,.12); border:1px solid rgba(139,92,246,.2); margin-top:1px; }
-        .kai-cap-text { font-size:13px; color:#d1d5db; line-height:1.55; }
-        .kai-cap-text strong { color:#fff; display:block; font-size:14px; margin-bottom:2px; }
-        .kai-plan-note { font-size:12px; color:#6b7280; display:flex; align-items:center; gap:6px; margin-top:8px; }
-        .kai-plan-note span { background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#f59e0b; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
-        /* Mockup chat */
-        .kai-chat-mock { background:rgba(10,14,28,.95); border:1px solid rgba(139,92,246,.2); border-radius:20px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(139,92,246,.08),inset 0 1px 0 rgba(255,255,255,.04); }
-        .kai-chat-header { background:linear-gradient(135deg,rgba(59,130,246,.9),rgba(139,92,246,.9)); padding:14px 18px; display:flex; align-items:center; gap:10px; }
-        .kai-chat-avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
-        .kai-chat-name { font-size:13px; font-weight:700; color:#fff; }
-        .kai-chat-status { font-size:10px; color:rgba(255,255,255,.65); }
-        .kai-chat-body { padding:16px; display:flex; flex-direction:column; gap:10px; }
-        .kai-msg { max-width:85%; border-radius:14px; padding:10px 14px; font-size:12px; line-height:1.55; }
-        .kai-msg-ai { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:#d1d5db; border-radius:14px 14px 14px 3px; }
-        .kai-msg-user { background:linear-gradient(135deg,#3b82f6,#6d28d9); color:#fff; margin-left:auto; border-radius:14px 14px 3px 14px; }
-        .kai-msg-label { font-size:10px; font-weight:700; color:#6b7280; margin-bottom:3px; }
-        .kai-chip { display:inline-block; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); color:#22c55e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; margin:3px 2px 0 0; }
-        .kai-chip-amber { background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.2); color:#f59e0b; }
-        .kai-chip-red { background:rgba(248,113,113,.1); border-color:rgba(248,113,113,.2); color:#f87171; }
-        .kai-typing { display:flex; align-items:center; gap:4px; padding:10px 14px; }
-        .kai-typing-dot { width:6px; height:6px; border-radius:50%; background:#6b7280; animation:blink 1.2s infinite; }
-        .kai-typing-dot:nth-child(2) { animation-delay:.2s; }
-        .kai-typing-dot:nth-child(3) { animation-delay:.4s; }
-        .kai-input-row { border-top:1px solid rgba(255,255,255,.05); padding:12px 16px; display:flex; align-items:center; gap:8px; }
-        .kai-input-fake { flex:1; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:9px 12px; font-size:11px; color:#4b5563; }
-        .kai-send-btn { width:30px; height:30px; background:linear-gradient(135deg,#3b82f6,#6d28d9); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
-
-        /* ── RESPONSIVE ── */
-        @media(max-width:1100px){
-          .hero { grid-template-columns:1fr; padding:100px 40px 60px; gap:48px; }
-          .hero-right { display:none; }
-          .feat-grid { grid-template-columns:repeat(2,1fr); }
-          .steps-grid { grid-template-columns:repeat(2,1fr); }
-          .steps-grid::before { display:none; }
-          .price-grid { grid-template-columns:1fr; max-width:420px; }
-          .section { padding:70px 40px; }
-          .nav { padding:0 32px; }
-          .footer { flex-direction:column; gap:16px; text-align:center; padding:30px 40px; }
-          .kai-wrap { grid-template-columns:1fr; gap:40px; }
+        .testimonial-block-ed {
+          margin-top: 100px;
+          border-top: 1px solid var(--color-border);
+          padding-top: 80px;
+          display: grid;
+          grid-template-columns: 0.8fr 1.2fr;
+          gap: 60px;
+          align-items: center;
         }
-        @media(max-width:1100px){
-          .hero-db-row1 { grid-template-columns:repeat(2,1fr); }
-          .hero-db-row2 { grid-template-columns:1fr; }
-          .hero-db-row3 { grid-template-columns:1fr 1fr; }
-          .hero-content { padding:100px 32px 80px; max-width:640px; }
+        .testimonial-quote-ed {
+          font-family: var(--font-serif);
+          font-size: 26px;
+          line-height: 1.45;
+          color: var(--color-navy);
+          font-style: italic;
         }
-        @media(max-width:640px){
-          .hero-h1 { letter-spacing:-2px; }
-          .hero-cta { flex-direction:column; align-items:center; }
-          .hero-stats { gap:28px; }
-          .hero-db-row1 { grid-template-columns:repeat(2,1fr); }
-          .hero-db-row2 { grid-template-columns:1fr; }
-          .hero-db-row3 { display:none; }
-          .hero-content { padding:80px 20px 64px; }
-          .feat-grid { grid-template-columns:1fr; }
-          .steps-grid { grid-template-columns:1fr; }
-          .section { padding:52px 24px; }
-          .nav { padding:0 20px; }
-          .nav-links { display:none; }
-          .footer { padding:24px; }
-          .cta-box { padding:48px 24px; }
-          .cta-btns { flex-direction:column; align-items:center; }
+        .testimonial-author-ed {
+          margin-top: 24px;
+        }
+        .testimonial-author-ed strong {
+          display: block;
+          font-size: 14px;
+          color: var(--color-text-dark);
+        }
+        .testimonial-author-ed span {
+          font-size: 12px;
+          color: var(--color-text-muted);
+        }
+
+        /* ── CTA FINAL ── */
+        .final-cta-box-ed {
+          background: var(--color-navy);
+          color: #FFFFFF;
+          padding: 100px 80px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        }
+        .final-cta-box-ed h2 {
+          color: #FFFFFF;
+          font-size: clamp(32px, 4vw, 56px);
+          margin-bottom: 20px;
+        }
+        .final-cta-box-ed p {
+          font-size: 16px;
+          color: rgba(255, 255, 255, 0.7);
+          max-width: 600px;
+          margin: 0 auto 40px;
+          font-weight: 300;
+        }
+
+        /* ── FOOTER INSTITUCIONAL ── */
+        .footer-editorial {
+          background: #FFFFFF;
+          padding: 80px;
+          border-top: 1px solid var(--color-border);
+        }
+        .footer-columns-ed {
+          max-width: 1280px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1.5fr 1fr 1fr;
+          gap: 60px;
+          border-bottom: 1px solid var(--color-border);
+          padding-bottom: 60px;
+        }
+        .footer-info-brand {
+          max-width: 320px;
+        }
+        .footer-brand-logo {
+          height: 38px;
+          width: auto;
+          filter: brightness(0) opacity(0.85);
+          margin-bottom: 24px;
+        }
+        .footer-brand-desc {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--color-text-muted);
+        }
+        .footer-col-title {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--color-text-dark);
+          margin-bottom: 24px;
+        }
+        .footer-links-list {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .footer-links-list a {
+          color: var(--color-text-muted);
+          text-decoration: none;
+          font-size: 13px;
+          transition: color 0.3s ease;
+        }
+        .footer-links-list a:hover {
+          color: var(--color-copper);
+        }
+        .footer-bottom-ed {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding-top: 40px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: var(--color-text-muted);
+        }
+        .footer-bottom-ed a {
+          color: inherit;
+          text-decoration: none;
+          transition: color 0.3s ease;
+        }
+        .footer-bottom-ed a:hover {
+          color: var(--color-copper);
+        }
+
+        /* ── RESPONSIVE COMPACT ── */
+        @media (max-width: 1100px) {
+          .header-nav { padding: 0 40px; }
+          .hero-section { padding: 140px 40px 80px; }
+          .hero-container { grid-template-columns: 1fr; gap: 40px; }
+          .hero-right-visual { display: none; }
+          .metrics-container { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+          .metrics-section { padding: 80px 40px; }
+          .editorial-section { padding: 100px 40px; }
+          .modules-grid { grid-template-columns: repeat(2, 1fr); }
+          .dashboard-preview-wrapper { grid-template-columns: 1fr; gap: 40px; }
+          .steps-editorial-row { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+          .steps-editorial-row::before { display: none; }
+          .kia-editorial-grid { grid-template-columns: 1fr; gap: 40px; }
+          .plans-grid-ed { grid-template-columns: 1fr; max-width: 450px; }
+          .testimonial-block-ed { grid-template-columns: 1fr; gap: 30px; }
+          .footer-columns-ed { grid-template-columns: 1fr; gap: 40px; }
+          .footer-editorial { padding: 60px 40px; }
+        }
+
+        @media (max-width: 640px) {
+          .header-nav { padding: 0 20px; }
+          .nav-menu { display: none; }
+          .hero-section { padding: 120px 20px 60px; }
+          .metrics-container { grid-template-columns: 1fr; }
+          .metric-card { border-left: none; padding-left: 0; border-bottom: 1px solid var(--color-border); padding-bottom: 20px; }
+          .metric-card:last-child { border-bottom: none; padding-bottom: 0; }
+          .editorial-section { padding: 80px 20px; }
+          .modules-grid { grid-template-columns: 1fr; }
+          .steps-editorial-row { grid-template-columns: 1fr; }
+          .final-cta-box-ed { padding: 80px 20px; }
+          .footer-bottom-ed { flex-direction: column; gap: 16px; text-align: center; }
         }
       `}</style>
 
-      {/* ── Scripts: scroll reveal + parallax ── */}
-      <script dangerouslySetInnerHTML={{ __html: `
+      {/* ── SCRIPTS: ANIMACIONES E INTERACCIONES ── */}
+      <Script id="landing-animations" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
         (function(){
-          // IntersectionObserver para reveal
-          var isMobile = window.innerWidth < 768;
-          var io = new IntersectionObserver(function(entries){
-            entries.forEach(function(e){
-              if(e.isIntersecting){ e.target.classList.add('up'); io.unobserve(e.target); }
-            });
-          },{ threshold: isMobile ? 0.01 : 0.10, rootMargin: isMobile ? '0px' : '0px 0px -40px 0px' });
-          function init(){
-            var els = document.querySelectorAll('.reveal,.reveal-left,.reveal-scale');
-            els.forEach(function(el){ io.observe(el); });
-            // Fallback: si el observer no disparó en 2s, revelar todo
-            setTimeout(function(){
-              els.forEach(function(el){ el.classList.add('up'); });
-            }, 2000);
+          // 1. SMART HEADER (OCULTAR AL BAJAR, MOSTRAR AL SUBIR)
+          var lastScroll = 0;
+          window.addEventListener('scroll', function() {
+            var header = document.querySelector('.header-nav');
+            if (!header) return;
+            var currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            if (currentScroll > 50) {
+              header.classList.add('scrolled');
+            } else {
+              header.classList.remove('scrolled');
+            }
+            if (currentScroll > lastScroll && currentScroll > 150) {
+              header.classList.add('nav-hidden');
+            } else {
+              header.classList.remove('nav-hidden');
+            }
+            lastScroll = currentScroll <= 0 ? 0 : currentScroll;
+          }, { passive: true });
+
+          // 2. PARALLAX Y MOVIMIENTO DEL MOUSE EN HERO (DESKTOP)
+          var isMobile = window.innerWidth < 1024;
+          if (!isMobile) {
+            var heroBg = document.querySelector('.hero-bg-image');
+            var heroSection = document.querySelector('.hero-section');
+            if (heroSection && heroBg) {
+              heroSection.addEventListener('mousemove', function(e) {
+                var xVal = (e.clientX / window.innerWidth - 0.5) * 15;
+                var yVal = (e.clientY / window.innerHeight - 0.5) * 15;
+                heroBg.style.transform = 'scale(1.1) translate3d(' + xVal + 'px, ' + yVal + 'px, 0)';
+              }, { passive: true });
+            }
           }
-          document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
+
+          // 3. INTERSECTION OBSERVER PARA REVEALS
+          var options = {
+            threshold: isMobile ? 0.02 : 0.08,
+            rootMargin: '0px 0px -60px 0px'
+          };
+          var observer = new IntersectionObserver(function(entries, self) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                // Si es la sección de "Cómo funciona", animar la línea
+                if (entry.target.classList.contains('steps-editorial-row')) {
+                  var line = entry.target.querySelector('.step-progress-line');
+                  if (line) line.classList.add('visible');
+                }
+                // Si contiene contadores, animarlos
+                var counters = entry.target.querySelectorAll('.metric-number');
+                if (counters.length > 0) {
+                  counters.forEach(function(counter) {
+                    if (!counter.dataset.animated) {
+                      animateCounter(counter);
+                    }
+                  });
+                }
+                self.unobserve(entry.target);
+              }
+            });
+          }, options);
+
+          // Registrar elementos
+          document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .img-mask-reveal, .steps-editorial-row, .metrics-container').forEach(function(el) {
+            observer.observe(el);
+          });
+
+          // Función CountUp suave
+          function animateCounter(el) {
+            el.dataset.animated = "true";
+            var target = parseFloat(el.getAttribute('data-target'));
+            var isFloat = el.getAttribute('data-float') === "true";
+            var isMonetary = el.getAttribute('data-money') === "true";
+            var duration = 2500;
+            var start = 0;
+            var startTime = null;
+
+            function step(currentTime) {
+              if (!startTime) startTime = currentTime;
+              var progress = Math.min((currentTime - startTime) / duration, 1);
+              // Easing cubic out
+              var ease = 1 - Math.pow(1 - progress, 3);
+              var currentVal = start + ease * (target - start);
+
+              if (isFloat) {
+                el.textContent = currentVal.toFixed(1) + "%";
+              } else if (isMonetary) {
+                el.textContent = "S/ " + Math.floor(currentVal) + "M+";
+              } else {
+                el.textContent = Math.floor(currentVal) + "+";
+              }
+
+              if (progress < 1) {
+                requestAnimationFrame(step);
+              } else {
+                if (isFloat) el.textContent = target + "%";
+                else if (isMonetary) el.textContent = "S/ " + target + "M+";
+                else el.textContent = target + "+";
+              }
+            }
+            requestAnimationFrame(step);
+          }
+
+          // Fallback por si acaso el observer no gatilla rápido
+          setTimeout(function() {
+            document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .img-mask-reveal').forEach(function(el) {
+              el.classList.add('visible');
+            });
+            var line = document.querySelector('.step-progress-line');
+            if (line) line.classList.add('visible');
+          }, 3000);
         })();
       ` }} />
 
-      {/* ═══════════════ NAV ═══════════════ */}
-      <nav className="nav">
-        <a href="/" className="nav-logo">
-          <img src="/logo-brand.png" alt="Kostruye+" style={{ height: 38, width: "auto", objectFit: "contain" }} />
+
+      {/* ═══════════════ NAV BAR (TRES MARES STYLE) ═══════════════ */}
+      <nav className="header-nav">
+        <a href="/" className="nav-logo-link">
+          <img src="/logo-brand.png" alt="Kostruye+" className="logo-image" />
         </a>
-        <ul className="nav-links">
-          {([["#features","Módulos"],["#pricing","Precios"],["#contact","Contacto"]] as [string,string][]).map(([h,l])=>(
-            <li key={h}><a href={h}>{l}</a></li>
-          ))}
+        <ul className="nav-menu">
+          <li><a href="#features">Módulos</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#pricing">Precios</a></li>
+          <li><a href="#contact">Contacto</a></li>
         </ul>
-        <div style={{ display: "flex", gap: 10 }}>
-          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="nav-cta-alt">Descargar Manual</a>
-          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="nav-cta">Solicitar demo</a>
+        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="btn-action-outline">Manual PDF</a>
+          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid">Solicitar demo</a>
         </div>
       </nav>
 
-      {/* ═══════════════ HERO ═══════════════ */}
-      <section className="hero">
-
-        {/* ── Foto de construcción de fondo ── */}
-        <div className="hero-photo" />
-        <div className="hero-photo-overlay" />
-
-        {/* ── Orbs de luz animados ── */}
-        <div className="hero-orb hero-orb1" />
-        <div className="hero-orb hero-orb2" />
-        <div className="hero-orb hero-orb3" />
-
-        {/* ── Grid sutil ── */}
-        <div className="hero-grid" />
-
-        {/* ── Sweep de luz diagonal ── */}
-        <div className="hero-sweep" />
-
-        {/* Overlay */}
-        <div className="hero-overlay" />
-
-        {/* ── Texto en primer plano ── */}
-        <div className="hero-content">
-          <div className="hero-badge">Software de gestión para constructoras en Perú · <span style={{color:"#a78bfa"}}>✦ Asistente IA incluido</span></div>
-          <h1 className="hero-h1">
-            Gestiona tus obras<br />
-            <span className="g-amber">con precisión total</span>
-          </h1>
-          <p className="hero-sub">
-            Presupuestos, stock, planificación LPS y gastos — todo en una sola plataforma
-            con inteligencia artificial integrada para la industria de la construcción peruana.
-          </p>
-          <div className="hero-cta">
-            <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-primary">
-              Solicitar demo gratuita →
-            </a>
-            <a href="#features" className="btn-ghost">Ver módulos</a>
+      {/* ═══════════════ HERO SECTION (PARALLAX + EDITORIAL) ═══════════════ */}
+      <section className="hero-section">
+        <div className="hero-bg-wrapper">
+          <div className="hero-bg-image"></div>
+        </div>
+        <div className="hero-grid-overlay"></div>
+        
+        <div className="hero-container">
+          <div className="reveal-left">
+            <span className="hero-badge-minimal">Tecnología y Datos para Obras</span>
+            <h1 className="hero-h1-editorial">
+              Gestiona tus proyectos con <span>precisión editorial.</span>
+            </h1>
+            <p className="hero-desc-editorial">
+              Presupuestos S10, control de stock físico, planificación LPS y gestión de costos. Un ERP diseñado institucionalmente para constructoras líderes del Perú.
+            </p>
+            <div className="hero-ctas-editorial">
+              <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid">Solicitar Demo Gratuita</a>
+              <a href="#features" className="btn-action-outline">Ver Módulos</a>
+            </div>
           </div>
-          <div className="hero-stats">
-            {([["10+","Obras activas"],["S/ 50M+","Gestionados"],["99.9%","Uptime"]] as [string,string][]).map(([n,l])=>(
-              <div key={l}><div className="stat-n">{n}</div><div className="stat-l">{l}</div></div>
-            ))}
+          
+          <div className="hero-right-visual reveal-scale d2">
+            <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
+              <img src="/construction-detail.png" alt="Estructura e Ingeniería" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="divider"/>
-
-      {/* ═══════════════ FEATURES ═══════════════ */}
-      <section className="section" id="features">
-        <div className="container">
-          <div style={{ textAlign:"center" }}>
-            <span className="section-label reveal">Módulos</span>
-            <h2 className="section-h reveal d1">
-              Todo lo que necesita<br/><span className="g-amber">tu constructora</span>
-            </h2>
-            <p className="section-sub reveal d2">Ocho módulos integrados, un solo login, cero planillas de Excel.</p>
+      {/* ═══════════════ SECCIÓN DE MÉTRICAS (ANIMADAS) ═══════════════ */}
+      <section className="metrics-section">
+        <div className="metrics-container">
+          <div className="metric-card">
+            <div className="metric-number" data-target="10" data-money="false" data-float="false">0</div>
+            <div className="metric-label">Obras Activas</div>
+            <div className="metric-desc">Controladas y monitoreadas simultáneamente.</div>
           </div>
-          <div className="feat-grid">
+          <div className="metric-card">
+            <div className="metric-number" data-target="50" data-money="true" data-float="false">S/ 0M+</div>
+            <div className="metric-label">Capital Gestionado</div>
+            <div className="metric-desc">Presupuesto y valorizaciones validadas al mes.</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-number" data-target="99.9" data-money="false" data-float="true">0%</div>
+            <div className="metric-label">Uptime del Sistema</div>
+            <div className="metric-desc">Estabilidad y acceso constante a la plataforma.</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-number" data-target="1000" data-money="false" data-float="false">0</div>
+            <div className="metric-label">Usuarios Activos</div>
+            <div className="metric-desc">Ingenieros, administradores y personal de obra.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ MÓDULOS DE GESTIÓN (GRID MINIMALISTA) ═══════════════ */}
+      <section className="editorial-section" id="features">
+        <div className="editorial-container">
+          <div className="section-header-editorial reveal">
+            <span className="section-tag-editorial">Plataforma</span>
+            <h2 className="section-title-editorial">Módulos integrados creados para la industria constructora.</h2>
+            <p className="section-sub-editorial">
+              Elimina las hojas de cálculo fragmentadas. Conecta cada fase operativa de tu obra en un entorno de datos corporativo y de alta gama.
+            </p>
+          </div>
+
+          <div className="modules-grid">
             {[
-              { icon:"💰",color:"#f59e0b",title:"Presupuesto de obra",   desc:"Estructura por capítulos e ítems. Controla montos, avances y variaciones en tiempo real.",           items:["Capítulos y partidas","Real vs presupuestado","Multi-moneda PEN / USD"],       d:"d1" },
-              { icon:"📦",color:"#f59e0b",title:"Control de stock",     desc:"Gestiona entradas y salidas de materiales con trazabilidad completa y alertas de reposición.",       items:["Entradas con proveedor y guía","Salidas por partida","Alertas de stock mínimo"], d:"d2" },
-              { icon:"🛒",color:"#f59e0b",title:"Compras y OC",         desc:"Órdenes de compra con aprobación, seguimiento de entrega y comparación de precios.",                 items:["Solicitud y aprobación","Comparativo de precios","Estado de entrega"],           d:"d3" },
-              { icon:"👷",color:"#f59e0b",title:"Nóminas de obra",      desc:"Control de personal diario, planilla semanal y liquidaciones con cálculo automático.",               items:["Asistencia diaria","Planilla semanal","Cálculo automático"],                      d:"d4" },
-              { icon:"📅",color:"#f59e0b",title:"Planificación LPS",   desc:"Last Planner System digitalizado: lookahead semanal, restricciones y PPC automático.",               items:["Lookahead a 4 semanas","Registro de restricciones","PPC semanal automático"],   d:"d1" },
-              { icon:"🤝",color:"#f59e0b",title:"Clientes y proveedores",desc:"Directorio completo con historial de órdenes de compra y valorizaciones por cliente.",              items:["Directorio centralizado","Órdenes de compra","Historial de transacciones"],     d:"d2" },
-              { icon:"📊",color:"#f59e0b",title:"Valorizaciones",       desc:"Genera valorizaciones mensuales para el cliente con avance por partida e impresión PDF.",           items:["Valorización por partida","Exportación PDF","Historial de valorizaciones"],     d:"d3" },
-              { icon:"📈",color:"#f59e0b",title:"Dashboard ejecutivo",  desc:"Vista gerencial con KPIs de todas las obras activas en tiempo real.",                               items:["Presupuesto vs real","Indicadores de avance","Reportes exportables"],            d:"d4" },
-            ].map(f=>(
-              <div key={f.title} className={`feat-card reveal ${f.d}`}>
-                <div className="feat-icon">{f.icon}</div>
-                <div className="feat-title" style={{ color:f.color }}>{f.title}</div>
-                <div className="feat-desc">{f.desc}</div>
-                <ul className="feat-items">{f.items.map(i=><li key={i}>{i}</li>)}</ul>
+              {
+                title: "Presupuesto de Obra",
+                desc: "Estructuración completa por capítulos y partidas. Visualiza variaciones financieras en tiempo real.",
+                items: ["Capítulos y partidas", "Presupuestado vs Real", "Multi-moneda PEN/USD"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <line x1="12" y1="4" x2="12" y2="20" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                  </svg>
+                ),
+                delay: "d1"
+              },
+              {
+                title: "Control de Almacén",
+                desc: "Gestión completa de stock, entradas por guías de remisión y salidas asociadas a partidas específicas.",
+                items: ["Trazabilidad de guías", "Consumos por partida", "Alertas de stock mínimo"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                  </svg>
+                ),
+                delay: "d2"
+              },
+              {
+                title: "Compras y Subcontratos",
+                desc: "Ciclo de compras automatizado con flujos de aprobación y comparativa de cotizaciones.",
+                items: ["Cuadros comparativos", "Órdenes de Compra", "Validación de entrega"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                ),
+                delay: "d3"
+              },
+              {
+                title: "Planilla de Obreros",
+                desc: "Control de asistencia diaria de operarios, oficiales y peones. Cálculos según régimen de construcción civil.",
+                items: ["Asistencia con foto", "Planilla semanal", "Liquidaciones de ley"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                ),
+                delay: "d4"
+              },
+              {
+                title: "Planificación LPS",
+                desc: "Metodología Last Planner System integrada. Lookahead de restricciones y cálculo automático de PPC.",
+                items: ["Lookahead a 4 semanas", "Gestión de restricciones", "PPC automático semanal"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                ),
+                delay: "d1"
+              },
+              {
+                title: "Clientes & Proveedores",
+                desc: "Directorio institucional centralizado con histórico completo de transacciones y estados de cuenta.",
+                items: ["Historial de pagos", "Calificación de entrega", "Directorio unificado"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                ),
+                delay: "d2"
+              },
+              {
+                title: "Valorizaciones",
+                desc: "Elaboración de valorizaciones de obra mensuales. Estructurado por avance real de partida.",
+                items: ["Cruce presupuestal", "Fórmulas polinómicas", "Reporte de avance físico"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                  </svg>
+                ),
+                delay: "d3"
+              },
+              {
+                title: "Dashboard Gerencial",
+                desc: "Consola de control de KPIs ejecutivos de múltiples proyectos activos, flujo de caja y rentabilidad.",
+                items: ["Variación de costos (EV)", "Proyección de cierre", "KPIs multi-obra"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M3 3v18h18" />
+                    <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+                  </svg>
+                ),
+                delay: "d4"
+              }
+            ].map((mod, index) => (
+              <div key={index} className={`module-card-editorial reveal ${mod.delay}`}>
+                {mod.icon}
+                <h3 className="module-card-title">{mod.title}</h3>
+                <p className="module-card-desc">{mod.desc}</p>
+                <ul className="module-card-list">
+                  {mod.items.map((it, i) => (
+                    <li key={i}>{it}</li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="divider"/>
-
-      {/* ═══════════════ STEPS ═══════════════ */}
-      <section className="section" style={{ background:"rgba(245,158,11,.02)" }}>
-        <div className="container">
-          <div style={{ textAlign:"center" }}>
-            <span className="section-label reveal">¿Cómo funciona?</span>
-            <h2 className="section-h reveal d1">Empieza en <span className="g-amber">menos de 24 horas</span></h2>
-          </div>
-          <div className="steps-grid">
-            {[
-              { icon:"💬", t:"Solicita tu demo",       d:"Te configuramos tu espacio en menos de 24 horas.",         delay:"d1" },
-              { icon:"🔐", t:"Accede a tu portal",     d:"URL personalizada con login seguro para tu equipo.",        delay:"d2" },
-              { icon:"📥", t:"Carga tu obra",          d:"Importa presupuesto, proveedores y stock inicial.",         delay:"d3" },
-              { icon:"🚀", t:"Gestiona en tiempo real",d:"Decisiones basadas en datos actualizados al instante.",     delay:"d4" },
-            ].map(s=>(
-              <div key={s.t} className={`step reveal ${s.delay}`}>
-                <div className="step-num">{s.icon}</div>
-                <div className="step-t">{s.t}</div>
-                <div className="step-d">{s.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="divider"/>
-
-      {/* ═══════════════ KIA — ASISTENTE IA ═══════════════ */}
-      <section className="section" id="kai" style={{ background:"rgba(139,92,246,.02)", paddingBottom:"60px" }}>
-        <div className="container">
-          <div className="kai-wrap">
-            {/* Texto izquierda */}
+      {/* ── ═══════════════ PREVIEW DE DASHBOARD (CON IMAGEN IA) ═══════════════ ── */}
+      <section className="editorial-section alt-bg" id="dashboard">
+        <div className="editorial-container">
+          <div className="dashboard-preview-wrapper">
             <div className="reveal-left">
-              <div className="kai-badge">✦ KIA — Kostruye AI</div>
-              <h2 className="kai-h">
-                Tu obra tiene un<br/>
-                <span style={{ background:"linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
-                  gerente de datos
-                </span><br/>disponible 24/7
-              </h2>
-              <p className="kai-sub">
-                KIA consulta en tiempo real tus proyectos, presupuestos, compras y nóminas.
-                Pregunta en lenguaje natural y recibe análisis inmediatos, sin exportar ni abrir reportes.
+              <span className="section-tag-editorial">Control Visivo</span>
+              <h2 className="section-title-editorial">Decisiones en obra respaldadas por datos instantáneos.</h2>
+              <p className="section-sub-editorial" style={{ marginBottom: 48 }}>
+                La interfaz clara y depurada de Kostruye+ te permite rastrear los desvíos financieros y operacionales antes de que comprometan el margen de la obra.
               </p>
-              <ul className="kai-caps">
-                {[
-                  { icon:"📊", title:"Análisis de presupuesto", desc:"\"¿En qué partidas estamos sobre-gastando?\" — KIA cruza el presupuesto vs gastos reales al instante." },
-                  { icon:"🛒", title:"Control de compras", desc:"Consulta OC pendientes, montos comprometidos y proveedores con mayor gasto sin salir del chat." },
-                  { icon:"⚠️", title:"Alertas proactivas", desc:"KIA detecta anomalías — sobre-gasto, stock bajo, valorizaciones vencidas — y te las menciona sin que preguntes." },
-                  { icon:"📋", title:"Resumen ejecutivo", desc:"\"Resume el estado de mis 5 proyectos activos\" — un informe gerencial en segundos." },
-                ].map(c=>(
-                  <li key={c.title} className="kai-cap">
-                    <div className="kai-cap-icon">{c.icon}</div>
-                    <div className="kai-cap-text"><strong>{c.title}</strong>{c.desc}</div>
-                  </li>
-                ))}
-              </ul>
-              <div className="kai-plan-note">
-                <span>PRO</span>
-                Incluido en Plan Pro y Enterprise · Powered by Claude
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">01</div>
+                <div className="bullet-text">
+                  <strong>Consumo Real vs Presupuestado</strong>
+                  <p>Monitoreo diario del costo incurrido contra el presupuesto contractual S10 de la obra.</p>
+                </div>
+              </div>
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">02</div>
+                <div className="bullet-text">
+                  <strong>Estado de Almacenes en Vivo</strong>
+                  <p>Evita paralizaciones por falta de stock. Visualiza insumos críticos, pedidos en tránsito y alertas en rojo.</p>
+                </div>
               </div>
             </div>
 
-            {/* Mockup chat derecha — solo HTML/CSS, sin API calls */}
-            <div className="reveal-scale d1">
-              <div className="kai-chat-mock">
-                <div className="kai-chat-header">
-                  <div className="kai-chat-avatar">✦</div>
-                  <div>
-                    <div className="kai-chat-name">KIA — Kostruye AI</div>
-                    <div className="kai-chat-status">● En línea · Claude</div>
-                  </div>
+            <div className="dashboard-img-container reveal-scale d2">
+              <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
+                <img src="/dashboard-preview.png" alt="Dashboard Gerencial Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ═══════════════ APP MÓVIL (COMPLEMENTO DE CAMPO) ═══════════════ ── */}
+      <section className="editorial-section" id="mobile-app">
+        <div className="editorial-container">
+          <div className="dashboard-preview-wrapper" style={{ gridTemplateColumns: "0.9fr 1.1fr" }}>
+            <div className="dashboard-img-container reveal-scale">
+              <div className="img-mask-reveal" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src="/app-mockup.png" alt="App Móvil Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '20px' }} />
+              </div>
+            </div>
+
+            <div className="reveal-right">
+              <span className="section-tag-editorial">Control en Campo</span>
+              <h2 className="section-title-editorial">La potencia del ERP en el bolsillo de tus ingenieros.</h2>
+              <p className="section-sub-editorial" style={{ marginBottom: 48 }}>
+                Diseñada especialmente para el trabajo rudo en obra. Nuestra aplicación móvil se conecta con la misma base de datos Supabase en tiempo real, permitiendo a tu equipo registrar datos de campo sin papeleos ni retrasos.
+              </p>
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">01</div>
+                <div className="bullet-text">
+                  <strong>Control de Asistencia Civil (Tareo)</strong>
+                  <p>Registra el ingreso y salida diario de operarios, oficiales y peones. Incluye validación fotográfica y geolocalización para evitar planillas infladas.</p>
                 </div>
-                <div className="kai-chat-body">
-                  {/* Mensaje bienvenida */}
-                  <div>
-                    <div className="kai-msg-label">KIA</div>
-                    <div className="kai-msg kai-msg-ai">
-                      Hola 👋 Soy KIA. Tengo acceso a todos tus proyectos en tiempo real. ¿Qué necesitas saber?
-                    </div>
-                  </div>
-                  {/* Pregunta usuario */}
-                  <div>
-                    <div className="kai-msg kai-msg-user">
-                      ¿Cómo vamos en el proyecto Torres Lima Norte?
-                    </div>
-                  </div>
-                  {/* Respuesta KIA */}
-                  <div>
-                    <div className="kai-msg-label">KIA</div>
-                    <div className="kai-msg kai-msg-ai">
-                      <strong style={{ color:"#fff", display:"block", marginBottom:6 }}>Torres Lima Norte — Resumen</strong>
-                      Avance físico <span className="kai-chip">67%</span> · Sem. 24 de 36<br/>
-                      Presupuesto <span className="kai-chip">S/ 2.4M</span> · Gasto real <span className="kai-chip kai-chip-amber">S/ 1.63M</span><br/><br/>
-                      <span style={{ color:"#f87171" }}>⚠️ Alerta:</span> Partida <em>Concreto armado</em> con <span className="kai-chip kai-chip-red">+12% desvío</span>. Revisar OC pendiente de Proveedor Cemento Sur.
-                    </div>
-                  </div>
-                  {/* Pregunta 2 */}
-                  <div>
-                    <div className="kai-msg kai-msg-user">
-                      ¿Cuánto llevamos en compras este mes?
-                    </div>
-                  </div>
-                  {/* Respuesta KIA */}
-                  <div>
-                    <div className="kai-msg-label">KIA</div>
-                    <div className="kai-msg kai-msg-ai">
-                      <strong style={{ color:"#fff", display:"block", marginBottom:6 }}>Compras — Mes actual</strong>
-                      OC emitidas: <span className="kai-chip">24 órdenes</span> · <span className="kai-chip kai-chip-amber">S/ 187,400</span> comprometido<br/><br/>
-                      Mayor proveedor: <em>Cemento Sur S.A.</em> <span className="kai-chip kai-chip-red">S/ 68,200</span><br/>
-                      <span style={{ color:"#9ca3af", fontSize:11, marginTop:4, display:"block" }}>3 OC pendientes de entrega · revisar stock antes de emitir nuevas.</span>
-                    </div>
-                  </div>
+              </div>
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">02</div>
+                <div className="bullet-text">
+                  <strong>Kardex y Stock Físico al Instante</strong>
+                  <p>El almacenero puede escanear guías de remisión con la cámara de su celular y registrar ingresos o consumos de materiales asignados a partidas específicas en segundos.</p>
                 </div>
-                <div className="kai-input-row">
-                  <div className="kai-input-fake">Pregunta sobre tus proyectos...</div>
-                  <div className="kai-send-btn">➤</div>
+              </div>
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">03</div>
+                <div className="bullet-text">
+                  <strong>Aprobación de Órdenes en Tiempo Real</strong>
+                  <p>Los ingenieros residentes y gerentes reciben alertas inmediatas para autorizar requerimientos de compra y servicios directamente desde la app móvil.</p>
                 </div>
               </div>
             </div>
@@ -575,128 +1365,217 @@ export default function Landing() {
         </div>
       </section>
 
-      <div className="divider"/>
-
-      {/* ═══════════════ PRICING ═══════════════ */}
-      <section className="section" id="pricing">
-        <div className="container">
-          <div style={{ textAlign:"center" }}>
-            <span className="section-label reveal">Precios</span>
-            <h2 className="section-h reveal d1">Planes simples y transparentes</h2>
-            <p className="section-sub reveal d2">Sin contratos anuales. Cancela cuando quieras.</p>
+      {/* ── ═══════════════ CÓMO FUNCIONA (CON CONECTORES) ═══════════════ ── */}
+      <section className="editorial-section">
+        <div className="editorial-container">
+          <div style={{ textAlign: "center", marginBottom: 60 }}>
+            <span className="section-tag-editorial">Despliegue</span>
+            <h2 className="section-title-editorial">Implementación e integración institucional</h2>
           </div>
-          <div className="price-grid">
-            {/* Pro */}
-            <div className="price-card popular reveal-scale d1">
-              <div className="popular-tag">MÁS POPULAR</div>
-              <div className="plan-name" style={{ color:"#f59e0b" }}>Pro</div>
-              <div className="plan-price-row">
-                <span className="plan-price">S/ 1,099</span>
-                <span className="plan-period">/mes</span>
+
+          <div className="steps-editorial-row reveal">
+            <div className="step-progress-line"></div>
+            
+            {[
+              {
+                num: "01",
+                title: "Solicitud de Demo",
+                desc: "Evaluamos el volumen de tus proyectos y estructuramos tu tenant en la plataforma."
+              },
+              {
+                num: "02",
+                title: "Migración de Datos",
+                desc: "Cargamos tus catálogos de insumos, base de datos de proveedores y subcontratistas."
+              },
+              {
+                num: "03",
+                title: "Carga de Presupuestos",
+                desc: "Importamos tus presupuestos S10 directamente desde Excel u OCR inteligente."
+              },
+              {
+                num: "04",
+                title: "Gestión Operativa",
+                desc: "Acceso seguro para ingenieros residentes, administradores y gerencia."
+              }
+            ].map((step, idx) => (
+              <div key={idx} className="step-editorial">
+                <div className="step-circle">{step.num}</div>
+                <h4 className="step-title-ed">{step.title}</h4>
+                <p className="step-desc-ed">{step.desc}</p>
               </div>
-              <p className="plan-desc">La solución completa para constructoras en crecimiento.</p>
-              <ul className="plan-features">
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ═══════════════ KIA ASISTENTE IA (CHAT MOCKUP CLARO) ═══════════════ ── */}
+      <section className="editorial-section alt-bg">
+        <div className="editorial-container">
+          <div className="kia-editorial-grid">
+            <div className="dashboard-img-container reveal-scale">
+              <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
+                <img src="/construction-team.png" alt="Ingenieros usando Inteligencia Artificial" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            </div>
+
+            <div className="reveal-right">
+              <span className="section-tag-editorial">Inteligencia Artificial</span>
+              <h2 className="section-title-editorial">KIA: El asistente experto en los datos de tu obra.</h2>
+              <p className="section-sub-editorial" style={{ marginBottom: 40 }}>
+                Pregunta en lenguaje natural directamente sobre tus costos, compras pendientes, stock o PPC semanal. KIA consulta la base de datos en tiempo real de manera aislada y segura.
+              </p>
+
+              <div className="kia-chat-wrapper-ed">
+                <div className="kia-chat-head-ed">
+                  <div className="kia-avatar-circle">✦</div>
+                  <div className="kia-title-status">
+                    <div className="kia-title-text">KIA — Kostruye AI</div>
+                    <div className="kia-status-text">Analista de datos activo</div>
+                  </div>
+                  <div style={{ fontSize: 18 }}>●</div>
+                </div>
+                <div className="kia-chat-content-ed">
+                  <div className="kia-bubble kia-bubble-ai">
+                    Hola. Tengo acceso al consolidado de tus obras. ¿Qué indicador financiero deseas evaluar hoy?
+                  </div>
+                  <div className="kia-bubble kia-bubble-user">
+                    ¿Cuál es el estado de gastos en la partida de concreto del proyecto Torres Lima Norte?
+                  </div>
+                  <div className="kia-bubble kia-bubble-ai">
+                    <span className="kia-bubble-title">Torres Lima Norte — Insumo Concreto</span>
+                    El presupuesto contractual asignado es de S/ 450,000. El valorizado a la fecha es de S/ 380,000, con un costo real facturado de S/ 425,000. Registramos un desvío desfavorable de S/ 45,000 debido a un incremento de precio del proveedor Cemento Sur.
+                  </div>
+                </div>
+                <div className="kia-chat-input-ed">
+                  <div className="kia-input-fake-ed">Consultar sobre presupuestos, compras o trabajadores...</div>
+                  <div style={{ color: "var(--color-copper)", fontSize: 16 }}>➤</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ═══════════════ TARIFAS Y PLANES EDITORIALES ═══════════════ ── */}
+      <section className="editorial-section" id="pricing">
+        <div className="editorial-container">
+          <div style={{ textAlign: "center", marginBottom: 60 }}>
+            <span className="section-tag-editorial">Tarifas</span>
+            <h2 className="section-title-editorial">Estructura de inversión transparente.</h2>
+            <p className="section-sub-editorial">Sin plazos forzosos. Escalabilidad de acuerdo al crecimiento de tu empresa.</p>
+          </div>
+
+          <div className="plans-grid-ed">
+            {/* Plan Pro */}
+            <div className="plan-card-ed popular-plan-ed reveal-scale d1">
+              <span className="plan-tag-ed">Recomendado</span>
+              <h3 className="plan-title-ed">Plan Pro</h3>
+              <div className="plan-price-ed">S/ 1,099 <span>/ mes</span></div>
+              <p className="plan-desc-ed">Diseñado para constructoras con múltiples obras simultáneas que requieren control absoluto.</p>
+              
+              <ul className="plan-features-ed">
                 {[
-                  "Proyectos ilimitados",
-                  "Todos los módulos — compras, nóminas, valorizaciones, LPS, contabilidad",
-                  "✦ KIA asistente IA con acceso a todos tus datos",
-                  "Exportación PDF y CSV",
-                  "Usuarios ilimitados",
-                  "Soporte prioritario 24/7",
-                  "Alertas automáticas de sobre-gasto y stock",
-                ].map(f=>(
-                  <li key={f}>
-                    <span className="check" style={{ color: f.startsWith("✦") ? "#a78bfa" : "#f59e0b" }}>
-                      {f.startsWith("✦") ? "✦" : "✓"}
-                    </span>
-                    {f.startsWith("✦") ? f.slice(2) : f}
+                  "Proyectos y obras ilimitadas",
+                  "Todos los módulos operativos integrados",
+                  "KIA Asistente de IA con acceso en vivo",
+                  "Exportación de reportes PDF, Excel y CSV",
+                  "Usuarios administradores ilimitados",
+                  "Soporte corporativo prioritario 24/7"
+                ].map((feat, i) => (
+                  <li key={i}>
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    {feat}
                   </li>
                 ))}
               </ul>
-              <a href="/pagar?plan=pro" className="plan-btn" style={{ background:"linear-gradient(135deg,#f59e0b,#d97706)", color:"#000" }}>
-                Empezar ahora →
-              </a>
+              
+              <a href="/pagar?plan=pro" className="btn-action-solid" style={{ width: '100%', justifyContent: 'center' }}>Empezar suscripción</a>
             </div>
 
-            {/* Enterprise */}
-            <div className="price-card reveal-scale d2">
-              <div className="plan-name" style={{ color:"#8b5cf6" }}>Enterprise</div>
-              <div className="plan-price-row">
-                <span className="plan-price">S/ 3,699</span>
-                <span className="plan-period">/mes</span>
-              </div>
-              <p className="plan-desc">Para grupos constructores con múltiples empresas.</p>
-              <ul className="plan-features">
+            {/* Plan Enterprise */}
+            <div className="plan-card-ed reveal-scale d2">
+              <h3 className="plan-title-ed">Enterprise</h3>
+              <div className="plan-price-ed">S/ 3,699 <span>/ mes</span></div>
+              <p className="plan-desc-ed">Para corporaciones constructoras con múltiples razones sociales y requerimientos a medida.</p>
+              
+              <ul className="plan-features-ed">
                 {[
-                  "Todo en Pro +",
-                  "Multi-empresa en un solo panel",
-                  "Gerente de cuenta dedicado",
-                  "Onboarding y migración de datos",
-                  "Integraciones a medida",
-                  "SLA 99.9% garantizado",
-                ].map(f=>(
-                  <li key={f}><span className="check" style={{ color:"#8b5cf6" }}>✓</span>{f}</li>
+                  "Consolidado multi-empresa unificado",
+                  "Gerente de cuenta y onboarding corporativo",
+                  "Integración a medida con sistemas ERP externos",
+                  "Desarrollo de reportes a la medida",
+                  "SLA garantizado por contrato (99.9%)",
+                  "Copias de respaldo de base de datos personalizadas"
+                ].map((feat, i) => (
+                  <li key={i}>
+                    <svg viewBox="0 0 24 24" style={{ stroke: "var(--color-navy)" }}><polyline points="20 6 9 17 4 12" /></svg>
+                    {feat}
+                  </li>
                 ))}
               </ul>
-              <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20el%20Plan%20Enterprise%20de%20Kostruye%2B" className="plan-btn" style={{ background:"rgba(255,255,255,.06)", color:"#fff", border:"1px solid rgba(139,92,246,.44)" }}>
-                Contactar ventas
-              </a>
+              
+              <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20el%20Plan%20Enterprise%20de%20Kostruye%2B" className="btn-action-outline" style={{ width: '100%', justifyContent: 'center' }}>Contactar Ventas</a>
             </div>
           </div>
 
           {/* Testimonial */}
-          <div className="testi reveal">
-            <div style={{ fontSize:32, marginBottom:16 }}>💬</div>
-            <blockquote>
-              "Pasamos de hojas de Excel con errores a tener control total de nuestra obra en tiempo real. La diferencia es brutal."
-            </blockquote>
-            <div style={{ color:"#6b7280", fontSize:14 }}>
-              <strong style={{ color:"#f59e0b" }}>Jorge Olivera</strong> — Gerente de Proyecto, SEATEK Construcciones
+          <div className="testimonial-block-ed reveal">
+            <div className="testimonial-quote-ed">
+              "La plataforma eliminó el retraso en el reporte de costos semanales. Ahora la gerencia y el residente de obra miran la misma información en tiempo real."
+            </div>
+            <div className="testimonial-author-ed">
+              <strong>Ing. Jorge Olivera</strong>
+              <span>Gerente de Proyectos · SEATEK Construcciones</span>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="divider"/>
+      {/* ── ═══════════════ CTA FINAL (GRIS MARES) ═══════════════ ── */}
+      <section className="final-cta-box-ed reveal" id="contact">
+        <h2>¿Listo para estructurar tu constructora?</h2>
+        <p>Habilita tu tenant en 24 horas y comienza a registrar tus presupuestos de obra hoy mismo.</p>
+        <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20conocer%20Kostruye%2B" className="btn-action-solid" style={{ background: "var(--color-copper)", border: "none" }}>💬 Escribir a WhatsApp</a>
+          <a href="mailto:info@kreoia.site" className="btn-action-outline" style={{ borderColor: "#FFFFFF", color: "#FFFFFF" }}>✉️ Contactar por correo</a>
+        </div>
+      </section>
 
-      {/* ═══════════════ CTA / CONTACT ═══════════════ */}
-      <section className="section" id="contact">
-        <div className="container">
-          <div className="cta-box reveal">
-            <span className="section-label">Empieza hoy</span>
-            <h2 className="section-h" style={{ margin:"16px 0 12px" }}>
-              ¿Listo para gestionar tus obras <span className="g-amber">con datos reales?</span>
-            </h2>
-            <p style={{ color:"#6b7280", fontSize:15, maxWidth:500, margin:"0 auto" }}>
-              Sin contratos, sin letra pequeña. Tu primera obra activa en menos de 24 horas.
+      {/* ── ═══════════════ FOOTER INSTITUCIONAL (TRES MARES STYLE) ═══════════════ ── */}
+      <footer className="footer-editorial">
+        <div className="footer-columns-ed">
+          <div className="footer-info-brand">
+            <img src="/logo-brand.png" alt="Kostruye+" className="footer-brand-logo" />
+            <p className="footer-brand-desc">
+              Plataforma y ERP de gestión operativa para constructoras del Perú. Optimización de presupuestos, almacén, compras y nóminas de personal.
             </p>
-            <div className="cta-btns">
-              <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20conocer%20Kostruye%2B" className="btn-primary" style={{ fontSize:16 }}>
-                💬 Escribir por WhatsApp
-              </a>
-              <a href="mailto:kreoiastudioperu@gmail.com" className="btn-ghost" style={{ fontSize:16 }}>
-                ✉️ kreoiastudioperu@gmail.com
-              </a>
-            </div>
-            <div style={{ color:"#374151", fontSize:13 }}>
-              O escríbenos a{" "}
-              <a href="mailto:kreoiastudioperu@gmail.com" style={{ color:"#f59e0b", textDecoration:"none" }}>kreoiastudioperu@gmail.com</a>
-            </div>
+          </div>
+          <div>
+            <h4 className="footer-col-title">Plataforma</h4>
+            <ul className="footer-links-list">
+              <li><a href="#features">Módulos</a></li>
+              <li><a href="#dashboard">Dashboard</a></li>
+              <li><a href="#pricing">Tarifas y Planes</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="footer-col-title">Compañía</h4>
+            <ul className="footer-links-list">
+              <li><a href="mailto:info@kreoia.site">Soporte</a></li>
+              <li><a href="/Manual-Kostruye-Plus.pdf">Manual del Sistema</a></li>
+              <li><a href="https://wa.me/51907130225">Contacto Ventas</a></li>
+            </ul>
           </div>
         </div>
-      </section>
 
-      {/* ═══════════════ FOOTER ═══════════════ */}
-      <footer className="footer">
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <img src="/logo-brand.png" alt="Kostruye+" style={{ height: 28, width: "auto", objectFit: "contain" }} />
-          <span style={{ fontWeight:700, fontSize:13, color:"#374151" }}>© 2026 KREO IA Studio</span>
+        <div className="footer-bottom-ed">
+          <div>© 2026 <a href="https://kreoia.site" target="_blank" rel="noopener noreferrer">KREO IA Studio</a>. Todos los derechos reservados.</div>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", justifyContent: "center" }}>
+            <a href="/legal/terminos">Términos</a>
+            <a href="/legal/privacidad">Privacidad</a>
+            <span>Lima, Perú</span>
+          </div>
         </div>
-        <ul className="footer-links">
-          {([["#features","Módulos"],["#pricing","Precios"],["#contact","Contacto"]] as [string,string][]).map(([h,l])=>(
-            <li key={h}><a href={h}>{l}</a></li>
-          ))}
-        </ul>
       </footer>
 
       {/* JSON-LD Structured Data */}

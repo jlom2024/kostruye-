@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     pathname.startsWith("/pagar") ||
+    pathname.startsWith("/legal") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/admin/auth") ||

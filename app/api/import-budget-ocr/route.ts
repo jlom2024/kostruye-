@@ -3,8 +3,6 @@ import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export const maxDuration = 600; // permite extracciones largas (PDFs grandes)
 export const dynamic = "force-dynamic";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type BudgetItem = {
@@ -306,6 +304,8 @@ export async function POST(req: NextRequest) {
   let isScanned = false;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
     const parsed = await pdfParse(buffer);
     extractedText = parsed.text;
     const charCount = extractedText.replace(/\s/g, "").length;

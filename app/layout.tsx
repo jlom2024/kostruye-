@@ -2,6 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Inter, Playfair_Display } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
 
 const APP_URL = "https://konstruye.site";
 
@@ -80,8 +91,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="h-full" suppressHydrationWarning>
-      <body className="h-full antialiased">
+    <html lang="es" className={`h-full ${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+      <body className="h-full antialiased font-sans">
         <QueryProvider>
           {children}
           <Toaster richColors position="top-right" />
