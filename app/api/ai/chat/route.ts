@@ -163,7 +163,7 @@ type OpenAIToolCall = {
 async function runTool(
   name: string,
   args: Record<string, string>,
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: any,
   orgId: string
 ) {
   switch (name) {
@@ -182,20 +182,20 @@ async function runTool(
         .eq("project_id", args.project_id);
       if (!budgets?.length) return { error: "Sin presupuesto registrado" };
 
-      const ventaBudget = budgets.find(b => b.budget_type === "venta");
-      const metaBudget  = budgets.find(b => b.budget_type === "meta");
+      const ventaBudget = budgets.find((b: any) => b.budget_type === "venta");
+      const metaBudget  = budgets.find((b: any) => b.budget_type === "meta");
 
       const { data: chapters } = ventaBudget
         ? await supabase
             .from("budget_chapters")
             .select("code, name, total")
-            .eq("budget_id", ventaBudget.id)
+            .eq("budget_id", (ventaBudget as any).id)
             .order("sort_order")
         : { data: [] };
 
       return {
-        presupuesto_venta: ventaBudget?.total ?? 0,
-        presupuesto_meta:  metaBudget?.total  ?? 0,
+        presupuesto_venta: (ventaBudget as any)?.total ?? 0,
+        presupuesto_meta:  (metaBudget as any)?.total  ?? 0,
         capitulos: chapters ?? [],
       };
     }
@@ -205,7 +205,7 @@ async function runTool(
         .select("id, po_number, status, total, issue_date, suppliers(name)")
         .eq("project_id", args.project_id)
         .order("issue_date", { ascending: false });
-      return (data ?? []).map(p => ({
+      return (data ?? []).map((p: any) => ({
         po_number:  p.po_number,
         supplier:   (p.suppliers as { name: string } | null)?.name ?? "—",
         total:      p.total,
@@ -243,7 +243,7 @@ async function runTool(
         .select("os_number, service_type, description, amount, status, issue_date, completion_date, suppliers(name)")
         .eq("project_id", args.project_id)
         .order("created_at", { ascending: false });
-      return (data ?? []).map(o => ({
+      return (data ?? []).map((o: any) => ({
         os_number:       o.os_number,
         type:            o.service_type,
         description:     o.description,
@@ -307,16 +307,16 @@ async function runTool(
         .order("created_at");
       if (!formulas?.length) return { message: "No hay fórmulas polinómicas definidas para este proyecto." };
 
-      const ids = formulas.map((f) => f.id);
+      const ids = formulas.map((f: any) => f.id);
       const { data: monomios } = await supabase
         .from("reajuste_monomios")
         .select("formula_id, symbol, coefficient, index_code, description")
         .in("formula_id", ids)
         .order("sort_order");
 
-      return formulas.map((f) => ({
+      return formulas.map((f: any) => ({
         ...f,
-        monomios: (monomios ?? []).filter((m) => m.formula_id === f.id),
+        monomios: (monomios ?? []).filter((m: any) => m.formula_id === f.id),
       }));
     }
     default:
@@ -348,7 +348,7 @@ export async function POST(request: NextRequest) {
   // Contexto de proyecto activo
   let projectContext = "";
   if (projectId) {
-    const { data: proj } = await supabase
+    const { data: proj } = await (supabase as any)
       .from("projects")
       .select("name, code, status, currency")
       .eq("id", projectId)
@@ -437,7 +437,7 @@ Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: 
     const data = await res.json();
     const choice = data.choices?.[0];
     const finishReason: string = choice?.finish_reason;
-    const assistantMsg: OpenAIMessage = choice?.message;
+    const assistantMsg = choice?.message;
 
     // Si no hay tool calls → respuesta final
     if (finishReason !== "tool_calls") {
@@ -447,15 +447,15 @@ Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: 
     }
 
     // Agregar mensaje del asistente con tool_calls al historial
-    msgs.push(assistantMsg);
+    msgs.push(assistantMsg as any);
 
     // Ejecutar herramientas en paralelo
-    const toolCalls: OpenAIToolCall[] = assistantMsg.tool_calls ?? [];
+    const toolCalls: OpenAIToolCall[] = (assistantMsg as any).tool_calls ?? [];
     const toolResults = await Promise.all(
       toolCalls.map(async (tc) => {
         let args: Record<string, string> = {};
         try { args = JSON.parse(tc.function.arguments); } catch { /* args vacíos */ }
-        const result = await runTool(tc.function.name, args, supabase, membership.organization_id);
+        const result = await runTool(tc.function.name, args, supabase as any, (membership as any).organization_id);
         return {
           role: "tool" as const,
           tool_call_id: tc.id,
@@ -465,7 +465,7 @@ Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: 
     );
 
     // Agregar resultados al historial
-    msgs.push(...toolResults);
+    msgs.push(...toolResults as any[]);
   }
 
   return NextResponse.json({ content: "No pude completar la consulta." });
