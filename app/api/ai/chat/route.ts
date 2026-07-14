@@ -1,103 +1,171 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const ANTHROPIC_TOOLS = [
+// ─────────────────────────────────────────────────────────────────
+// KIA — Definición de herramientas en formato OpenAI function calling
+// ─────────────────────────────────────────────────────────────────
+const OPENAI_TOOLS: OpenAITool[] = [
   {
-    name: "get_projects",
-    description: "Lista todos los proyectos de la organización con estado, presupuesto y fechas",
-    input_schema: { type: "object", properties: {}, required: [] },
-  },
-  {
-    name: "get_project_budget",
-    description: "Obtiene las partidas del presupuesto de un proyecto con montos y gastos reales",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
+    type: "function",
+    function: {
+      name: "get_projects",
+      description: "Lista todos los proyectos de la organización con estado, presupuesto y fechas",
+      parameters: { type: "object", properties: {}, required: [] },
     },
   },
   {
-    name: "get_purchase_orders",
-    description: "Lista las órdenes de compra de un proyecto con proveedor, monto y estado",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_payroll",
-    description: "Obtiene las nóminas/planillas de un proyecto con montos y fechas",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_valuations",
-    description: "Lista las valorizaciones de un proyecto con montos y estados",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_clients",
-    description: "Lista los clientes de la organización",
-    input_schema: { type: "object", properties: {}, required: [] },
-  },
-  {
-    name: "get_warehouse",
-    description: "Consulta el stock o inventario del almacén de un proyecto",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_service_orders",
-    description: "Lista las órdenes de servicio de un proyecto (subcontratos, equipos, transporte) con montos y estados",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_workers",
-    description: "Lista el personal (empleados/trabajadores) de un proyecto con su cargo/categoría, DNI, salario y estado",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
-    },
-  },
-  {
-    name: "get_inei_indices",
-    description: "Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPCs). Úsalo cuando el usuario pregunte por índices INEI, valores para la fórmula polinómica, el índice de mano de obra, acero, cemento, etc.",
-    input_schema: {
-      type: "object",
-      properties: {
-        index_code: { type: "string", description: "Código del índice (ej: '47' mano de obra, '03' acero corrugado). Omitir para obtener todos." },
+    type: "function",
+    function: {
+      name: "get_project_budget",
+      description: "Obtiene las partidas del presupuesto de un proyecto con montos y gastos reales",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
       },
-      required: [],
     },
   },
   {
-    name: "get_reajuste_formulas",
-    description: "Obtiene las fórmulas polinómicas de reajuste (Factor K) de un proyecto con sus monomios e índices INEI asignados",
-    input_schema: {
-      type: "object",
-      properties: { project_id: { type: "string", description: "UUID del proyecto" } },
-      required: ["project_id"],
+    type: "function",
+    function: {
+      name: "get_purchase_orders",
+      description: "Lista las órdenes de compra de un proyecto con proveedor, monto y estado",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_payroll",
+      description: "Obtiene las nóminas/planillas de un proyecto con montos y fechas",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_valuations",
+      description: "Lista las valorizaciones de un proyecto con montos y estados",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_clients",
+      description: "Lista los clientes de la organización",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_warehouse",
+      description: "Consulta el stock o inventario del almacén de un proyecto",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_service_orders",
+      description: "Lista las órdenes de servicio de un proyecto (subcontratos, equipos, transporte) con montos y estados",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_workers",
+      description: "Lista el personal (empleados/trabajadores) de un proyecto con su cargo/categoría, DNI, salario y estado",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_inei_indices",
+      description: "Consulta los Índices Unificados de Precios de la Construcción (INEI/IUPCs). Úsalo cuando el usuario pregunte por índices INEI, valores para la fórmula polinómica, el índice de mano de obra, acero, cemento, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          index_code: { type: "string", description: "Código del índice (ej: '47' mano de obra, '03' acero corrugado). Omitir para obtener todos." },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_reajuste_formulas",
+      description: "Obtiene las fórmulas polinómicas de reajuste (Factor K) de un proyecto con sus monomios e índices INEI asignados",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
     },
   },
 ];
 
-async function runTool(name: string, args: Record<string, string>, supabase: Awaited<ReturnType<typeof createClient>>, orgId: string) {
+// ─────────────────────────────────────────────────────────────────
+// Tipos OpenAI
+// ─────────────────────────────────────────────────────────────────
+type OpenAITool = {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+};
+
+type OpenAIMessage =
+  | { role: "system";    content: string }
+  | { role: "user";      content: string }
+  | { role: "assistant"; content: string | null; tool_calls?: OpenAIToolCall[] }
+  | { role: "tool";      content: string; tool_call_id: string };
+
+type OpenAIToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+// ─────────────────────────────────────────────────────────────────
+// Ejecución de herramientas (sin cambios respecto a versión Anthropic)
+// ─────────────────────────────────────────────────────────────────
+async function runTool(
+  name: string,
+  args: Record<string, string>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string
+) {
   switch (name) {
     case "get_projects": {
       const { data } = await supabase
@@ -256,16 +324,9 @@ async function runTool(name: string, args: Record<string, string>, supabase: Awa
   }
 }
 
-type AnthropicMessage = {
-  role: "user" | "assistant";
-  content: string | AnthropicContent[];
-};
-
-type AnthropicContent =
-  | { type: "text"; text: string }
-  | { type: "tool_use"; id: string; name: string; input: Record<string, string> }
-  | { type: "tool_result"; tool_use_id: string; content: string };
-
+// ─────────────────────────────────────────────────────────────────
+// POST handler — Loop agéntico con OpenAI function calling
+// ─────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -284,6 +345,7 @@ export async function POST(request: NextRequest) {
     projectId?: string | null;
   };
 
+  // Contexto de proyecto activo
   let projectContext = "";
   if (projectId) {
     const { data: proj } = await supabase
@@ -327,7 +389,6 @@ APP MÓVIL KOSTRUYE+ (Expo/React Native):
 - Fases completadas: Auth, selector org/proyecto, Dashboard KPIs, Almacén (Kardex + ingresos + vales), Compras (lista OC + cambio estado en campo)
 - La app móvil conecta a la misma base de datos que el web — los datos son los mismos
 - Próximo: EAS Build → APK interno para distribución
-- Si el usuario pregunta por la app móvil, explica que ya tiene módulos de campo (almacén + compras) disponibles
 
 ÍNDICES INEI (IUPCs):
 - Norma vigente: R.J. 016-2026-INEI. Base: Diciembre 2025 = 100. Área 1 = Lima Metropolitana.
@@ -338,61 +399,73 @@ FÓRMULA POLINÓMICA (Factor K):
 
 Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.${projectContext}`;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 500 });
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "OPENAI_API_KEY no configurada" }, { status: 500 });
 
-  const msgs: AnthropicMessage[] = messages.map(m => ({ role: m.role, content: m.content }));
+  // Modelo: env configurable, default gpt-4o-mini (rápido y económico)
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  // Agentic loop — max 5 rounds
+  // Construir historial en formato OpenAI
+  const msgs: OpenAIMessage[] = [
+    { role: "system", content: systemPrompt },
+    ...messages.map(m => ({ role: m.role, content: m.content } as OpenAIMessage)),
+  ];
+
+  // ── Loop agéntico — máx 5 rondas ──────────────────────────────
   for (let i = 0; i < 5; i++) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model,
         max_tokens: 2048,
-        system: systemPrompt,
         messages: msgs,
-        tools: ANTHROPIC_TOOLS,
+        tools: OPENAI_TOOLS,
+        tool_choice: "auto",
       }),
     });
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("Anthropic KIA error:", err);
+      console.error("[KIA] OpenAI error:", err);
       return NextResponse.json({ error: "Error en KIA" }, { status: 502 });
     }
 
     const data = await res.json();
-    const stopReason: string = data.stop_reason;
-    const content: AnthropicContent[] = data.content;
+    const choice = data.choices?.[0];
+    const finishReason: string = choice?.finish_reason;
+    const assistantMsg: OpenAIMessage = choice?.message;
 
-    if (stopReason !== "tool_use") {
-      const text = content.find((b) => b.type === "text");
-      return NextResponse.json({ content: (text as { type: "text"; text: string })?.text ?? "Sin respuesta." });
+    // Si no hay tool calls → respuesta final
+    if (finishReason !== "tool_calls") {
+      return NextResponse.json({
+        content: assistantMsg?.content ?? "Sin respuesta.",
+      });
     }
 
-    // Process tool calls
-    const toolUses = content.filter((b) => b.type === "tool_use") as { type: "tool_use"; id: string; name: string; input: Record<string, string> }[];
+    // Agregar mensaje del asistente con tool_calls al historial
+    msgs.push(assistantMsg);
 
-    msgs.push({ role: "assistant", content });
-
+    // Ejecutar herramientas en paralelo
+    const toolCalls: OpenAIToolCall[] = assistantMsg.tool_calls ?? [];
     const toolResults = await Promise.all(
-      toolUses.map(async (tu) => {
-        const result = await runTool(tu.name, tu.input, supabase, membership.organization_id);
+      toolCalls.map(async (tc) => {
+        let args: Record<string, string> = {};
+        try { args = JSON.parse(tc.function.arguments); } catch { /* args vacíos */ }
+        const result = await runTool(tc.function.name, args, supabase, membership.organization_id);
         return {
-          type: "tool_result" as const,
-          tool_use_id: tu.id,
+          role: "tool" as const,
+          tool_call_id: tc.id,
           content: JSON.stringify(result),
         };
       })
     );
 
-    msgs.push({ role: "user", content: toolResults });
+    // Agregar resultados al historial
+    msgs.push(...toolResults);
   }
 
   return NextResponse.json({ content: "No pude completar la consulta." });
