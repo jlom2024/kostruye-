@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "***REDACTED***";
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 function adminClient() {
   return createClient(
