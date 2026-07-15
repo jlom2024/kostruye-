@@ -42,25 +42,32 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 
 ---
 
-## Módulos activos (estado 2026-06-19)
+## Módulos activos (v2.5 - Julio 2026)
 
 | Módulo | Ruta | Roles | Estado |
 |--------|------|-------|--------|
-| Dashboard | `/proyectos/[id]/dashboard` | admin/contador/user | ✅ |
-| Presupuesto / APU | `/proyectos/[id]/presupuesto` | admin/contador | ✅ Roll-up automático, gating edición, importación S10 exacta al céntimo (Excel/PDF) |
+| Dashboard | `/proyectos/[id]/dashboard` | admin/contador/user/cliente | ✅ Incorporados KPIs de Fideicomiso, HSE y Calidad |
+| Presupuesto / APU | `/proyectos/[id]/presupuesto` | admin/contador | ✅ Roll-up automático, importación S10 exacta al céntimo (Excel/PDF) |
 | Compras | `/proyectos/[id]/compras` | admin/contador | ✅ Gating aprobación/emisión |
 | Servicios | `/proyectos/[id]/servicios` | admin/contador | ✅ |
 | Almacén | `/proyectos/[id]/almacen` | admin/user | ✅ Kardex PPP |
+| Tareo Diario | `/proyectos/[id]/campo/tareo` | admin/user/cliente | ✅ Corregido conflicto de presupuesto dinámico con `.eq("budget_type", "venta")` |
+| Parte Equipos | `/proyectos/[id]/campo/parte-equipos` | admin/user/cliente | ✅ |
+| Avance Diario | `/proyectos/[id]/campo/avance` | admin/user/cliente | ✅ Sincronizado con presupuesto de venta |
+| Calidad y HSE | `/proyectos/[id]/campo/hse` | admin/user/cliente | ✅ Resuelto error 404 de params asíncronos en Next.js 16 |
+| Productividad | `/proyectos/[id]/campo/productividad` | admin/contador/user/cliente | ✅ |
 | Nóminas | `/proyectos/[id]/nominas` | admin/contador | ✅ |
 | Valorizaciones | `/proyectos/[id]/valorizaciones` | admin/contador | ✅ Fórmula polinómica + K + PDF |
 | Control de Costos | `/proyectos/[id]/control-costos` | admin/contador | ✅ Desviaciones vs Kardex |
 | Lean / LPS | `/proyectos/[id]/lean` | admin/user | 🔨 En desarrollo |
 | Contabilidad + SUNAT | `/proyectos/[id]/contabilidad` | admin/contador | ✅ Facturación electrónica |
+| Caja Chica | `/proyectos/[id]/caja-chica` | admin/contador/user | ✅ Rendiciones móviles vinculadas a APU |
+| Fideicomiso | `/proyectos/[id]/fideicomiso` | admin/contador/cliente | ✅ Integración con CORFID / DH Consultores |
 | Auditoría | `/proyectos/[id]/auditoria` | admin/contador | ✅ Log multi-tenant + diff |
-| Config. proyecto | `/proyectos/[id]/configuracion` | admin | ✅ General, Equipo, Parámetros, **Fideicomiso** |
+| Config. proyecto | `/proyectos/[id]/configuracion` | admin | ✅ General, Equipo, Parámetros, Fideicomiso |
 | Admin INEI | `/admin/inei` | admin app | ✅ CRUD índices |
 | Configuración SUNAT | `/configuracion` | admin | ✅ Credenciales SOL por org |
-| **App Móvil** | `kostruye-movil/` (repo separado) | todos | ✅ Expo/RN — Dashboard KPIs, Almacén, Compras. Misma Supabase. |
+| **App Móvil** | `kostruye-movil/` (repo separado) | todos | ✅ Expo/RN (Offline-First, GPS, Fotos, Kardex y Caja Chica) |
 
 ---
 
@@ -76,10 +83,10 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 ## KIA — Asistente IA
 
 - **Ubicación:** `app/(dashboard)/layout.tsx` → `<AiChat />` (aparece en todo el dashboard)
-- **API:** `app/api/ai/chat/route.ts` — OpenAI `gpt-4o-mini` (loop agéntico, máx 5 rondas). Modelo sobrescribible con `OPENAI_MODEL`.
+- **API:** `app/api/ai/chat/route.ts` — OpenAI `gpt-4o-mini` (loop agéntico, máx 5 rondas).
 - **Context-aware:** auto-detecta `projectId` del URL, lo inyecta en system prompt
-- **Herramientas (11):** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`, `get_inei_indices`, `get_reajuste_formulas`
-- **Conoce:** importación S10 exacta al céntimo (Excel/PDF), app móvil, índices INEI y Fórmula Polinómica
+- **Novedades v2.5:** Conoce sobre Caja Chica móvil, Fideicomisos CORFID, checklists e incidentes HSE.
+- **Herramientas (14):** `get_projects`, `get_project_budget`, `get_purchase_orders`, `get_payroll`, `get_valuations`, `get_warehouse`, `get_service_orders`, `get_workers`, `get_clients`, `get_inei_indices`, `get_reajuste_formulas`, `analyze_k_factor_risk`, `detect_cost_overrun`, `generate_committee_minutes`
 - ⚠️ **NO está en la landing** — solo en el dashboard de la app
 
 ## Manual de Usuario
@@ -159,8 +166,9 @@ Organization (constructora)
 | Rol | Acceso |
 |-----|--------|
 | `admin` | Todo — gestión org + todos los proyectos |
-| `contador` | Módulos financieros (presupuesto, compras, valorizaciones, contabilidad) |
-| `user` | Dashboard, almacén, lean |
+| `contador` | Módulos financieros, nóminas, contabilidad, Caja Chica y Fideicomiso |
+| `user` | Dashboard, almacén, lean, tareo, equipos, avance, HSE y Caja Chica |
+| `cliente` | Dashboard (con KPIs de Fideicomiso/HSE), tareo, parte-equipos, avance, HSE, productividad y Fideicomiso |
 
 Los roles existen en 2 niveles: **organization_members** (global) y **project_members** (por proyecto). El rol de proyecto tiene precedencia vía `fn_user_can_project`.
 
