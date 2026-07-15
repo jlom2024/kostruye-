@@ -1328,7 +1328,7 @@ export default function Landing() {
             <span className="section-tag-editorial">Diferenciador v2.5</span>
             <h2 className="section-title-editorial">¿Por qué Kostruye+ es el ERP definitivo?</h2>
             <p className="section-sub-editorial" style={{ maxWidth: 800, margin: "0 auto" }}>
-              Reunimos las mejores capacidades operativas y financieras del mercado en una sola plataforma integrada, superando las limitaciones de los sistemas aislados de la competencia.
+              Reunimos las mejores capacidades operativas y financieras del mercado en una sola plataforma integrada, superando las limitaciones de los sistemas tradicionales aislados.
             </p>
           </div>
 
@@ -1337,17 +1337,17 @@ export default function Landing() {
               <thead>
                 <tr style={{ background: "var(--color-bg-sand)", borderBottom: "2px solid var(--color-border)" }}>
                   <th style={{ padding: "18px 24px", textAlign: "left", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Característica</th>
-                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>S10 Integral</th>
-                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Konstru360</th>
-                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Bildin</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Sistemas Locales</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Apps de Campo Aisladas</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>ERPs No Localizados</th>
                   <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-copper)", fontSize: 16, fontWeight: "bold", background: "rgba(184, 115, 61, 0.05)" }}>Kostruye+ v2.5</th>
                 </tr>
               </thead>
               <tbody>
                 {[
                   {
-                    feat: "Importación Presupuestos S10 (APU)",
-                    s10: "✓ Local (Desktop)", k360: "✗", bildin: "✗", kplus: "✓ Cloud en Vivo (Excel/OCR)"
+                    feat: "Importación Presupuestos (APU/Excel)",
+                    s10: "✓ Solo PC Local", k360: "✗", bildin: "✗", kplus: "✓ Cloud en Vivo (Excel/OCR)"
                   },
                   {
                     feat: "App Móvil de Campo Offline-First",
@@ -1363,7 +1363,7 @@ export default function Landing() {
                   },
                   {
                     feat: "Facturación SUNAT e Índices INEI",
-                    s10: "✓ Parcial (INEI)", k360: "✗", bildin: "✗", kplus: "✓ 1-Clic Automático"
+                    s10: "✓ Manual/Parcial", k360: "✗", bildin: "✗", kplus: "✓ 1-Clic Automático"
                   },
                   {
                     feat: "Asistente AI de Analíticas (KIA)",
