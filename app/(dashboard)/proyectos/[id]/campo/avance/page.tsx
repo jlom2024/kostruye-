@@ -15,7 +15,7 @@ export default async function AvancePage({ params }: Props) {
     { data: activeBudget }
   ] = await Promise.all([
     (supabase.from("projects") as any).select("id, name, organization_id").eq("id", id).single(),
-    (supabase.from("budgets") as any).select("id").eq("project_id", id).eq("is_active", true).single()
+    (supabase.from("budgets") as any).select("id").eq("project_id", id).eq("budget_type", "venta").eq("is_active", true).single()
   ]);
 
   if (!project) notFound();
