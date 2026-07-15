@@ -59,7 +59,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Nóminas | `/proyectos/[id]/nominas` | admin/contador | ✅ |
 | Valorizaciones | `/proyectos/[id]/valorizaciones` | admin/contador | ✅ Fórmula polinómica + K + PDF |
 | Control de Costos | `/proyectos/[id]/control-costos` | admin/contador | ✅ Desviaciones vs Kardex |
-| Lean / LPS | `/proyectos/[id]/lean` | admin/user | 🔨 En desarrollo |
+| Lean / LPS | `/proyectos/[id]/lean` | admin/user | ✅ Lookahead, restricciones y PPC semanal |
 | Contabilidad + SUNAT | `/proyectos/[id]/contabilidad` | admin/contador | ✅ Facturación electrónica |
 | Caja Chica | `/proyectos/[id]/caja-chica` | admin/contador/user | ✅ Rendiciones móviles vinculadas a APU |
 | Fideicomiso | `/proyectos/[id]/fideicomiso` | admin/contador/cliente | ✅ Integración con CORFID / DH Consultores |
