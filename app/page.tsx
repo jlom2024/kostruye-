@@ -1266,6 +1266,44 @@ export default function Landing() {
                   </svg>
                 ),
                 delay: "d4"
+              },
+              {
+                title: "Fideicomisos CORFID",
+                desc: "Gestión digital y automatizada de liberación de fondos vinculada a valorizaciones aprobadas, nóminas y compras.",
+                items: ["Conciliación bancaria", "Sustentos estructurados", "Trazabilidad de fondos"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <polyline points="9 11 11 13 15 9" />
+                  </svg>
+                ),
+                delay: "d1"
+              },
+              {
+                title: "Caja Chica de Campo",
+                desc: "Rendición de gastos transaccionales en caliente por los ingenieros residentes usando la app móvil con foto y comprobante.",
+                items: ["Carga de facturas/boletas", "Flujos de aprobación 1-clic", "Asignación por partida"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <line x1="12" y1="4" x2="12" y2="20" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                ),
+                delay: "d2"
+              },
+              {
+                title: "Calidad y Seguridad HSE",
+                desc: "Control de frente diario, checklists de trabajo de alto riesgo (altura, excavación) e incidentes de obra con evidencias fotográficas.",
+                items: ["Checklists dinámicos", "Reporte de incidentes en vivo", "Auditoría fotográfica con GPS"],
+                icon: (
+                  <svg className="module-svg-icon" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <circle cx="12" cy="11" r="3" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
+                ),
+                delay: "d3"
               }
             ].map((mod, index) => (
               <div key={index} className={`module-card-editorial reveal ${mod.delay}`}>
@@ -1279,6 +1317,69 @@ export default function Landing() {
                 </ul>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ═══════════════ COMPARATIVA DE MERCADO (TRES MARES EDITORIAL) ═══════════════ ── */}
+      <section className="editorial-section alt-bg" id="comparison">
+        <div className="editorial-container">
+          <div style={{ textAlign: "center", marginBottom: 60 }} className="reveal">
+            <span className="section-tag-editorial">Diferenciador v2.5</span>
+            <h2 className="section-title-editorial">¿Por qué Kostruye+ es el ERP definitivo?</h2>
+            <p className="section-sub-editorial" style={{ maxWidth: 800, margin: "0 auto" }}>
+              Reunimos las mejores capacidades operativas y financieras del mercado en una sola plataforma integrada, superando las limitaciones de los sistemas aislados de la competencia.
+            </p>
+          </div>
+
+          <div style={{ overflowX: "auto" }} className="reveal d2">
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800, background: "#FFFFFF", border: "1px solid var(--color-border)" }}>
+              <thead>
+                <tr style={{ background: "var(--color-bg-sand)", borderBottom: "2px solid var(--color-border)" }}>
+                  <th style={{ padding: "18px 24px", textAlign: "left", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Característica</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>S10 Integral</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Konstru360</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-navy)", fontSize: 15, fontWeight: "normal" }}>Bildin</th>
+                  <th style={{ padding: "18px 24px", textAlign: "center", fontFamily: "var(--font-serif)", color: "var(--color-copper)", fontSize: 16, fontWeight: "bold", background: "rgba(184, 115, 61, 0.05)" }}>Kostruye+ v2.5</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {
+                    feat: "Importación Presupuestos S10 (APU)",
+                    s10: "✓ Local (Desktop)", k360: "✗", bildin: "✗", kplus: "✓ Cloud en Vivo (Excel/OCR)"
+                  },
+                  {
+                    feat: "App Móvil de Campo Offline-First",
+                    s10: "✗", k360: "✓ Solo checklists", bildin: "✗", kplus: "✓ Completo (Tareo, Almacén, Caja Chica)"
+                  },
+                  {
+                    feat: "Fideicomisos & Fiduciarias (CORFID)",
+                    s10: "✗", k360: "✗", bildin: "✗", kplus: "✓ Integrado 100%"
+                  },
+                  {
+                    feat: "Rendición de Caja Chica con Fotos",
+                    s10: "✗", k360: "✗", bildin: "✓ Parcial", kplus: "✓ Móvil con GPS y Foto"
+                  },
+                  {
+                    feat: "Facturación SUNAT e Índices INEI",
+                    s10: "✓ Parcial (INEI)", k360: "✗", bildin: "✗", kplus: "✓ 1-Clic Automático"
+                  },
+                  {
+                    feat: "Asistente AI de Analíticas (KIA)",
+                    s10: "✗", k360: "✗", bildin: "✗", kplus: "✓ Copiloto Natural Integrado"
+                  }
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    <td style={{ padding: "16px 24px", fontSize: 13, fontWeight: 600, color: "var(--color-text-dark)" }}>{row.feat}</td>
+                    <td style={{ padding: "16px 24px", fontSize: 13, textAlign: "center", color: "var(--color-text-muted)" }}>{row.s10}</td>
+                    <td style={{ padding: "16px 24px", fontSize: 13, textAlign: "center", color: "var(--color-text-muted)" }}>{row.k360}</td>
+                    <td style={{ padding: "16px 24px", fontSize: 13, textAlign: "center", color: "var(--color-text-muted)" }}>{row.bildin}</td>
+                    <td style={{ padding: "16px 24px", fontSize: 13, textAlign: "center", fontWeight: 700, color: "var(--color-copper)", background: "rgba(184, 115, 61, 0.03)" }}>{row.kplus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
