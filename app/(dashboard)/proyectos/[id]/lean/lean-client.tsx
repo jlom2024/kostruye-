@@ -110,6 +110,7 @@ export function LeanClient({ projectId }: { projectId: string }) {
   // ── Queries ──────────────────────────────────────────────────────
   const { data: weeks = [] } = useQuery<Week[]>({
     queryKey: ["lean_weeks", projectId],
+    staleTime: 10 * 60 * 1000, // 10 minutos (cambia poco)
     queryFn: async () => {
       const { data, error } = await sb
         .from("lean_weeks")
@@ -132,6 +133,7 @@ export function LeanClient({ projectId }: { projectId: string }) {
 
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["lean_tasks", projectId],
+    staleTime: 1 * 60 * 1000, // 1 minuto (alta frecuencia de cambios en planificador)
     queryFn: async () => {
       const { data, error } = await sb
         .from("lean_tasks")
@@ -145,6 +147,7 @@ export function LeanClient({ projectId }: { projectId: string }) {
 
   const { data: constraints = [] } = useQuery<Constraint[]>({
     queryKey: ["lean_constraints", projectId],
+    staleTime: 1 * 60 * 1000, // 1 minuto (restricciones dinámicas)
     queryFn: async () => {
       const { data, error } = await sb
         .from("lean_constraints")

@@ -84,7 +84,7 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AlmacenClient({ projectId, currency }: Props) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const sym = currency === "PEN" ? "S/" : "$";
 
   const [tab, setTab] = useState<Tab>("stock");

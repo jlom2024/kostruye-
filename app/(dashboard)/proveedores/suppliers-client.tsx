@@ -32,7 +32,7 @@ const EMPTY_FORM = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SuppliersClient({ organizationId }: { organizationId: string }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -107,12 +107,12 @@ export function SuppliersClient({ organizationId }: { organizationId: string }) 
     const payload = {
       organization_id: organizationId,
       name:            form.name.trim(),
-      ruc:             form.ruc.trim()          || null,
-      contact_name:    form.contact_name.trim() || null,
-      phone:           form.phone.trim()        || null,
-      email:           form.email.trim()        || null,
-      address:         form.address.trim()      || null,
-      notes:           form.notes.trim()        || null,
+      ruc:             form.ruc?.trim()          || null,
+      contact_name:    form.contact_name?.trim() || null,
+      phone:           form.phone?.trim()        || null,
+      email:           form.email?.trim()        || null,
+      address:         form.address?.trim()      || null,
+      notes:           form.notes?.trim()        || null,
     };
 
     if (editing) {
@@ -265,9 +265,9 @@ export function SuppliersClient({ organizationId }: { organizationId: string }) 
           {/* Form */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
-            <Fld label="Nombre *">
+            <Fld label="Nombre comercial / Razón social *">
               <input
-                value={form.name}
+                value={form.name ?? ""}
                 onChange={(e) => set("name", e.target.value)}
                 className={inp()}
                 placeholder="Ferretería El Maestro S.A.C."
@@ -277,7 +277,7 @@ export function SuppliersClient({ organizationId }: { organizationId: string }) 
 
             <Fld label="RUC">
               <input
-                value={form.ruc}
+                value={form.ruc ?? ""}
                 onChange={(e) => set("ruc", e.target.value)}
                 className={inp()}
                 placeholder="20123456789"
@@ -288,7 +288,7 @@ export function SuppliersClient({ organizationId }: { organizationId: string }) 
             <div className="grid grid-cols-2 gap-4">
               <Fld label="Contacto">
                 <input
-                  value={form.contact_name}
+                  value={form.contact_name ?? ""}
                   onChange={(e) => set("contact_name", e.target.value)}
                   className={inp()}
                   placeholder="Juan Pérez"
@@ -296,7 +296,7 @@ export function SuppliersClient({ organizationId }: { organizationId: string }) 
               </Fld>
               <Fld label="Teléfono">
                 <input
-                  value={form.phone}
+                  value={form.phone ?? ""}
                   onChange={(e) => set("phone", e.target.value)}
                   className={inp()}
                   placeholder="999 888 777"

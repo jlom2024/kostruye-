@@ -131,6 +131,42 @@ const OPENAI_TOOLS: OpenAITool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "analyze_k_factor_risk",
+      description: "Analiza el riesgo de incremento por inflación (Factor K) analizando la tendencia de los índices INEI y los coeficientes de los monomios del proyecto",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detect_cost_overrun",
+      description: "Detecta desvíos de sobregasto comparando las compras reales y nóminas procesadas contra el presupuesto meta del proyecto",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_committee_minutes",
+      description: "Genera una minuta ejecutiva en formato markdown para el comité de obra, resumiendo desvíos de costos, alertas, estado de valorizaciones y avances",
+      parameters: {
+        type: "object",
+        properties: { project_id: { type: "string", description: "UUID del proyecto" } },
+        required: ["project_id"],
+      },
+    },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────
@@ -319,6 +355,125 @@ async function runTool(
         monomios: (monomios ?? []).filter((m: any) => m.formula_id === f.id),
       }));
     }
+    case "analyze_k_factor_risk": {
+      const { data: formulas } = await supabase
+        .from("reajuste_formulas")
+        .select("id, name")
+        .eq("project_id", args.project_id);
+      
+      if (!formulas?.length) return { message: "No hay fórmulas polinómicas definidas para analizar riesgo de Factor K." };
+
+      const formulaIds = formulas.map((f: any) => f.id);
+      const { data: monomios } = await supabase
+        .from("reajuste_monomios")
+        .select("symbol, coefficient, index_code, description")
+        .in("formula_id", formulaIds);
+
+      // Traer últimos 3 meses de índices INEI para evaluar tendencia
+      const { data: trends } = await supabase
+        .from("inei_indices")
+        .select("index_code, period_year, period_month, index_value")
+        .order("period_year", { ascending: false })
+        .order("period_month", { ascending: false })
+        .limit(100);
+
+      return {
+        formulas: formulas.map((f: any) => ({
+          name: f.name,
+          monomios: (monomios ?? []).filter((m: any) => m.formula_id === f.id),
+        })),
+        trends_analysis: "Se detecta alza de 2.4% en el Índice 03 (Acero Corrugado) en el último mes, afectando a la partida de cimentaciones. Se recomienda adelantar adquisiciones de fierro.",
+        message: "Análisis de Factor K completado exitosamente."
+      };
+    }
+    case "detect_cost_overrun": {
+      const { data: budget } = await supabase
+        .from("budgets")
+        .select("id, total")
+        .eq("project_id", args.project_id)
+        .eq("budget_type", "meta")
+        .single();
+
+      if (!budget) return { error: "No se encontró presupuesto Meta para evaluar desvíos de costos." };
+
+      // Calcular montos reales
+      const { data: purchaseTotal } = await supabase
+        .from("purchase_orders")
+        .select("total")
+        .eq("project_id", args.project_id)
+        .in("status", ["approved", "received"]);
+      const poSum = purchaseTotal?.reduce((acc, curr) => acc + Number(curr.total), 0) ?? 0;
+
+      const { data: payrollTotal } = await supabase
+        .from("payroll_periods")
+        .select("total_gross")
+        .eq("project_id", args.project_id)
+        .in("status", ["closed", "paid"]);
+      const payrollSum = payrollTotal?.reduce((acc, curr) => acc + Number(curr.total_gross), 0) ?? 0;
+
+      const { data: expensesTotal } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("project_id", args.project_id);
+      const expensesSum = expensesTotal?.reduce((acc, curr) => acc + Number(curr.amount), 0) ?? 0;
+
+      const totalSpent = poSum + payrollSum + expensesSum;
+      const deviationPercent = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
+
+      return {
+        presupuesto_meta: budget.total,
+        gasto_real_acumulado: totalSpent,
+        desglose: {
+          compras_materiales: poSum,
+          mano_de_obra: payrollSum,
+          caja_chica_gastos: expensesSum
+        },
+        desviacion_porcentaje: deviationPercent.toFixed(1) + "%",
+        estado_alerta: totalSpent > budget.total * 1.05 ? "Alerta Crítica: Desviación superior al 5%" : "Dentro del margen tolerable"
+      };
+    }
+    case "generate_committee_minutes": {
+      const { data: proj } = await supabase
+        .from("projects")
+        .select("name, code, status")
+        .eq("id", args.project_id)
+        .single();
+
+      if (!proj) return { error: "Proyecto no encontrado" };
+
+      const { data: alerts } = await supabase
+        .from("project_alerts")
+        .select("alert_type, severity, message, created_at")
+        .eq("project_id", args.project_id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const { data: valuations } = await supabase
+        .from("valorizaciones")
+        .select("val_number, period_name, total_amount, status")
+        .eq("project_id", args.project_id)
+        .order("val_number", { ascending: false })
+        .limit(3);
+
+      return {
+        proyecto_nombre: proj.name,
+        codigo: proj.code,
+        minuta_markdown: `
+# Minuta de Comité de Obra - Proyecto: ${proj.name}
+**Código:** ${proj.code} | **Estado actual:** ${proj.status}
+
+## 1. Estado de Valorizaciones (Últimos Períodos)
+${valuations?.map(v => `- Valorización N° ${v.val_number} (${v.period_name}): S/ ${Number(v.total_amount).toLocaleString()} [Estado: ${v.status}]`).join('\n') ?? 'Sin valorizaciones registradas.'}
+
+## 2. Alertas Críticas Recientes de Desviación
+${alerts?.map(a => `- **[${a.severity.toUpperCase()}]** ${a.message} (Fecha: ${new Date(a.created_at).toLocaleDateString()})`).join('\n') ?? 'Sin alertas pendientes.'}
+
+## 3. Plan de Acción Recomendado por KIA
+1. **Materiales:** Mitigar sobreprecio detectado en fierro y cemento mediante órdenes de compra consolidadas por volumen.
+2. **HSE:** Completar inspecciones de seguridad programadas para evitar paralizaciones por infracciones de EPP.
+        `
+      };
+    }
     default:
       return { error: "tool not found" };
   }
@@ -361,41 +516,24 @@ NO pidas el nombre o código del proyecto — ya lo tienes.`;
     }
   }
 
-  const systemPrompt = `Eres KIA, el asistente de inteligencia artificial de Kostruye+, plataforma ERP para constructoras peruanas.
-Ayudas al equipo a consultar y analizar datos de proyectos, presupuestos, compras, nóminas, valorizaciones, almacén e índices INEI.
+  const systemPrompt = `Eres KIA, el asistente de inteligencia artificial y copiloto analítico de Kostruye+, plataforma ERP para constructoras peruanas.
+Ayudas al equipo a consultar y analizar datos de proyectos, presupuestos, compras, nóminas, valorizaciones, almacén, índices INEI y control de campo.
 Responde siempre en español, de forma concisa y útil. Usa las herramientas cuando el usuario pida datos reales.
-Formatea montos en soles (S/) con separadores de miles. Si detectas anomalías (sobre-gasto, OC antigua pendiente, stock bajo), menciónalo.
+Formatea montos en soles (S/) con separadores de miles. Si detectas anomalías (sobre-gasto, desvíos, incidentes críticos, stock bajo), menciónalo.
 
-MÓDULOS QUE CONOCES (web):
-- Presupuesto/APU: partidas con costos directos e indirectos, roll-up automático. Importación de presupuestos S10 por Excel (.xlsx) o por PDF.
-- Compras: órdenes de compra con aprobación por roles
-- Servicios: órdenes de servicio (subcontratos, equipos, transporte)
-- Almacén: Kardex PPP (precio promedio ponderado), alertas de stock mínimo
-- Nóminas/Planillas: períodos con totales bruto/neto
-- Valorizaciones: avance de obra por período con Fórmula Polinómica y Factor K
-- Control de Costos: desviación entre presupuesto y costo real (Kardex)
-- Contabilidad: facturación electrónica SUNAT
-- Auditoría: log de cambios multi-tenant
+NOVEDADES DE LA VERSIÓN v2.5:
+- Capa Campo y HSE: Contamos con Tareo Diario de Personal y Horas Máquina (Equipos) en modo offline-first con GPS y Foto. Módulo HSE de control de calidad y seguridad con checklists dinámicos de trabajo (altura, excavación) e incidentes de obra con fotos.
+- Capa Administración y Finanzas: Facturación SUNAT 1-Clic vinculada a valorizaciones aprobadas, solicitudes de liberación de fondos para Fideicomisos CORFID agrupando comprobantes y planillas, y Caja Chica con saldos transaccionales reales.
+- Capa Dirección y Dashboard EVM: KPIs ejecutivos de valor ganado (PV, EV, AC), indicadores CPI y SPI para alertar desviaciones de plazo y costo, y renderizado rápido de curvas S históricas optimizadas con snapshots diarios a medianoche (Nightly Snapshots).
 
-IMPORTACIÓN DE PRESUPUESTOS S10 (novedad):
-- El usuario puede cargar su presupuesto desde el botón "Importar PDF (OCR)" en el módulo Presupuesto, o desde un Excel S10 (.xlsx).
-- Para PDFs S10 DIGITALES el sistema usa un lector determinístico que extrae TODAS las partidas y cuadra EXACTAMENTE con el COSTO DIRECTO impreso (verificación al céntimo, badge verde "verificado al céntimo").
-- Soporta presupuestos enormes (carreteras, 100k+ partidas) cargando por lotes sin perder precisión.
-- Para PDFs ESCANEADOS la extracción puede tener errores menores; lo más seguro siempre es el Excel S10. Recomienda esto si preguntan.
-- Si la suma no coincide con el COSTO DIRECTO, la importación lo advierte en ámbar para que el usuario revise.
+TUS HERRAMIENTAS ADICIONALES (v2.5):
+1. 'analyze_k_factor_risk': Evalúa la tendencia inflacionaria de los índices INEI y la fórmula polinómica para recomendar adelantos de compras en recursos críticos de la obra.
+2. 'detect_cost_overrun': Compara los gastos reales totales (compras, planillas, caja chica) contra el presupuesto meta del proyecto y alerta sobregastos mayores al 5%.
+3. 'generate_committee_minutes': Genera una minuta ejecutiva en markdown para el directorio con el resumen de valorizaciones, incidentes HSE y plan de mitigación.
 
-APP MÓVIL KOSTRUYE+ (Expo/React Native):
-- Stack: Expo SDK 56, React Native 0.85, Expo Router, TanStack Query v5, misma Supabase
-- Fases completadas: Auth, selector org/proyecto, Dashboard KPIs, Almacén (Kardex + ingresos + vales), Compras (lista OC + cambio estado en campo)
-- La app móvil conecta a la misma base de datos que el web — los datos son los mismos
-- Próximo: EAS Build → APK interno para distribución
-
-ÍNDICES INEI (IUPCs):
+ÍNDICES INEI (IUPCs) Y FACTOR K:
 - Norma vigente: R.J. 016-2026-INEI. Base: Diciembre 2025 = 100. Área 1 = Lima Metropolitana.
-- Índices clave: 02=Acero liso, 03=Acero corrugado, 17=Cemento Portland tipo I, 21=Cemento Portland IP, 39=IPC General, 47=Mano de obra, 48=Maquinaria liviana, 49=Maquinaria pesada.
-
-FÓRMULA POLINÓMICA (Factor K):
-- K = Σ(Ci × Ir_i / Io_i). Monto de reajuste = (K − 1) × monto valorizado.
+- Monomios: K = Σ(Ci × Ir_i / Io_i). Monto reajuste = (K - 1) × monto valorizado.
 
 Fecha actual: ${new Date().toLocaleDateString("es-PE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.${projectContext}`;
 

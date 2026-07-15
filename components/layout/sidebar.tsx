@@ -21,6 +21,12 @@ import {
   Wrench,
   ShieldCheck,
   Scale,
+  ClipboardCheck,
+  Truck,
+  ClipboardList,
+  BarChart4,
+  Activity,
+  Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -38,19 +44,31 @@ const allMainNav = [
   { href: "/proyectos",   icon: FolderKanban, label: "Proyectos",   roles: ["admin", "contador", "user"] },
   { href: "/clientes",    icon: Users,        label: "Clientes",    roles: ["admin", "contador"] },
   { href: "/proveedores", icon: Building2,    label: "Proveedores", roles: ["admin", "contador"] },
+  { href: "/configuracion/inei", icon: Settings, label: "Índices INEI", roles: ["admin"] },
 ];
 
 const allProjectNav = [
   { href: "dashboard",      icon: LayoutDashboard, label: "Dashboard",      roles: ["admin", "contador", "user"] },
   { href: "presupuesto",    icon: Calculator,      label: "Presupuesto",    roles: ["admin", "contador"] },
+  { href: "presupuesto/formula", icon: Calculator, label: "Fórmulas Polinómicas", roles: ["admin", "contador"] },
+  { href: "presupuesto/adicionales", icon: FileText, label: "Control de Cambios", roles: ["admin", "contador"] },
   { href: "compras",        icon: ShoppingCart,    label: "Compras",        roles: ["admin", "contador"] },
   { href: "servicios",      icon: Wrench,          label: "Servicios",      roles: ["admin", "contador"] },
   { href: "almacen",        icon: Warehouse,       label: "Almacén",        roles: ["admin", "user"] },
+  { href: "campo/cuaderno", icon: BookOpen,        label: "Cuaderno de Obra",roles: ["admin", "user"] },
+  { href: "campo/equipos",  icon: Truck,           label: "Equipos",        roles: ["admin", "user"] },
+  { href: "campo/tareo",    icon: ClipboardCheck,  label: "Tareo Diario",   roles: ["admin", "user"] },
+  { href: "campo/parte-equipos", icon: ClipboardList, label: "Parte Equipos", roles: ["admin", "user"] },
+  { href: "campo/avance",   icon: BarChart4,       label: "Avance Diario",  roles: ["admin", "user"] },
+  { href: "campo/hse",      icon: ShieldCheck,     label: "Calidad y HSE",  roles: ["admin", "user"] },
+  { href: "campo/productividad", icon: Activity,  label: "Productividad", roles: ["admin", "user", "contador"] },
   { href: "nominas",        icon: Users,           label: "Nóminas",        roles: ["admin", "contador"] },
   { href: "valorizaciones", icon: FileText,        label: "Valorizaciones", roles: ["admin", "contador"] },
   { href: "control-costos", icon: Scale,           label: "Control de Costos", roles: ["admin", "contador"] },
   { href: "lean",           icon: TrendingUp,      label: "Lean",           roles: ["admin", "user"] },
   { href: "contabilidad",   icon: BookOpen,        label: "Contabilidad",   roles: ["admin", "contador"] },
+  { href: "caja-chica",     icon: Wallet,          label: "Caja Chica",     roles: ["admin", "contador", "user"] },
+  { href: "fideicomiso",    icon: ShieldCheck,     label: "Fideicomiso CORFID", roles: ["admin", "contador"] },
   { href: "auditoria",      icon: ShieldCheck,     label: "Auditoría",      roles: ["admin", "contador"] },
   { href: "configuracion",  icon: Settings2,       label: "Configuración",  roles: ["admin"] },
 ];

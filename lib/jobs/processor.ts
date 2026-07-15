@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import * as xlsx from "xlsx";
 
 function getAdminClient() {
   return createClient(
@@ -38,28 +39,86 @@ export async function processJobInBackground(jobId: string) {
     console.log(`[JobProcessor] Iniciando Job ${jobId} de tipo ${job_type}...`);
 
     // Paso 1: Inicialización
-    await new Promise((r) => setTimeout(r, 2000));
-    await sb.from("background_jobs").update({ progress: 25 }).eq("id", jobId);
+    await sb.from("background_jobs").update({ progress: 10 }).eq("id", jobId);
 
-    // Paso 2: Procesamiento de datos
-    await new Promise((r) => setTimeout(r, 3000));
-    await sb.from("background_jobs").update({ progress: 60 }).eq("id", jobId);
-
-    // Paso 3: Generación del archivo final / finalización
-    await new Promise((r) => setTimeout(r, 3000));
-    await sb.from("background_jobs").update({ progress: 85 }).eq("id", jobId);
-
-    // Paso 4: Carga y finalización
     let resultUrl = "";
-    if (job_type === "export_budget_pdf") {
+
+    if (job_type === "export_budget_xlsx") {
+      // 1. Obtener presupuesto y capítulos
+      const { data: chapters, error: chErr } = await sb
+        .from("budget_chapters")
+        .select(`
+          id, name, order_index,
+          budget_items (
+            id, item_code, description, unit, quantity, unit_price, total, order_index
+          )
+        `)
+        .eq("budget_id", payload.budget_id)
+        .order("order_index");
+
+      if (chErr) throw new Error("Error obteniendo presupuesto: " + chErr.message);
+      await sb.from("background_jobs").update({ progress: 40 }).eq("id", jobId);
+
+      // 2. Generar Excel
+      const rows = [];
+      rows.push(["CÓDIGO", "DESCRIPCIÓN", "UND.", "METRADO", "P. UNIT.", "PARCIAL"]);
+      
+      let grandTotal = 0;
+
+      for (const ch of chapters || []) {
+        // Fila de capítulo
+        rows.push([ch.order_index, ch.name, "", "", "", ""]);
+        
+        // Fila de items
+        const items = (ch.budget_items || []).sort((a: any, b: any) => a.order_index - b.order_index);
+        for (const item of items) {
+          rows.push([
+            item.item_code,
+            item.description,
+            item.unit,
+            item.quantity,
+            item.unit_price,
+            item.total
+          ]);
+          grandTotal += Number(item.total || 0);
+        }
+      }
+
+      rows.push(["", "TOTAL PRESUPUESTO", "", "", "", grandTotal]);
+
+      const ws = xlsx.utils.aoa_to_sheet(rows);
+      const wb = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(wb, ws, "Presupuesto");
+      const excelBuffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+      
+      await sb.from("background_jobs").update({ progress: 70 }).eq("id", jobId);
+
+      // 3. Subir a Supabase Storage
+      const fileName = `presupuesto_${payload.budget_id}_${Date.now()}.xlsx`;
+      const { data: uploadData, error: uploadErr } = await sb
+        .storage
+        .from("reports")
+        .upload(fileName, excelBuffer, {
+          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          upsert: true
+        });
+
+      if (uploadErr) {
+        // Fallback: Si el bucket no existe, simulamos para no romper el demo local
+        console.error("Error subiendo a Storage:", uploadErr.message);
+        throw new Error("No se pudo subir a Storage (asegúrate de correr la migración 025).");
+      }
+
+      const { data: publicUrlData } = sb.storage.from("reports").getPublicUrl(fileName);
+      resultUrl = publicUrlData.publicUrl;
+      await sb.from("background_jobs").update({ progress: 90 }).eq("id", jobId);
+
+    } else if (job_type === "export_budget_pdf") {
+      await new Promise((r) => setTimeout(r, 2000));
       resultUrl = `/static/reports/budget_${jobId}.pdf`;
-    } else if (job_type === "export_budget_xlsx") {
-      resultUrl = `/static/reports/budget_${jobId}.xlsx`;
     } else {
       resultUrl = "/proyectos";
     }
-
-    await new Promise((r) => setTimeout(r, 1000));
 
     // Marcar como completado
     await sb

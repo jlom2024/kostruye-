@@ -23,6 +23,7 @@ renderiza a PDF con Chrome/Edge headless. Antes este PDF se generaba fuera del r
 3. El botón "Descargar Manual" de la app sirve `public/Manual-Kostruye-Plus.pdf`.
 
 ## Historial
+- **v2.5 (2026-07-14):** Lanzamiento de control gerencial PMI Standard (CPI, SPI, Curva S y Flujo de Caja), Fideicomisos CORFID (solicitudes de liberación), Caja Chica con saldos transaccionales en tiempo real, Facturación SUNAT 1-Clic desde valorización y App Móvil offline-first (Tareo + Caja Chica).
 - **v1.2 (2026-06-19):** Importación de presupuestos S10 exacta al céntimo (verificación
   vs COSTO DIRECTO, carga por lotes para obras grandes, recomendación Excel S10);
   KIA con herramientas `get_inei_indices` y `get_reajuste_formulas`; término "Costo

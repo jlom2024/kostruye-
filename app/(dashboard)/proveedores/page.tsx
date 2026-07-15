@@ -10,7 +10,7 @@ export default async function ProveedoresPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: memberships } = await supabase
+  const { data: memberships } = await (supabase as any)
     .from("organization_members")
     .select("organization_id")
     .eq("user_id", user.id);

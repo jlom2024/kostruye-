@@ -6,7 +6,7 @@ import { AlmacenClient } from "./almacen-client";
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: project } = await supabase
+  const { data: project } = await (supabase as any)
     .from("projects")
     .select("name, currency")
     .eq("id", id)

@@ -11,7 +11,7 @@ export default async function AuditoriaPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
+  const { data: project } = await (supabase as any)
     .from("projects")
     .select("name")
     .eq("id", id)
@@ -20,7 +20,7 @@ export default async function AuditoriaPage({ params }: Props) {
   if (!project) notFound();
 
   // Últimos 300 eventos de auditoría del proyecto (RLS scope por organización)
-  const { data: logs } = await supabase
+  const { data: logs } = await (supabase as any)
     .from("audit_logs")
     .select("id, table_name, record_id, operation, changed_by, changed_at, old_values, new_values")
     .eq("project_id", id)
@@ -29,17 +29,17 @@ export default async function AuditoriaPage({ params }: Props) {
 
   // Resolver nombres/correos de los autores
   const actorIds = Array.from(
-    new Set((logs ?? []).map((l) => (l as { changed_by: string | null }).changed_by).filter(Boolean))
+    new Set((logs ?? []).map((l: any) => (l as { changed_by: string | null }).changed_by).filter(Boolean))
   ) as string[];
 
   let actors: Record<string, string> = {};
   if (actorIds.length) {
-    const { data: profiles } = await supabase
+    const { data: profiles } = await (supabase as any)
       .from("profiles")
       .select("id, name, email")
       .in("id", actorIds);
     actors = Object.fromEntries(
-      (profiles ?? []).map((p) => {
+      (profiles ?? []).map((p: any) => {
         const row = p as { id: string; name: string | null; email: string | null };
         return [row.id, row.name || row.email || row.id.slice(0, 8)];
       })

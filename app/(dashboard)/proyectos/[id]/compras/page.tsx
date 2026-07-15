@@ -12,7 +12,7 @@ export default async function ComprasPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
+  const { data: project } = await (supabase as any)
     .from("projects")
     .select("name, currency, organization_id")
     .eq("id", id)

@@ -11,6 +11,9 @@ import {
   HardHat,
   BarChart3,
   Wrench,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -149,6 +152,22 @@ export function DashboardClient({
   const roMargen   = ingreso > 0 ? Math.round((ro / ingreso) * 100) : 0;
   const roPositive = ro >= 0;
 
+  // ── EVM: Earned Value Management ────────────────────────────────────────────
+  // EV (Earned Value) = Monto valorizado aprobado
+  const ev = ingreso;
+  // AC (Actual Cost) = Costo real ejecutado hasta ahora (compras + MO + servicios)
+  const ac = costoTotal;
+  // PV (Planned Value) = Lo que debería estar valorizado a esta fecha del plazo
+  const pv = (plazoPercent !== null && ventaTotal > 0)
+    ? Math.round((plazoPercent / 100) * ventaTotal)
+    : null;
+  // CPI = EV / AC  (> 1: bajo presupuesto, < 1: sobre presupuesto)
+  const cpi = ac > 0 ? Math.round((ev / ac) * 1000) / 1000 : null;
+  // SPI = EV / PV  (> 1: adelantado, < 1: atrasado)
+  const spi = (pv !== null && pv > 0) ? Math.round((ev / pv) * 1000) / 1000 : null;
+  // Flujo de Caja = Ingresos cobrados (Valorizaciones aprobadas) - Egresos reales
+  const flujoCaja = ev - ac;
+
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
@@ -242,6 +261,81 @@ export function DashboardClient({
         currency={currency}
         usandoKardex={usandoKardex}
       />
+
+      {/* ── EVM KPIs ────────────────────────────────────────────────────────── */}
+      {(cpi !== null || spi !== null || ev > 0) && (
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-4 w-4 text-indigo-600" />
+            <h3 className="text-sm font-semibold text-slate-700">Earned Value Management (EVM)</h3>
+            <span className="ml-auto text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">PMI Standard</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {/* CPI */}
+            <div className={cn(
+              "rounded-lg p-4 border",
+              cpi === null ? "border-slate-100 bg-slate-50" :
+              cpi >= 1 ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+            )}>
+              <p className="text-xs text-slate-500 mb-1">CPI (Cost Performance)</p>
+              <p className={cn(
+                "text-2xl font-bold",
+                cpi === null ? "text-slate-400" : cpi >= 1 ? "text-green-700" : "text-red-600"
+              )}>
+                {cpi !== null ? cpi.toFixed(2) : "—"}
+              </p>
+              <p className="text-xs mt-1 text-slate-500">
+                {cpi === null ? "Sin datos de costo" :
+                 cpi >= 1 ? "✅ Bajo presupuesto" : "⚠️ Sobre presupuesto"}
+              </p>
+            </div>
+            {/* SPI */}
+            <div className={cn(
+              "rounded-lg p-4 border",
+              spi === null ? "border-slate-100 bg-slate-50" :
+              spi >= 1 ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"
+            )}>
+              <p className="text-xs text-slate-500 mb-1">SPI (Schedule Performance)</p>
+              <p className={cn(
+                "text-2xl font-bold",
+                spi === null ? "text-slate-400" : spi >= 1 ? "text-green-700" : "text-amber-700"
+              )}>
+                {spi !== null ? spi.toFixed(2) : "—"}
+              </p>
+              <p className="text-xs mt-1 text-slate-500">
+                {spi === null ? "Sin fechas de plazo" :
+                 spi >= 1 ? "✅ Adelantado" : "⚠️ Con atraso"}
+              </p>
+            </div>
+            {/* EV */}
+            <div className="rounded-lg p-4 border border-blue-200 bg-blue-50">
+              <p className="text-xs text-slate-500 mb-1">EV — Valor Ganado</p>
+              <p className="text-2xl font-bold text-blue-700">
+                {fmtShort(ev, currency)}
+              </p>
+              <p className="text-xs mt-1 text-slate-500">Valorizado aprobado</p>
+            </div>
+            {/* Flujo de Caja */}
+            <div className={cn(
+              "rounded-lg p-4 border",
+              flujoCaja >= 0 ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"
+            )}>
+              <p className="text-xs text-slate-500 mb-1">Flujo de Caja (EV - AC)</p>
+              <p className={cn("text-2xl font-bold flex items-center gap-1",
+                flujoCaja >= 0 ? "text-emerald-700" : "text-rose-600"
+              )}>
+                {flujoCaja >= 0
+                  ? <ArrowUpRight className="h-5 w-5" />
+                  : <ArrowDownRight className="h-5 w-5" />}
+                {fmtShort(Math.abs(flujoCaja), currency)}
+              </p>
+              <p className="text-xs mt-1 text-slate-500">
+                {flujoCaja >= 0 ? "Positivo — ingresos > egresos" : "Negativo — egresos > ingresos"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Charts row ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

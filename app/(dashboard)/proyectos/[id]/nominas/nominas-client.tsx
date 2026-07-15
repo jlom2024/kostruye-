@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Plus, X, Loader2, Trash2, Users, CalendarDays,
-  ChevronDown, ChevronRight, CheckCircle2, Clock, Banknote,
+  ChevronDown, ChevronRight, CheckCircle2, Clock, Banknote, Zap,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -279,6 +279,24 @@ export function NominasClient({ projectId, currency }: Props) {
     await loadAll();
   }
 
+  // ── Auto-generar desde Tareo ──────────────────────────────────────────────
+
+  async function generateFromTareo(period: PayrollPeriod) {
+    if (!confirm(`¿Generar nómina automáticamente desde el Tareo Diario (${period.start_date} al ${period.end_date})?\nEsto reemplazará cualquier entrada existente.`)) return;
+    const { data, error } = await supabase.rpc('fn_generate_payroll_from_tareo', { p_period_id: period.id });
+    if (error) {
+      toast.error('Error al generar: ' + error.message);
+    } else {
+      toast.success(`Nómina generada: ${data} trabajador(es) con registro de tareo.`);
+      // Forzar recarga de entradas del período
+      setEntries((prev) => { const n = {...prev}; delete n[period.id]; return n; });
+      await loadAll();
+      setExpandedId(period.id);
+      const { data: newEntries } = await supabase.from('payroll_entries').select('*').eq('period_id', period.id);
+      setEntries((prev) => ({ ...prev, [period.id]: newEntries ?? [] }));
+    }
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   function fmt(n: number) {
@@ -519,12 +537,18 @@ export function NominasClient({ projectId, currency }: Props) {
                         <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 bg-slate-50">
                           <div className="flex gap-2">
                             {period.status === "open" && (
+                              <>
+                              <button onClick={() => generateFromTareo(period)}
+                                className="flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
+                                <Zap className="h-3.5 w-3.5" /> Generar desde Tareo
+                              </button>
                               <button onClick={() => changeStatus(period, "closed")}
                                 className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors">
                                 <Clock className="h-3.5 w-3.5" /> Cerrar período
                               </button>
+                              </>
                             )}
-                            {period.status === "closed" && (
+                            {period.status !== "open" && period.status === "closed" && (
                               <>
                                 <button onClick={() => changeStatus(period, "open")}
                                   className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">

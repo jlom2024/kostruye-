@@ -77,51 +77,21 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 
 // ── CSV Export ─────────────────────────────────────────────────────────────────
 
-function escapeCsv(val: string | number | null | undefined): string {
-  const s = String(val ?? "");
-  return s.includes(",") || s.includes('"') || s.includes("\n")
-    ? `"${s.replace(/"/g, '""')}"`
-    : s;
-}
-
-function exportCsv(chapters: Chapter[], currency: string) {
-  const sym = currency === "USD" ? "USD" : "PEN";
-  const rows: string[] = [
-    ["Código", "Descripción", "Unidad", "Metrado", `Precio Unit. (${sym})`, `Total (${sym})`].join(","),
-  ];
-
-  for (const chapter of chapters) {
-    if (chapter.id !== "__uncategorized__") {
-      rows.push([
-        escapeCsv(chapter.code),
-        escapeCsv(chapter.name.toUpperCase()),
-        "", "", "",
-        escapeCsv(chapter.total.toFixed(2)),
-      ].join(","));
-    }
-    for (const item of chapter.items) {
-      rows.push([
-        escapeCsv(item.item_code),
-        escapeCsv(item.description),
-        escapeCsv(item.unit),
-        escapeCsv(item.quantity.toFixed(4)),
-        escapeCsv(item.unit_price.toFixed(2)),
-        escapeCsv(item.total.toFixed(2)),
-      ].join(","));
-    }
+async function requestExportJob(budgetId: string, projectId: string) {
+  const res = await fetch("/api/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      job_type: "export_budget_xlsx",
+      project_id: projectId,
+      payload: { budget_id: budgetId }
+    })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Error al encolar exportación");
   }
-
-  const grandTotal = chapters.flatMap(c => c.items).reduce((s, i) => s + Number(i.total), 0);
-  rows.push(["", "TOTAL PRESUPUESTO", "", "", "", escapeCsv(grandTotal.toFixed(2))].join(","));
-
-  const bom = "﻿"; // UTF-8 BOM for Excel
-  const blob = new Blob([bom + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = `presupuesto_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  return res.json();
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -144,6 +114,8 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
   const [loadingApu, setLoadingApu] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<number>(0);
   const [newItemId, setNewItemId] = useState<string | null>(null);
   const editingRef = useRef<{ field: string; id: string } | null>(null);
 
@@ -486,12 +458,51 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
           </>
         )}
         <button
-          onClick={() => exportCsv(chapters, currency)}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-          title="Exportar a Excel (CSV)"
+          onClick={async () => {
+            try {
+              setExporting(true);
+              setExportProgress(0);
+              const data = await requestExportJob(budgetId, budgetId); // Asumiendo projectId == budgetId o usamos window.location para extraerlo
+              const jobId = data.job_id;
+              
+              // Polling
+              const interval = setInterval(async () => {
+                const checkRes = await fetch(`/api/jobs?id=${jobId}`);
+                if (checkRes.ok) {
+                  const checkData = await checkRes.json();
+                  setExportProgress(checkData.progress);
+                  if (checkData.status === "completed") {
+                    clearInterval(interval);
+                    setExporting(false);
+                    toast.success("Excel generado correctamente");
+                    window.location.href = checkData.result_url;
+                  } else if (checkData.status === "failed") {
+                    clearInterval(interval);
+                    setExporting(false);
+                    toast.error("Error al generar Excel: " + checkData.error_message);
+                  }
+                }
+              }, 2000);
+            } catch (e: any) {
+              setExporting(false);
+              toast.error(e.message);
+            }
+          }}
+          disabled={exporting}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+          title="Exportar a Excel"
         >
-          <Download className="h-4 w-4" />
-          Exportar Excel
+          {exporting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              Generando ({exportProgress}%)
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </>
+          )}
         </button>
         {saving && (
           <span className="flex items-center gap-1 text-xs text-slate-400">

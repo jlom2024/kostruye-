@@ -32,7 +32,7 @@ const ROLE_ICONS: Record<string, React.ElementType> = {
 };
 
 export default function ConfiguracionPage() {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [org, setOrg] = useState<OrgData | null>(null);
@@ -73,7 +73,7 @@ export default function ConfiguracionPage() {
       if (!user) return;
       setUserEmail(user.email ?? "");
 
-      const { data: membership } = await supabase
+      const { data: membership } = await (supabase as any)
         .from("organization_members")
         .select("organization_id, role")
         .eq("user_id", user.id)
@@ -86,7 +86,7 @@ export default function ConfiguracionPage() {
       }
       setMyRole(membership.role);
 
-      const { data: orgData } = await supabase
+      const { data: orgData } = await (supabase as any)
         .from("organizations")
         .select("id, name, ruc")
         .eq("id", membership.organization_id)

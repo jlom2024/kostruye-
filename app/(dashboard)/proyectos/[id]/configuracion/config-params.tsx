@@ -16,7 +16,7 @@ export function ConfigParams({
   venta: any;
 }) {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirm, setConfirm] = useState("");

@@ -1,90 +1,55 @@
 import { createClient } from "@/lib/supabase/server";
-import { Topbar } from "@/components/layout/topbar";
 import { notFound } from "next/navigation";
 import { ValorizacionesClient } from "./valorizaciones-client";
-import { ReajustePanel } from "@/components/reajuste/reajuste-panel";
-import { userCanProject } from "@/lib/permissions";
 
-export default async function ValorizacionesPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+}
+
+export default async function ValorizacionesPage({ params }: Props) {
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
+  const { data: project, error: pErr } = await supabase
     .from("projects")
-    .select("name, currency")
+    .select("*")
     .eq("id", id)
     .single();
 
-  if (!project) notFound();
+  if (pErr || !project) {
+    notFound();
+  }
 
-  // Permiso para aprobar valorizaciones — project-aware (misma base que la RLS)
-  const canApprove = await userCanProject(supabase, id, "valorizaciones", "approve");
-  // Editar fórmulas de reajuste usa el permiso del módulo valorizaciones
-  const canEditReajuste = await userCanProject(supabase, id, "valorizaciones", "edit");
-
-  // Índices INEI disponibles — último período por código (para mostrar valor actual en fórmula)
-  const { data: ineiRaw } = await supabase
-    .from("inei_indices")
-    .select("index_code, index_name, index_value, period_year, period_month")
-    .order("index_code")
-    .order("period_year", { ascending: false })
-    .order("period_month", { ascending: false });
-  // Dedup: primera aparición por código = período más reciente (orden DESC)
-  const seen = new Set<string>();
-  const ineiIndices = (ineiRaw ?? []).filter((i) => {
-    if (seen.has(i.index_code)) return false;
-    seen.add(i.index_code);
-    return true;
-  });
-
-  // Presupuesto venta (para total del contrato)
-  const { data: budget } = await supabase
-    .from("budgets")
-    .select("id, total")
-    .eq("project_id", id)
-    .eq("budget_type", "venta")
-    .single();
-
-  // Valorizaciones (sólo cabeceras, los ítems se cargan on-demand)
-  const { data: valorizaciones } = await supabase
+  const { data: valorizaciones, error: vErr } = await supabase
     .from("valorizaciones")
-    .select("*")
+    .select("*, reajuste_formulas(name)")
     .eq("project_id", id)
-    .order("val_number", { ascending: true });
+    .order("val_number", { ascending: false });
 
-  // Fórmulas polinómicas del proyecto (para reajuste por factor K)
-  const { data: formulas } = await supabase
+  if (vErr) {
+    console.error("Error cargando valorizaciones:", vErr);
+  }
+
+  const { data: formulas, error: fErr } = await supabase
     .from("reajuste_formulas")
-    .select("id, name, contract_date")
-    .eq("project_id", id)
-    .order("created_at");
+    .select("id, name")
+    .eq("project_id", id);
 
   return (
-    <>
-      <Topbar title="Valorizaciones" subtitle={project.name} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="px-6 pt-5">
-          <ReajustePanel
-            projectId={id}
-            budgetId={budget?.id ?? null}
-            ineiIndices={ineiIndices as { index_code: string; index_name: string; index_value?: number; period_year?: number; period_month?: number }[]}
-            canEdit={canEditReajuste}
-          />
-        </div>
-        <ValorizacionesClient
-          projectId={id}
-          currency={project.currency}
-          budgetId={budget?.id ?? null}
-          ventaTotal={budget?.total ?? 0}
-          initialValorizaciones={valorizaciones ?? []}
-          canApprove={canApprove}
-          formulas={(formulas ?? []) as { id: string; name: string; contract_date: string | null }[]}
-        />
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Valorizaciones</h1>
+        <p className="text-muted-foreground mt-2">
+          Gestiona las valorizaciones mensuales, avances físicos y reajustes.
+        </p>
       </div>
-    </>
+
+      <ValorizacionesClient 
+        projectId={id} 
+        initialData={valorizaciones || []} 
+        formulas={formulas || []}
+      />
+    </div>
   );
 }

@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import {
   Plus, X, Loader2, Trash2,
   CheckCircle2, PackageCheck, XCircle, Send,
-  FileText, RotateCcw,
+  FileText, RotateCcw, PackageOpen,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function PurchaseOrdersClient({ projectId, currency, organizationId, canApprove = true }: Props) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const sym = currency === "PEN" ? "S/" : "$";
 
   const [pos, setPos]             = useState<PurchaseOrder[]>([]);
@@ -442,12 +443,12 @@ export function PurchaseOrdersClient({ projectId, currency, organizationId, canA
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
-                    {["N° OC", "Proveedor", "Emisión", "Esperado", "Total", "Estado"].map((h, i) => (
+                    {["N° OC", "Proveedor", "Emisión", "Esperado", "Total", "Estado", ""].map((h, i) => (
                       <th
-                        key={h}
+                        key={h + i}
                         className={cn(
                           "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500",
-                          i >= 4 ? "text-right" : "text-left",
+                          i >= 4 && i < 6 ? "text-right" : "text-left",
                           i === 5 && "text-center"
                         )}
                       >
@@ -492,6 +493,16 @@ export function PurchaseOrdersClient({ projectId, currency, organizationId, canA
                           >
                             {meta.label}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          {(po.status === 'sent' || po.status === 'partial') && (
+                            <Link
+                              href={`/proyectos/${projectId}/compras/${po.id}/recibir`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                            >
+                              <PackageOpen className="h-3.5 w-3.5" /> Recibir
+                            </Link>
+                          )}
                         </td>
                       </tr>
                     );

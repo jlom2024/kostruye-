@@ -41,7 +41,7 @@ const EMPTY: Omit<Client, "id" | "active"> = {
 };
 
 export function ClientesClient({ organizationId }: { organizationId: string }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   const [clients, setClients]     = useState<Client[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -98,14 +98,14 @@ export function ClientesClient({ organizationId }: { organizationId: string }) {
       organization_id: organizationId,
       name:         form.name.trim(),
       type:         form.type,
-      ruc:          form.ruc.trim()          || null,
-      contact_name: form.contact_name.trim() || null,
-      phone:        form.phone.trim()        || null,
-      email:        form.email.trim()        || null,
-      address:      form.address.trim()      || null,
-      district:     form.district.trim()     || null,
-      city:         form.city.trim()         || null,
-      notes:        form.notes.trim()        || null,
+      ruc:          form.ruc?.trim()          || null,
+      contact_name: form.contact_name?.trim() || null,
+      phone:        form.phone?.trim()        || null,
+      email:        form.email?.trim()        || null,
+      address:      form.address?.trim()      || null,
+      district:     form.district?.trim()     || null,
+      city:         form.city?.trim()         || null,
+      notes:        form.notes?.trim()        || null,
     };
     if (editing) {
       const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
@@ -276,41 +276,41 @@ export function ClientesClient({ organizationId }: { organizationId: string }) {
             </Fld>
 
             <Fld label="Nombre / Razón social *">
-              <input value={form.name} onChange={(e) => set("name", e.target.value)} className={inp()} placeholder="Inmobiliaria Lima Norte S.A.C." autoFocus />
+              <input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} className={inp()} placeholder="Inmobiliaria Lima Norte S.A.C." autoFocus />
             </Fld>
 
             <Fld label="RUC / DNI">
-              <input value={form.ruc} onChange={(e) => set("ruc", e.target.value)} className={inp()} placeholder="20123456789" maxLength={11} />
+              <input value={form.ruc ?? ""} onChange={(e) => set("ruc", e.target.value)} className={inp()} placeholder="20123456789" maxLength={11} />
             </Fld>
 
             <div className="grid grid-cols-2 gap-4">
               <Fld label="Contacto principal">
-                <input value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} className={inp()} placeholder="Carlos Ramírez" />
+                <input value={form.contact_name ?? ""} onChange={(e) => set("contact_name", e.target.value)} className={inp()} placeholder="Carlos Ramírez" />
               </Fld>
               <Fld label="Teléfono">
-                <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inp()} placeholder="987 654 321" />
+                <input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} className={inp()} placeholder="987 654 321" />
               </Fld>
             </div>
 
             <Fld label="Email">
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inp()} placeholder="contacto@empresa.com" />
+              <input type="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} className={inp()} placeholder="contacto@empresa.com" />
             </Fld>
 
             <Fld label="Dirección">
-              <input value={form.address} onChange={(e) => set("address", e.target.value)} className={inp()} placeholder="Av. Javier Prado Este 1234" />
+              <input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} className={inp()} placeholder="Av. Javier Prado Este 1234" />
             </Fld>
 
             <div className="grid grid-cols-2 gap-4">
               <Fld label="Distrito">
-                <input value={form.district} onChange={(e) => set("district", e.target.value)} className={inp()} placeholder="San Isidro" />
+                <input value={form.district ?? ""} onChange={(e) => set("district", e.target.value)} className={inp()} placeholder="San Isidro" />
               </Fld>
               <Fld label="Ciudad">
-                <input value={form.city} onChange={(e) => set("city", e.target.value)} className={inp()} placeholder="Lima" />
+                <input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} className={inp()} placeholder="Lima" />
               </Fld>
             </div>
 
             <Fld label="Notas">
-              <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} className={inp() + " resize-none"} placeholder="Condiciones contractuales, personas de contacto adicionales..." />
+              <textarea value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} rows={3} className={inp() + " resize-none"} placeholder="Condiciones contractuales, personas de contacto adicionales..." />
             </Fld>
           </div>
 

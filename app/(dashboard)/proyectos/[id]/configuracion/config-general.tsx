@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 
 export function ConfigGeneral({ project, projectId }: { project: any; projectId: string }) {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     code: project.code,

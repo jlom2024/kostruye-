@@ -3,9 +3,9 @@ import Script from "next/script";
 import { JoshyWidget } from "@/components/joshy-widget";
 
 export const metadata: Metadata = {
-  title: "KOSTRUYE+",
+  title: "KOSTRUYE+ v2.5",
   description:
-    "Gestiona presupuestos S10, valorizaciones, almacén, planilla y compras de todas tus obras desde una sola plataforma. ERP de construcción hecho en Perú.",
+    "ERP definitivo para constructoras peruanas v2.5. Presupuestos S10, valorizaciones automáticas, almacén, planillas, fideicomiso CORFID, caja chica móvil y analíticas EVM.",
   alternates: { canonical: "https://konstruye.site" },
 };
 
@@ -17,7 +17,7 @@ const jsonLd = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description:
-    "ERP de gestión de obras para constructoras peruanas. Presupuesto S10, valorizaciones, almacén, planilla, compras y Last Planner System en una sola plataforma.",
+    "ERP de gestión de obras para constructoras peruanas v2.5. Presupuesto S10, valorizaciones automáticas, almacén, fideicomisos CORFID, analíticas EVM y caja chica móvil.",
   offers: [
     {
       "@type": "Offer",
@@ -1106,10 +1106,10 @@ export default function Landing() {
           <div className="reveal-left">
             <span className="hero-badge-minimal">Tecnología y Datos para Obras</span>
             <h1 className="hero-h1-editorial">
-              Gestiona tus proyectos con <span>precisión editorial.</span>
+              Gestiona tus proyectos con <span>precisión editorial v2.5.</span>
             </h1>
             <p className="hero-desc-editorial">
-              Presupuestos S10, control de stock físico, planificación LPS y gestión de costos. Un ERP diseñado institucionalmente para constructoras líderes del Perú.
+              Presupuestos S10, control de stock físico, planificación LPS, fideicomiso CORFID, caja chica de campo y analíticas EVM en tiempo real. Un ERP diseñado institucionalmente para constructoras líderes del Perú.
             </p>
             <div className="hero-ctas-editorial">
               <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid">Solicitar Demo Gratuita</a>
@@ -1204,9 +1204,9 @@ export default function Landing() {
                 delay: "d3"
               },
               {
-                title: "Planilla de Obreros",
-                desc: "Control de asistencia diaria de operarios, oficiales y peones. Cálculos según régimen de construcción civil.",
-                items: ["Asistencia con foto", "Planilla semanal", "Liquidaciones de ley"],
+                title: "Tareo y Planilla (Personal y Equipos)",
+                desc: "Control de asistencia diaria, horas hombre y horas máquina desde la app móvil. Sincronización automática para el procesamiento semanal de planilla civil.",
+                items: ["Tareo móvil de personal y GPS", "Horas de equipos (Trabajo / Standby)", "Planilla semanal automatizada"],
                 icon: (
                   <svg className="module-svg-icon" viewBox="0 0 24 24">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -1256,9 +1256,9 @@ export default function Landing() {
                 delay: "d3"
               },
               {
-                title: "Dashboard Gerencial",
-                desc: "Consola de control de KPIs ejecutivos de múltiples proyectos activos, flujo de caja y rentabilidad.",
-                items: ["Variación de costos (EV)", "Proyección de cierre", "KPIs multi-obra"],
+                title: "Dashboard Gerencial (EVM)",
+                desc: "Consola de control de KPIs ejecutivos de múltiples proyectos activos. Análisis CPI, SPI, Curvas S acumuladas y flujo de caja.",
+                items: ["Indicadores CPI / SPI", "Curva S acumulada", "Flujo de caja en vivo"],
                 icon: (
                   <svg className="module-svg-icon" viewBox="0 0 24 24">
                     <path d="M3 3v18h18" />
@@ -1331,33 +1331,33 @@ export default function Landing() {
             </div>
 
             <div className="reveal-right">
-              <span className="section-tag-editorial">Control en Campo</span>
-              <h2 className="section-title-editorial">La potencia del ERP en el bolsillo de tus ingenieros.</h2>
+              <span className="section-tag-editorial">Control en Campo v2.5 vs Estándar Tradicional</span>
+              <h2 className="section-title-editorial">La potencia del ERP móvil: Tareo, Pedidos, Aprobaciones y Tableros.</h2>
               <p className="section-sub-editorial" style={{ marginBottom: 48 }}>
-                Diseñada especialmente para el trabajo rudo en obra. Nuestra aplicación móvil se conecta con la misma base de datos Supabase en tiempo real, permitiendo a tu equipo registrar datos de campo sin papeleos ni retrasos.
+                Olvídate de contratar múltiples aplicaciones móviles fragmentadas. Kostruye+ consolida en una sola app todo-en-uno con sincronización 100% Offline-First para trabajar en cualquier punto del territorio peruano sin cobertura de red.
               </p>
 
               <div className="bullet-point-editorial">
                 <div className="bullet-number">01</div>
                 <div className="bullet-text">
-                  <strong>Control de Asistencia Civil (Tareo)</strong>
-                  <p>Registra el ingreso y salida diario de operarios, oficiales y peones. Incluye validación fotográfica y geolocalización para evitar planillas infladas.</p>
+                  <strong>Tareo de Personal y Equipos (Asistencia con GPS)</strong>
+                  <p>Control de horas hombre y horas máquina (operativas/stand-by) directamente por frente y actividad. Validación fotográfica y geolocalización satelital para mitigar planillas infladas y horas fantasma.</p>
                 </div>
               </div>
 
               <div className="bullet-point-editorial">
                 <div className="bullet-number">02</div>
                 <div className="bullet-text">
-                  <strong>Kardex y Stock Físico al Instante</strong>
-                  <p>El almacenero puede escanear guías de remisión con la cámara de su celular y registrar ingresos o consumos de materiales asignados a partidas específicas en segundos.</p>
+                  <strong>Pedidos en Obra e Inventarios (Kardex Móvil)</strong>
+                  <p>Solicitudes de compras e ingresos rápidos de materiales escaneando guías. Salidas vinculadas automáticamente a partidas del presupuesto APU para auditar consumos en caliente.</p>
                 </div>
               </div>
 
               <div className="bullet-point-editorial">
                 <div className="bullet-number">03</div>
                 <div className="bullet-text">
-                  <strong>Aprobación de Órdenes en Tiempo Real</strong>
-                  <p>Los ingenieros residentes y gerentes reciben alertas inmediatas para autorizar requerimientos de compra y servicios directamente desde la app móvil.</p>
+                  <strong>Aprobaciones en 1-Clic y Tablero Gerencial</strong>
+                  <p>Los jefes y gerentes autorizan órdenes de compra, contratos de servicios y liberaciones de fideicomiso al instante. Visualización de curvas S y KPIs financieros (CPI/SPI) consolidados.</p>
                 </div>
               </div>
             </div>
@@ -1477,6 +1477,7 @@ export default function Landing() {
                 {[
                   "Proyectos y obras ilimitadas",
                   "Todos los módulos operativos integrados",
+                  "Caja Chica & Rendición de Gastos de Campo",
                   "KIA Asistente de IA con acceso en vivo",
                   "Exportación de reportes PDF, Excel y CSV",
                   "Usuarios administradores ilimitados",
@@ -1501,9 +1502,9 @@ export default function Landing() {
               <ul className="plan-features-ed">
                 {[
                   "Consolidado multi-empresa unificado",
+                  "Integración con Fideicomisos CORFID",
                   "Gerente de cuenta y onboarding corporativo",
                   "Integración a medida con sistemas ERP externos",
-                  "Desarrollo de reportes a la medida",
                   "SLA garantizado por contrato (99.9%)",
                   "Copias de respaldo de base de datos personalizadas"
                 ].map((feat, i) => (
@@ -1547,7 +1548,7 @@ export default function Landing() {
           <div className="footer-info-brand">
             <img src="/logo-brand.png" alt="Kostruye+" className="footer-brand-logo" />
             <p className="footer-brand-desc">
-              Plataforma y ERP de gestión operativa para constructoras del Perú. Optimización de presupuestos, almacén, compras y nóminas de personal.
+              Plataforma y ERP de gestión operativa v2.5 para constructoras del Perú. Optimización de presupuestos, almacén, compras, fideicomisos CORFID, cajas chicas y nóminas de personal.
             </p>
           </div>
           <div>

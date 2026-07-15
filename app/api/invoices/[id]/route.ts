@@ -26,7 +26,8 @@ async function getOrgId(supabase: ReturnType<typeof serverClient>) {
 }
 
 // GET /api/invoices/[id] — refresh status from KREO-SUNAT
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -34,7 +35,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const { data: invoice } = await supabase
     .from("electronic_invoices")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("organization_id", orgId)
     .single();
 
@@ -80,7 +81,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           sunat_cdr_codigo: s.cdr_codigo ?? invoice.sunat_cdr_codigo,
           sunat_cdr_descripcion: s.cdr_descripcion ?? invoice.sunat_cdr_descripcion,
         })
-        .eq("id", params.id)
+        .eq("id", id)
         .select()
         .single();
       return NextResponse.json(updated ?? invoice);
@@ -93,7 +94,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // DELETE /api/invoices/[id] — anular comprobante
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -101,7 +103,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const { data: invoice } = await supabase
     .from("electronic_invoices")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("organization_id", orgId)
     .single();
 
@@ -142,7 +144,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const { error } = await supabase
     .from("electronic_invoices")
     .update({ estado_sunat: "anulado" })
-    .eq("id", params.id);
+    .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

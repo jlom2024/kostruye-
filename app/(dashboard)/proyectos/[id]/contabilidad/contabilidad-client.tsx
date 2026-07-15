@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { RefreshCw, FileX } from "lucide-react";
+import { RefreshCw, FileX, Zap } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────
 type Invoice = {
@@ -124,20 +124,25 @@ function InvoiceStatusBadge({ estado, descripcion }: { estado: string; descripci
   );
 }
 
-function InvoiceForm({ projectId, onSubmit, isPending, sym }: {
+function InvoiceForm({ projectId, onSubmit, isPending, sym, initialValues }: {
   projectId: string;
   onSubmit: (payload: object) => void;
   isPending: boolean;
   sym: string;
+  initialValues?: {
+    receptor_razon_social?: string;
+    receptor_num_doc?: string;
+    items?: InvoiceItem[];
+  };
 }) {
   const [tipo, setTipo]         = useState("01");
   const [serie, setSerie]       = useState("F001");
   const [numero, setNumero]     = useState("1");
   const [tipoDoc, setTipoDoc]   = useState("6");
-  const [numDoc, setNumDoc]     = useState("");
-  const [razon, setRazon]       = useState("");
+  const [numDoc, setNumDoc]     = useState(initialValues?.receptor_num_doc ?? "");
+  const [razon, setRazon]       = useState(initialValues?.receptor_razon_social ?? "");
   const [fecha, setFecha]       = useState(new Date().toISOString().slice(0, 10));
-  const [items, setItems]       = useState<InvoiceItem[]>([
+  const [items, setItems]       = useState<InvoiceItem[]>(initialValues?.items ?? [
     { descripcion: "", cantidad: 1, precio_unitario: 0, igv_aplica: true },
   ]);
 
@@ -299,14 +304,60 @@ export function ContabilidadClient({
   const [panelOpen, setPanelOpen] = useState(false);
   const [filterCat, setFilterCat] = useState("all");
   const [invoicePanel, setInvoicePanel] = useState(false);
+  const [invoicePrefill, setInvoicePrefill] = useState<any>(null);
 
   const sym = currency === "USD" ? "$" : "S/";
   const money = (n: number) =>
     `${sym} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  // ── Project & Valorizaciones Queries ────────────────────────────
+  const { data: project } = useQuery({
+    queryKey: ["project-detail", projectId],
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: approvedValorizaciones = [] } = useQuery({
+    queryKey: ["approved-valorizaciones", projectId],
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from("valorizaciones")
+        .select("*")
+        .eq("project_id", projectId)
+        .eq("status", "approved")
+        .order("val_number", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const handleFacturarValorizacion = (val: any) => {
+    setInvoicePrefill({
+      receptor_razon_social: project?.client ?? "",
+      receptor_num_doc: project?.fideicomiso_ruc ?? "", // Prefiltrado con RUC si estuviera definido
+      items: [
+        {
+          descripcion: `Valorización N° ${val.val_number} - ${val.period_name}`,
+          cantidad: 1,
+          precio_unitario: Number(val.total_amount),
+          igv_aplica: true,
+        }
+      ]
+    });
+    setInvoicePanel(true);
+  };
+
   // ── Invoices query ─────────────────────────────────────────────
   const { data: invoices = [] } = useQuery<Invoice[]>({
     queryKey: ["invoices", projectId],
+    staleTime: 2 * 60 * 1000, // 2 minutos (frecuencia media)
     queryFn: async () => {
       const res = await fetch(`/api/invoices?project_id=${projectId}`);
       if (!res.ok) throw new Error("Error cargando facturas");
@@ -361,6 +412,7 @@ export function ContabilidadClient({
   // ── Query ──────────────────────────────────────────────────────
   const { data: expenses = [] } = useQuery<Expense[]>({
     queryKey: ["expenses", projectId],
+    staleTime: 2 * 60 * 1000, // 2 minutos (frecuencia media)
     queryFn: async () => {
       const { data, error } = await sb
         .from("expenses")
@@ -692,10 +744,54 @@ export function ContabilidadClient({
         {/* Facturas tab */}
         {tab === "facturas" && (
           <div className="flex flex-col flex-1 overflow-auto">
+            {/* Valorizaciones listas para facturar */}
+            <div className="px-6 pt-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <h4 className="text-sm font-semibold text-slate-800">Valorizaciones aprobadas listas para facturar</h4>
+                </div>
+                {approvedValorizaciones.length === 0 ? (
+                  <p className="text-xs text-slate-400">No hay valorizaciones aprobadas en este proyecto.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                    {approvedValorizaciones.map((val: any) => {
+                      const yaFacturada = invoices.some((inv: any) =>
+                        inv.estado_sunat !== "anulado" &&
+                        Math.abs(Number(inv.subtotal) - Number(val.total_amount)) < 0.05
+                      );
+                      return (
+                        <div key={val.id} className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between hover:border-blue-300 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="text-xs font-semibold text-slate-700">Val N° {val.val_number}</span>
+                              <p className="text-[10px] text-slate-400 font-mono">{val.period_name}</p>
+                            </div>
+                            <span className="text-sm font-bold text-slate-900">{money(Number(val.total_amount))}</span>
+                          </div>
+                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                            <span className={`text-[10px] font-medium ${yaFacturada ? "text-amber-600" : "text-emerald-600"}`}>
+                              {yaFacturada ? "⚠️ Posiblemente ya facturada" : "Listo"}
+                            </span>
+                            <button
+                              onClick={() => handleFacturarValorizacion(val)}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              Facturar ⚡
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center gap-3 px-6 py-3">
               <span className="text-xs text-slate-500">{invoices.length} comprobante{invoices.length !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
-              <button onClick={() => setInvoicePanel(true)}
+              <button onClick={() => { setInvoicePrefill(null); setInvoicePanel(true); }}
                 className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
                 + Emitir comprobante
               </button>
@@ -775,14 +871,16 @@ export function ContabilidadClient({
         <div className="w-96 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <h3 className="text-sm font-semibold text-slate-800">Emitir comprobante SUNAT</h3>
-            <button onClick={() => setInvoicePanel(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            <button onClick={() => { setInvoicePanel(false); setInvoicePrefill(null); }} className="text-slate-400 hover:text-slate-600">✕</button>
           </div>
           <div className="flex-1 overflow-auto p-5">
             <InvoiceForm
+              key={invoicePrefill ? JSON.stringify(invoicePrefill) : "empty"}
               projectId={projectId}
               onSubmit={(payload) => emitInvoice.mutate(payload)}
               isPending={emitInvoice.isPending}
               sym={sym}
+              initialValues={invoicePrefill}
             />
           </div>
         </div>

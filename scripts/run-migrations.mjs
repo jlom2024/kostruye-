@@ -66,7 +66,7 @@ async function main() {
   const single = args.find(a => a.endsWith('.sql'));
 
   const toRun = single
-    ? MIGRATIONS.filter(m => m === single || m.startsWith(single))
+    ? [single]
     : MIGRATIONS;
 
   console.log(C.bold(C.blue('\n🚀 Kostruye+ Migration Runner')));
