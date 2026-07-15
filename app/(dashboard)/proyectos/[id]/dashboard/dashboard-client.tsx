@@ -291,6 +291,82 @@ export function DashboardClient({
         </div>
       )}
 
+      {/* ── Nuevas Métricas de Gestión (HSE, Fideicomiso, Inspecciones) ───────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Card: Seguridad y HSE */}
+        <div className={cn(
+          "rounded-xl border bg-white p-5",
+          openCriticalIncidents > 0 ? "border-red-200" : "border-slate-200"
+        )}>
+          <div className="flex items-center gap-2 mb-3">
+            <HardHat className="h-4 w-4 text-emerald-600" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seguridad y HSE</span>
+            {openCriticalIncidents > 0 && (
+              <span className="ml-auto text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full animate-pulse">
+                CRÍTICO
+              </span>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-slate-900 leading-tight">
+            {activeIncidentsCount} {activeIncidentsCount === 1 ? "Incidente Activo" : "Incidentes Activos"}
+          </p>
+          <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+            <div className="flex justify-between">
+              <span>Crítico / Alto:</span>
+              <span className={cn("font-semibold", openCriticalIncidents + openHighIncidents > 0 ? "text-red-600" : "text-slate-600")}>
+                {openCriticalIncidents} críticos · {openHighIncidents} altos
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Medio / Bajo:</span>
+              <span>{openMediumIncidents} medio · {openLowIncidents} bajo</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card: Fideicomiso CORFID */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Fideicomiso CORFID</span>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 leading-tight">
+            {fmt(approvedFideicomisoAmount, currency)}
+          </p>
+          <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+            <div className="flex justify-between">
+              <span>Aprobado / Liberado:</span>
+              <span className="font-semibold text-emerald-600">{fmt(approvedFideicomisoAmount, currency)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>En revisión (Presentado):</span>
+              <span>{fmt(submittedFideicomisoAmount, currency)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card: Inspecciones de Calidad */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="h-4 w-4 text-indigo-600" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inspecciones de Calidad</span>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 leading-tight">
+            {checklistsCount} Inspecciones
+          </p>
+          <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+            <div className="flex justify-between">
+              <span>Total checklists realizados:</span>
+              <span className="font-semibold text-slate-700">{checklistsCount} completos</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Frecuencia:</span>
+              <span>Monitoreo diario de frentes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── Resultado Operativo (S10) ───────────────────────────────────────── */}
       <ResultadoOperativo
         ingreso={ingreso}
