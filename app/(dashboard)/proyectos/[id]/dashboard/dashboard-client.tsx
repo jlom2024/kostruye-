@@ -51,6 +51,26 @@ interface OCPoint {
   amount: number;
 }
 
+interface Incident {
+  id: string;
+  description: string;
+  severity: "low" | "medium" | "high" | "critical";
+  location: string;
+  status: "open" | "resolved";
+  created_at: string;
+}
+
+interface FideicomisoRequest {
+  id: string;
+  status: "draft" | "submitted" | "approved" | "rejected";
+  total_amount: number;
+  request_number: string;
+}
+
+interface Checklist {
+  id: string;
+}
+
 interface Props {
   project:          Record<string, unknown>;
   ventaTotal:       number;
@@ -67,6 +87,9 @@ interface Props {
   costoServicios:   number;
   ocTimeline:       OCPoint[];
   usandoKardex:     boolean;
+  incidents:        Incident[];
+  fideicomisoRequests: FideicomisoRequest[];
+  checklists:       Checklist[];
 }
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -111,6 +134,9 @@ export function DashboardClient({
   costoServicios,
   ocTimeline,
   usandoKardex,
+  incidents,
+  fideicomisoRequests,
+  checklists,
 }: Props) {
   const currency = (project.currency as string) ?? "PEN";
 
@@ -167,6 +193,23 @@ export function DashboardClient({
   const spi = (pv !== null && pv > 0) ? Math.round((ev / pv) * 1000) / 1000 : null;
   // Flujo de Caja = Ingresos cobrados (Valorizaciones aprobadas) - Egresos reales
   const flujoCaja = ev - ac;
+
+  // ── HSE / Seguridad y Salud ──────────────────────────────────────────────────
+  const activeIncidents = incidents.filter((i) => i.status === "open");
+  const activeIncidentsCount = activeIncidents.length;
+  const openCriticalIncidents = activeIncidents.filter((i) => i.severity === "critical").length;
+  const openHighIncidents = activeIncidents.filter((i) => i.severity === "high").length;
+  const openMediumIncidents = activeIncidents.filter((i) => i.severity === "medium").length;
+  const openLowIncidents = activeIncidents.filter((i) => i.severity === "low").length;
+  const checklistsCount = checklists.length;
+
+  // ── Fideicomiso CORFID ───────────────────────────────────────────────────────
+  const approvedFideicomisoAmount = fideicomisoRequests
+    .filter((r) => r.status === "approved")
+    .reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
+  const submittedFideicomisoAmount = fideicomisoRequests
+    .filter((r) => r.status === "submitted")
+    .reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">

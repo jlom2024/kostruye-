@@ -37,6 +37,9 @@ export default async function ProjectDashboardPage({
     { data: payrollPeriods },
     { data: withdrawalCosts },
     { data: soAdvances },
+    { data: incidents },
+    { data: fideicomisoRequests },
+    { data: checklists },
   ] = await Promise.all([
     ventaBudget
       ? supabase
@@ -79,6 +82,20 @@ export default async function ProjectDashboardPage({
       .select("costo_servicios")
       .eq("project_id", id)
       .maybeSingle(),
+    // ── HSE Incidents ──────────────────────────────────────────────────────────
+    (supabase.from("hse_incidents") as any)
+      .select("id, severity, status, description, location, created_at")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false }),
+    // ── Fideicomiso Requests ───────────────────────────────────────────────────
+    (supabase.from("fideicomiso_requests") as any)
+      .select("id, status, total_amount, request_number")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false }),
+    // ── HSE Checklists ─────────────────────────────────────────────────────────
+    (supabase.from("hse_checklists") as any)
+      .select("id")
+      .eq("project_id", id),
   ]);
 
   // ── Cálculos de plazo ───────────────────────────────────────────────────────
@@ -155,6 +172,9 @@ export default async function ProjectDashboardPage({
         costoServicios={costoServicios}
         ocTimeline={ocTimeline}
         usandoKardex={usandoKardex}
+        incidents={incidents ?? []}
+        fideicomisoRequests={fideicomisoRequests ?? []}
+        checklists={checklists ?? []}
       />
     </>
   );
