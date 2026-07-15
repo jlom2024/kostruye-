@@ -12,11 +12,12 @@ export default async function ProductividadPage({ params }: Props) {
   const supabase = await createClient();
 
   // Verificar el proyecto
-  const { data: project, error: pErr } = await supabase
+  const { data, error: pErr } = await supabase
     .from("projects")
     .select("*")
     .eq("id", id)
     .single();
+  const project: any = data;
 
   if (pErr || !project) {
     notFound();

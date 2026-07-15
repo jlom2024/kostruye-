@@ -89,15 +89,15 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
       if (!user) throw new Error("No autenticado");
 
       // 1. Insertar cabecera
-      const { data: checklist, error: chkErr } = await supabase
-        .from("hse_checklists")
+      const { data: checklist, error: chkErr } = await (supabase
+        .from("hse_checklists") as any)
         .insert({
           project_id: projectId,
           title: newTitle,
           checklist_type: newType,
           inspector_user_id: user.id,
           status: "completed"
-        })
+        } as any)
         .select("*")
         .single();
 
@@ -108,16 +108,20 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
       const rows = questions.map((q) => {
         const itemState = checklistItems[q] || { status: "pass", notes: "" };
         return {
-          checklist_id: checklist.id,
+          checklist_id: (checklist as any).id,
           question: q,
           status: itemState.status,
           notes: itemState.notes
         };
       });
 
-      const { error: itemsErr } = await supabase.from("hse_checklist_items").insert(rows);
-      if (itemsErr) throw new Error(itemsErr.message);
-
+      if (rows.length > 0) {
+        const { error: itemsErr } = await (supabase
+          .from("hse_checklist_items") as any)
+          .insert(rows);
+        if (itemsErr) throw new Error(itemsErr.message);
+      }
+      
       setChecklists([checklist, ...checklists]);
       setShowNewChecklistModal(false);
       setNewTitle("");
@@ -137,8 +141,11 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
     }
     setLoading(true);
     try {
-      const { data: incident, error: incErr } = await supabase
-        .from("hse_incidents")
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      const { data: incident, error: incErr } = await (supabase
+        .from("hse_incidents") as any)
         .insert({
           project_id: projectId,
           description: incDescription,
@@ -146,7 +153,7 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
           location: incLocation,
           action_required: incActionRequired,
           status: "open"
-        })
+        } as any)
         .select("*")
         .single();
 
@@ -167,8 +174,8 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
 
   const handleResolveIncident = async (incidentId: string) => {
     try {
-      const { error } = await supabase
-        .from("hse_incidents")
+      const { error } = await (supabase
+        .from("hse_incidents") as any)
         .update({ status: "resolved" })
         .eq("id", incidentId);
 

@@ -27,7 +27,7 @@ export default async function ParteEquiposPage({ params }: Props) {
     const { data: items } = await supabase
       .from("budget_items")
       .select("id, item_code, description")
-      .eq("budget_id", activeBudget.id)
+      .eq("budget_id", (activeBudget as any).id)
       .order("item_code");
     
     if (items) budgetItems = items;

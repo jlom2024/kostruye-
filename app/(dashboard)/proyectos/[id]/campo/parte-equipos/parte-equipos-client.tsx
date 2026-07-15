@@ -41,24 +41,24 @@ export function ParteEquiposClient({ projectId, equipments, budgetItems }: Props
 
   async function loadLog(targetDate: string) {
     setLoading(true);
-    const { data: log } = await supabase
-      .from("equipment_logs")
+    const { data: log } = await (supabase
+      .from("equipment_logs") as any)
       .select("id, status")
       .eq("project_id", projectId)
       .eq("date", targetDate)
       .single();
 
     if (log) {
-      setLogId(log.id);
-      setStatus(log.status as any);
+      setLogId((log as any).id);
+      setStatus((log as any).status as any);
 
-      const { data: dbEntries } = await supabase
-        .from("equipment_log_entries")
+      const { data: dbEntries } = await (supabase
+        .from("equipment_log_entries") as any)
         .select("*")
-        .eq("equipment_log_id", log.id);
+        .eq("equipment_log_id", (log as any).id);
       
       const newEntries: Record<string, any> = {};
-      dbEntries?.forEach(e => {
+      dbEntries?.forEach((e: any) => {
         newEntries[e.equipment_id] = {
           worked_hours: e.worked_hours,
           standby_hours: e.standby_hours,
@@ -91,8 +91,8 @@ export function ParteEquiposClient({ projectId, equipments, budgetItems }: Props
       let currentLogId = logId;
 
       if (!currentLogId) {
-        const { data: newLog, error: logErr } = await supabase
-          .from("equipment_logs")
+        const { data: newLog, error: logErr } = await (supabase
+          .from("equipment_logs") as any)
           .insert({
             project_id: projectId,
             date,
@@ -104,8 +104,8 @@ export function ParteEquiposClient({ projectId, equipments, budgetItems }: Props
         currentLogId = newLog.id;
         setLogId(currentLogId);
       } else {
-        const { error: updErr } = await supabase
-          .from("equipment_logs")
+        const { error: updErr } = await (supabase
+          .from("equipment_logs") as any)
           .update({ status: newStatus })
           .eq("id", currentLogId);
         if (updErr) throw new Error(updErr.message);
@@ -120,9 +120,9 @@ export function ParteEquiposClient({ projectId, equipments, budgetItems }: Props
         budget_item_id: entries[eq.id].budget_item_id || null
       }));
 
-      await supabase.from("equipment_log_entries").delete().eq("equipment_log_id", currentLogId);
+      await (supabase.from("equipment_log_entries") as any).delete().eq("equipment_log_id", currentLogId!);
       
-      const { error: insertErr } = await supabase.from("equipment_log_entries").insert(rows);
+      const { error: insertErr } = await (supabase.from("equipment_log_entries") as any).insert(rows);
       if (insertErr) throw new Error(insertErr.message);
 
       setStatus(newStatus);
