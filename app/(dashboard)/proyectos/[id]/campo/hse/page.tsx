@@ -3,19 +3,18 @@ import { notFound } from "next/navigation";
 import { HSEClient } from "./hse-client";
 
 interface Props {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function HSEPage({ params }: Props) {
+  const { id } = await params;
   const supabase = await createClient();
 
   // Obtener el proyecto activo
   const { data } = await supabase
     .from("projects")
     .select("id, name")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
   const project: any = data;
 
