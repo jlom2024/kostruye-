@@ -3,6 +3,8 @@ import { Topbar } from "@/components/layout/topbar";
 import { notFound } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectDashboardPage({
   params,
 }: {

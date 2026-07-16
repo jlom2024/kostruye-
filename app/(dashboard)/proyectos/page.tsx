@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProyectosPage() {
   const supabase = await createClient();
   const { data: projects, error } = await supabase
