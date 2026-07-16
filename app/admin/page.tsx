@@ -76,6 +76,8 @@ export default function AdminDashboard() {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
 
   async function load() {
     try {
@@ -176,6 +178,7 @@ export default function AdminDashboard() {
     });
     if (res.ok) {
       setShowForm(false);
+      setShowPassword(false);
       setForm({ name: "", slug: "", plan: "pilot", contact_name: "", contact_email: "", password: "", monthly_price: 0, notes: "" });
       setLogoFile(null);
       setLogoPreview("");
@@ -411,7 +414,7 @@ export default function AdminDashboard() {
       </div>
 
       {showForm && (
-        <div style={s.overlay} onClick={() => setShowForm(false)}>
+        <div style={s.overlay} onClick={() => { setShowForm(false); setShowPassword(false); }}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: "0 0 24px", fontSize: 18, fontWeight: 700 }}>Nuevo cliente</h3>
             <form onSubmit={submitForm}>
@@ -431,9 +434,9 @@ export default function AdminDashboard() {
                     value={form.plan}
                     onChange={(e) => setForm({ ...form, plan: e.target.value as Plan, monthly_price: PLAN_PRICES[e.target.value as Plan] })}
                   >
-                    <option value="pilot">Piloto — Gratis</option>
-                    <option value="pro">Pro — S/ 1,099/mes</option>
-                    <option value="enterprise">Enterprise — S/ 1,299/mes</option>
+                    <option value="pilot" style={{ background: "#111827", color: "#fff" }}>Piloto — Gratis</option>
+                    <option value="pro" style={{ background: "#111827", color: "#fff" }}>Pro — S/ 1,099/mes</option>
+                    <option value="enterprise" style={{ background: "#111827", color: "#fff" }}>Enterprise — S/ 3,699/mes</option>
                   </select>
                 </div>
                 <div>
@@ -446,7 +449,48 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label style={s.label}>Contraseña *</label>
-                  <input style={s.input} type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <input
+                      style={{ ...s.input, paddingRight: 40 }}
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0 12px",
+                        color: showPassword ? "#f59e0b" : "#6b7280",
+                        display: "flex",
+                        alignItems: "center",
+                        transition: "color .2s",
+                      }}
+                    >
+                      {showPassword ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div style={{ gridColumn: "1/-1" }}>
                   <label style={s.label}>Logo de la empresa</label>
@@ -479,7 +523,7 @@ export default function AdminDashboard() {
               {error && <p style={{ color: "#f87171", fontSize: 13, margin: "12px 0 0" }}>{error}</p>}
 
               <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ ...s.btn, background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
+                <button type="button" onClick={() => { setShowForm(false); setShowPassword(false); }} style={{ ...s.btn, background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving} style={{ ...s.btn, background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff" }}>
