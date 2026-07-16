@@ -88,17 +88,40 @@ export async function POST(req: NextRequest) {
   let year = now.getFullYear();
   let month = now.getMonth() + 1;
 
-  // Intentar mes actual, si falla bajar un mes
+  // Intentar primero con la URL unificada/acumulada de 2026 (sin sufijo de mes)
   let buffer: ArrayBuffer | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const url = ineiUrl(year, month);
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (res.ok) { buffer = await res.arrayBuffer(); break; }
-    } catch {}
-    // Retroceder un mes
-    month--;
-    if (month < 1) { month = 12; year--; }
+  const unifiedUrl = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/n07_indices_unificados_de_precios_de_la_construccion.xlsx";
+  try {
+    const res = await fetch(unifiedUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (res.ok) {
+      buffer = await res.arrayBuffer();
+    }
+  } catch (err) {
+    console.error("Error al intentar descargar Excel unificado del INEI:", err);
+  }
+
+  // Fallback a URLs mensuales individuales clásicas
+  if (!buffer) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const url = ineiUrl(year, month);
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+          signal: AbortSignal.timeout(15000)
+        });
+        if (res.ok) { buffer = await res.arrayBuffer(); break; }
+      } catch {}
+      // Retroceder un mes
+      month--;
+      if (month < 1) { month = 12; year--; }
+    }
   }
 
   if (!buffer) {
