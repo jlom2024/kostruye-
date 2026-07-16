@@ -29,8 +29,11 @@ export async function middleware(request: NextRequest) {
     (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) &&
     pathname !== "/admin/login"
   ) {
-    const cookie = request.cookies.get("kostruye_admin");
-    if (!cookie || cookie.value !== ADMIN_TOKEN) {
+    const cookie = request.cookies.get("kostruye_admin")?.value;
+    const headerToken = request.headers.get("x-admin-token");
+    const isAuthorizedAdmin = cookie === ADMIN_TOKEN || headerToken === ADMIN_TOKEN;
+
+    if (!isAuthorizedAdmin) {
       if (pathname.startsWith("/api/")) {
         return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
