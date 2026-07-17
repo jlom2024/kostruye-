@@ -28,6 +28,28 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-07-16 — Houston (Gemini 3.5 Flash) — Corrección de Caching en Supabase y Sincronización INEI
+
+### Cambios
+
+**Caché de Dashboards (Multi-tenant)**
+- `lib/supabase/server.ts`: Se inyectó la opción `global.fetch` con `cache: 'no-store'` para desactivar de raíz el caching global de peticiones HTTP en Next.js App Router para Supabase. Esto evita que los datos y dashboards de proyectos se compartan/crucen entre clientes diferentes.
+- `app/(dashboard)/proyectos/page.tsx` y `app/(dashboard)/proyectos/[id]/dashboard/page.tsx`: Se añadió la directiva `export const dynamic = "force-dynamic"` en las páginas principales de proyectos y dashboard para forzar su renderización dinámica por petición.
+
+**Sincronización INEI**
+- `app/api/admin/inei/sync/route.ts`: Se adaptó la consulta de sincronización del INEI para apuntar a la URL unificada acumulativa del 2026 (`n07_indices_unificados_de_precios_de_la_construccion.xlsx`) que aloja el INEI actualmente. Se le agregó la cabecera `User-Agent` de navegador para evitar bloqueos por parte del firewall del INEI.
+- `middleware.ts`: Se actualizó la validación del panel `/api/admin` para permitir el acceso mediante la cabecera `x-admin-token`, facilitando la invocación programada por cron/scripts.
+- `docker-compose.yml`: Se expusieron explícitamente las variables `ADMIN_TOKEN`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `OPENAI_API_KEY` en el bloque de variables de entorno de Next.js.
+
+### Estado al cerrar
+- ✅ Dashboards de proyectos aislados por RLS y protegidos contra caching indeseado.
+- ✅ Sincronización con el INEI completamente funcional. Se importaron exitosamente 385 índices unificados acumulados de 2026 (hasta Mayo 2026) a la base de datos de producción mediante una petición de sincronización manual verificada.
+
+### ⚠️ Cuidado para el siguiente agente
+- El archivo Excel del INEI de 2026 se actualiza de manera continua bajo la misma URL sin sufijo de mes. La función `parseExcel` ya itera de forma dinámica sobre todas las pestañas mensuales que coincidan con `/^[A-Za-z]{3}_\d{4}$/`, por lo que el proceso es adaptativo y no requiere cambios mensuales.
+
+---
+
 ## 2026-06-20 — Antu (Claude Opus 4.8) — Fix import OCR: capítulos jerárquicos colapsados al raíz (adaptativo)
 
 ### Cambios
