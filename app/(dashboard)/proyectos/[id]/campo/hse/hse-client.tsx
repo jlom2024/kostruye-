@@ -21,6 +21,7 @@ interface Incident {
   location: string;
   action_required: string;
   status: "open" | "resolved";
+  photo_url: string | null;
   created_at: string;
 }
 
@@ -318,6 +319,16 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
                       </span>
                     )}
                   </div>
+                  {inc.photo_url && (
+                    <div className="rounded-lg overflow-hidden border border-slate-200">
+                      <img
+                        src={inc.photo_url}
+                        alt="Evidencia del incidente"
+                        className="w-full max-h-64 object-contain bg-slate-100"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
                   {inc.action_required && (
                     <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 border border-slate-100">
                       <strong>Acción Correctiva:</strong> {inc.action_required}
