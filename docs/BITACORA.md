@@ -28,39 +28,55 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
-## 2026-07-18 — Antu (Claude) — Fix App Móvil: sync offline, lista de proyectos y UX del picker
+## 2026-07-18/19 — Antu (Claude) — Fix App Móvil: sync offline, lista de proyectos, fotos en todas las pantallas
 
 ### Cambios
 
-**App Móvil (`kostruye-movil/`)**
+**App Móvil (`kostruye-movil/`) — Primera ronda**
 - `src/lib/offline-sync.ts`: corregido `checkConnection()` que llamaba a `/auth/v1/health` sin `apikey`, provocando `401` y bloqueando la sincronización offline a Supabase. Se agregaron los headers `apikey` y `Authorization: Bearer` con `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 - `src/lib/project-context.tsx`: admin y contador de una organización ahora ven **todos los proyectos de la org** (antes solo los de `project_members`). Los demás roles siguen filtrando por membresía de proyecto.
 - `src/components/project-picker.tsx`: proyectos agrupados por cliente (`project.client`) para evitar mezclar obras de clientes distintos bajo la misma organización.
 - `src/app/(app)/index.tsx`: banner de sincronización pluralizado (`1 registro local` / `N registros locales`) y contador refrescado al recibir foco del screen.
 - `src/types/database.ts`: agregados `contador` y `user` a `UserRole` para alinearse con el enum real de Supabase.
+- `src/lib/offline-sync.ts`: exportada función `uploadImage()` que usa `expo-file-system` (lectura base64) en lugar de `fetch(uri).blob()` que fallaba en React Native.
+- `src/app/(app)/hse.tsx`: usa `uploadImage` de offline-sync; si la foto no sube, el incidente se encola localmente.
+
+**App Móvil — Segunda ronda (fotos en Caja Chica y Avance Físico)**
+- `src/app/(app)/caja-chica.tsx`: reemplazado `fetch(photoUri).blob()` inline por `uploadImage()` de offline-sync.
+- `src/app/(app)/avance.tsx`: reemplazado `fetch(photoUri).blob()` inline por `uploadImage()`. Además ahora guarda `photo_url` en el insert a `daily_progress_entries`.
+- `src/lib/offline-sync.ts`: al sincronizar avances offline, también sube la foto y guarda `photo_url` en `daily_progress_entries`.
+
+**Backend (BD)**
+- `daily_progress_entries.photo_url`: columna agregada (antes no existía, las fotos subidas quedaban huérfanas).
+- Migración `046_photo_url_daily_progress.sql` creada y aplicada en Supabase.
+
+**Dashboard Web**
+- `hse-client.tsx`: muestra `photo_url` como imagen en cada incidente.
 
 **Documentación**
 - Reescrito `kostruye-movil/CLAUDE.md` con estructura, roadmap y notas actualizadas.
 - Reemplazado `kostruye-movil/README.md` del template de Expo por README específico de Kostruye+ Móvil.
 
-**Repo**
-- Commit `5e3fa02` y push a `https://github.com/jlom2024/kostruye-movil` (rama `master`).
-- Commit `52efb0c` con fix de fotos y push a `kostruye-movil`.
-- Commit `f49a2b2` con fix de visualización de foto en dashboard web y push a `https://github.com/jlom2024/kostruye-`.
+**Repos**
+- `kostruye-movil`: commits `5e3fa02`, `52efb0c`, `0edb8cb`, `ee139e6`.
+- `kostruye-`: commits `f49a2b2`, `ceb1e11`, `f6bd196`.
 - Deploy VPS actualizado (`kostruye-plus-app-1` recreado).
 
 ### Estado al cerrar
 - ✅ Sincronización offline funcional en app móvil.
 - ✅ Admin/contador ven todos los proyectos de SEATEK en el picker (5 proyectos).
 - ✅ Proyectos agrupados por cliente en el selector.
-- ✅ Subida de fotos desde la app móvil corregida (expo-file-system + base64).
-- ✅ Dashboard web muestra la foto de evidencia en incidentes HSE.
+- ✅ Subida de fotos corregida en HSE, Caja Chica y Avance Físico (expo-file-system + base64).
+- ✅ Avance Físico ahora guarda `photo_url` en DB (antes huérfana).
+- ✅ Dashboard web muestra foto de evidencia en incidentes HSE.
+- ✅ Incidente "Se presentó Kenji" eliminado (photo_url=null).
 - ✅ TypeScript sin errores (`npx tsc --noEmit`).
 
 ### ⚠️ Cuidado para el siguiente agente
 - La app móvil está en repo separado (`kostruye-movil`), no en `kostruye-`. No mezclar remotes.
 - `checkConnection()` depende de `EXPO_PUBLIC_SUPABASE_ANON_KEY`; si se rota la anon key, actualizar `.env`.
 - `expo-file-system` es ahora dependencia obligatoria para la subida de fotos.
+- Las 3 pantallas (HSE, Caja Chica, Avance) usan `uploadImage()` de `offline-sync.ts`. Si se agrega otra pantalla con fotos, reutilizar esa función, no hacer fetch+blob inline.
 
 ---
 
