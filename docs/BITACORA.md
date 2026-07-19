@@ -45,16 +45,22 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 **Repo**
 - Commit `5e3fa02` y push a `https://github.com/jlom2024/kostruye-movil` (rama `master`).
+- Commit `52efb0c` con fix de fotos y push a `kostruye-movil`.
+- Commit `f49a2b2` con fix de visualización de foto en dashboard web y push a `https://github.com/jlom2024/kostruye-`.
+- Deploy VPS actualizado (`kostruye-plus-app-1` recreado).
 
 ### Estado al cerrar
 - ✅ Sincronización offline funcional en app móvil.
 - ✅ Admin/contador ven todos los proyectos de SEATEK en el picker (5 proyectos).
 - ✅ Proyectos agrupados por cliente en el selector.
+- ✅ Subida de fotos desde la app móvil corregida (expo-file-system + base64).
+- ✅ Dashboard web muestra la foto de evidencia en incidentes HSE.
 - ✅ TypeScript sin errores (`npx tsc --noEmit`).
 
 ### ⚠️ Cuidado para el siguiente agente
 - La app móvil está en repo separado (`kostruye-movil`), no en `kostruye-`. No mezclar remotes.
 - `checkConnection()` depende de `EXPO_PUBLIC_SUPABASE_ANON_KEY`; si se rota la anon key, actualizar `.env`.
+- `expo-file-system` es ahora dependencia obligatoria para la subida de fotos.
 
 ---
 
