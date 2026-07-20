@@ -151,6 +151,7 @@ CORFID_WEBHOOK_SECRET=<secret>
 | 046 | `photo_url` en `daily_progress_entries` | ✅ Aplicada |
 | 047 | Trigger auditoría en `hse_incidents` | ✅ Aplicada |
 | 048 | `fn_audit()` resuelve `project_id`/`organization_id` genéricamente + backfill HSE | ✅ Aplicada |
+| 049 | Agregar `inspeccion_herramientas` a `hse_checklists.checklist_type` | ✅ Aplicada |
 
 > **Pendiente:** Crear archivos .sql para migraciones 019, 020, 021 (reproducibilidad).
 

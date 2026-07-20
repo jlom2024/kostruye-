@@ -56,6 +56,12 @@ const CHECKLIST_TEMPLATES: Record<string, string[]> = {
     "Tableros eléctricos provisionales protegidos y con llaves diferenciales",
     "Herramientas eléctricas con doble aislamiento o conexión a tierra",
     "Áreas de trabajo secas y libres de materiales inflamables"
+  ],
+  inspeccion_herramientas: [
+    "Herramientas manuales sin grietas, astillas o desgaste excesivo",
+    "Cables y conexiones eléctricas de herramientas en buen estado",
+    "Guardas y protectores de herramientas rotativas instalados",
+    "Herramientas eléctricas con conexión a tierra o doble aislamiento vigente"
   ]
 };
 
@@ -65,6 +71,8 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
   const [checklists, setChecklists] = useState<Checklist[]>(initialChecklists);
   const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
   const [loading, setLoading] = useState(false);
+  const [expandedChecklist, setExpandedChecklist] = useState<string | null>(null);
+  const [expandedChecklistItems, setExpandedChecklistItems] = useState<Record<string, { question: string; status: string; notes: string | null }[]>>({});
 
   // Estados para nuevo checklist
   const [showNewChecklistModal, setShowNewChecklistModal] = useState(false);
@@ -240,6 +248,22 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
     }
   };
 
+  const toggleChecklist = async (checklistId: string) => {
+    if (expandedChecklist === checklistId) {
+      setExpandedChecklist(null);
+      return;
+    }
+    if (!expandedChecklistItems[checklistId]) {
+      const { data } = await (supabase
+        .from("hse_checklist_items") as any)
+        .select("question, status, notes")
+        .eq("checklist_id", checklistId)
+        .order("created_at", { ascending: true });
+      setExpandedChecklistItems({ ...expandedChecklistItems, [checklistId]: data ?? [] });
+    }
+    setExpandedChecklist(checklistId);
+  };
+
   const handleResolveIncident = async (incidentId: string) => {
     try {
       const { error } = await (supabase
@@ -324,22 +348,54 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
                 </tr>
               ) : (
                 checklists.map((chk) => (
-                  <tr key={chk.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 text-slate-500">
-                      {new Date(chk.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {chk.title}
-                    </td>
-                    <td className="px-4 py-3 uppercase text-xs font-mono text-slate-600">
-                      {chk.checklist_type.replace("_", " ")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
-                        Completado
-                      </span>
-                    </td>
-                  </tr>
+                  <>
+                    <tr
+                      key={chk.id}
+                      className="hover:bg-slate-50/50 cursor-pointer"
+                      onClick={() => toggleChecklist(chk.id)}
+                    >
+                      <td className="px-4 py-3 text-slate-500">
+                        {new Date(chk.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {chk.title}
+                      </td>
+                      <td className="px-4 py-3 uppercase text-xs font-mono text-slate-600">
+                        {chk.checklist_type.replace("_", " ")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
+                          Completado
+                        </span>
+                      </td>
+                    </tr>
+                    {expandedChecklist === chk.id && (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-3 bg-slate-50/70">
+                          <div className="space-y-2">
+                            {(expandedChecklistItems[chk.id] ?? []).map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-3 text-sm">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                  item.status === 'pass' ? 'bg-emerald-100 text-emerald-700' :
+                                  item.status === 'fail' ? 'bg-red-100 text-red-700' :
+                                  'bg-slate-200 text-slate-600'
+                                }`}>
+                                  {item.status === 'pass' ? 'Conforme' : item.status === 'fail' ? 'No conforme' : 'N/A'}
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-slate-700">{item.question}</p>
+                                  {item.notes && <p className="text-xs text-slate-500 mt-0.5">{item.notes}</p>}
+                                </div>
+                              </div>
+                            ))}
+                            {(expandedChecklistItems[chk.id] ?? []).length === 0 && (
+                              <p className="text-xs text-slate-500">Cargando ítems...</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))
               )}
             </tbody>
@@ -451,6 +507,7 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
                   <option value="trabajo_altura">Trabajo en Altura</option>
                   <option value="excavaciones">Excavaciones y Zanjas</option>
                   <option value="equipos_electricos">Equipos y Conexiones Eléctricas</option>
+                  <option value="inspeccion_herramientas">Inspección de Herramientas</option>
                 </select>
               </div>
 

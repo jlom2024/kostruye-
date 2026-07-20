@@ -34,7 +34,13 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 **Dashboard Web — HSE (`app/(dashboard)/proyectos/[id]/campo/hse/`)**
 - `hse-client.tsx`: agregados botones de editar y eliminar en cada incidente; modal reutilizado para crear y editar.
+- `hse-client.tsx`: filas de checklists ahora expanden para mostrar los ítems evaluados (conforme / no conforme / N/A) y sus notas.
 - `page.tsx`: acción `deleteIncident` que borra el registro vía Supabase server action.
+
+**App Móvil — Checklists HSE funcionales**
+- `src/app/(app)/hse.tsx`: los botones de checklist ahora abren un modal con formulario funcional. Soporta 4 tipos: Trabajo en Altura, Inspección de Herramientas, EPP Básico y Equipos Eléctricos. Cada ítem se evalúa como Conforme / No conforme / N/A con notas opcionales.
+- `src/lib/offline-sync.ts`: agregado tipo `OfflineChecklist`, cola `KEYS.CHECKLISTS` y sync de checklists a `hse_checklists` + `hse_checklist_items` (online u offline).
+- `kostruye-movil/CLAUDE.md`: actualizado con el feature.
 
 **App Móvil — Fix subida de fotos (HTTP 415 invalid_mime_type)**
 - `src/lib/offline-sync.ts`: `uploadImage()` enviaba fotos con `FileSystemUploadType.BINARY_CONTENT` sin header `Content-Type`, por lo que Supabase Storage recibía `application/octet-stream` y respondía `415 invalid_mime_type`. Se agregó el header `Content-Type` con el MIME real según la extensión del archivo (`image/jpeg`, `image/png` o `image/webp`). Corrige la subida en HSE, Caja Chica y Avance Físico.
@@ -43,6 +49,7 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 **Backend (BD)**
 - Migración `047_hse_incidents_audit_trigger.sql`: trigger `trg_audit_hse_incidents` AFTER INSERT/UPDATE/DELETE ejecutando `fn_audit()`.
 - Migración `048_fn_audit_generic_project_resolution.sql`: `fn_audit()` ahora resuelve `project_id` y `organization_id` de forma genérica para cualquier tabla con columna `project_id` (incluye `hse_incidents`), no solo para presupuesto. Se restringió `search_path` y permisos consistentes con migraciones 016–017.
+- Migración `049_hse_checklist_type_herramientas.sql`: agregado `inspeccion_herramientas` al CHECK constraint de `hse_checklists.checklist_type`.
 - Backfill: el evento DELETE del incidente "Falla del sistema" quedó con `project_id` y `organization_id` nulos; se actualizó para que aparezca en la bitácora de auditoría del proyecto.
 
 **Verificación**
@@ -50,11 +57,13 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 - `npx tsc --noEmit` pasa en `kostruye-movil`.
 
 **Repos**
-- `kostruye-`: migraciones 047 y 048 agregadas; commit `742d08b`; push y deploy en VPS.
-- `kostruye-movil`: commit `b401893`; push a `master`.
+- `kostruye-`: migraciones 047, 048 y 049 agregadas; commits `742d08b`, `76d0dd1`; push y deploy en VPS.
+- `kostruye-movil`: commits `b401893`, `e4f0f80`, `2a1f4e1`; push a `master`.
 
 ### Estado al cerrar
 - ✅ Editar/eliminar incidentes HSE disponible en web.
+- ✅ Checklists HSE funcionales en app móvil (4 tipos, evaluación pass/fail/na, offline sync).
+- ✅ Web: filas de checklist expanden para ver ítems evaluados.
 - ✅ Auditoría registra creación, edición y eliminación de incidentes HSE.
 - ✅ Logs de auditoría filtran correctamente por proyecto (project_id no nulo).
 - ✅ Incidente "Falla del sistema" eliminado ahora visible en `/proyectos/[id]/auditoria`.
@@ -62,8 +71,9 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ### ⚠️ Cuidado para el siguiente agente
 - `fn_audit()` ahora depende de que las tablas auditadas tengan columna `project_id` o `budget_id`. Si se audita una tabla sin estas columnas, el log quedará sin `project_id` y no aparecerá en la bitácora del proyecto.
-- Las migraciones 047 y 048 deben aplicarse en producción antes de que los usuarios confíen en la auditoría HSE.
+- Las migraciones 047, 048 y 049 deben aplicarse en producción antes de que los usuarios confíen en la auditoría HSE y checklists móvil.
 - `uploadImage()` usa `expo-file-system/legacy`; si se actualiza Expo, revisar que `FileSystemUploadType` siga disponible en ese submódulo.
+- `hse_checklists.checklist_type` ahora admite `inspeccion_herramientas`; si se agrega otro tipo, actualizar también el CHECK constraint en BD.
 
 ---
 
