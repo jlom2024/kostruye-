@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kostruye+ — ERP para Constructoras Peruanas
 
-## Getting Started
+Frontend web de **Kostruye+**, ERP multi-tenant para empresas constructoras peruanas.
 
-First, run the development server:
+- **URL producción**: https://konstruye.site
+- **Repo**: https://github.com/jlom2024/kostruye-
+- **Backend**: Supabase (PostgreSQL + Auth + RLS + Storage)
+- **Stack**: Next.js 16, React 19, Tailwind CSS v4, TanStack Query, Supabase SSR
+
+## Entorno
+
+Copiar `.env.example` a `.env.local` y completar:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=https://wyaugtdgmcesoryhyois.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+NEXT_PUBLIC_APP_URL=https://konstruye.site
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Comandos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev     # localhost:3000
+npm run build
+npm run lint
+npx tsc --noEmit
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy VPS
 
-## Learn More
+```bash
+ssh -i ~/.ssh/antu_kostruye root@2.24.72.21 "git -C /opt/kostruye-plus fetch --prune origin && git -C /opt/kostruye-plus reset --hard origin/master && cd /opt/kostruye-plus && docker compose up -d --build"
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Documentación
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `CLAUDE.md` — contexto completo del proyecto, stack, módulos, convenciones y deploy.
+- `docs/BITACORA.md` — registro cronológico de cambios por sesión.
+- `docs/manual/Manual-Kostruye-Plus.html` — fuente del manual de usuario.
+- `public/Manual-Kostruye-Plus.pdf` — manual compilado.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Módulos principales
 
-## Deploy on Vercel
+- Dashboard ejecutivo con EVM (CPI/SPI) y Curva S
+- Presupuesto / APU con importación S10
+- Compras, Servicios, Almacén (Kardex PPP)
+- Tareo Diario, Parte Equipos, Avance Diario, Productividad
+- Calidad y HSE (checklists + incidentes)
+- Nóminas, Valorizaciones, Control de Costos
+- Caja Chica, Fideicomiso CORFID
+- Contabilidad + Facturación SUNAT
+- KIA — copiloto IA integrado
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notas para agentes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ver `CLAUDE.md` antes de modificar cualquier módulo.
+
+## App móvil
+
+El repositorio de la app móvil (Expo / React Native) está en `../kostruye-movil`.
+
