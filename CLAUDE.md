@@ -54,7 +54,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Tareo Diario | `/proyectos/[id]/campo/tareo` | admin/user/cliente | ✅ Corregido conflicto de presupuesto dinámico con `.eq("budget_type", "venta")` |
 | Parte Equipos | `/proyectos/[id]/campo/parte-equipos` | admin/user/cliente | ✅ |
 | Avance Diario | `/proyectos/[id]/campo/avance` | admin/user/cliente | ✅ Sincronizado con presupuesto de venta |
-| Calidad y HSE | `/proyectos/[id]/campo/hse` | admin/user/cliente | ✅ Resuelto error 404 de params asíncronos en Next.js 16 |
+| Calidad y HSE | `/proyectos/[id]/campo/hse` | admin/user/cliente | ✅ Checklists de seguridad + incidentes con foto, auditoría y edición/eliminación |
 | Productividad | `/proyectos/[id]/campo/productividad` | admin/contador/user/cliente | ✅ |
 | Nóminas | `/proyectos/[id]/nominas` | admin/contador | ✅ |
 | Valorizaciones | `/proyectos/[id]/valorizaciones` | admin/contador | ✅ Fórmula polinómica + K + PDF |
@@ -67,7 +67,7 @@ Desarrollado por **KREO IA Studio** (Antu, fundador). Stack: Next.js 16 App Rout
 | Config. proyecto | `/proyectos/[id]/configuracion` | admin | ✅ General, Equipo, Parámetros, Fideicomiso |
 | Admin INEI | `/admin/inei` | admin app | ✅ CRUD índices |
 | Configuración SUNAT | `/configuracion` | admin | ✅ Credenciales SOL por org |
-| **App Móvil** | `kostruye-movil/` (repo separado) | todos | ✅ Expo/RN (Offline-First, GPS, Fotos, Kardex y Caja Chica) |
+| **App Móvil** | `kostruye-movil/` (repo separado) | todos | ✅ Expo/RN (Offline-First, GPS, Fotos, HSE checklists/incidentes, Caja Chica, Avance) |
 
 ---
 
