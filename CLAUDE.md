@@ -148,6 +148,9 @@ CORFID_WEBHOOK_SECRET=<secret>
 | 022 | fideicomiso_* en projects | ✅ Aplicada |
 | budget_total_exact_parcial | `total` deja de ser GENERATED; rollups suman parcial impreso | ✅ Aplicada (2026-06-19) |
 | import_budget_chunked | RPCs `import_budget_chunk` + `import_budget_finalize` (SECURITY DEFINER, 300s timeout) | ✅ Aplicada (2026-06-19) |
+| 046 | `photo_url` en `daily_progress_entries` | ✅ Aplicada |
+| 047 | Trigger auditoría en `hse_incidents` | ✅ Aplicada |
+| 048 | `fn_audit()` resuelve `project_id`/`organization_id` genéricamente + backfill HSE | ✅ Aplicada |
 
 > **Pendiente:** Crear archivos .sql para migraciones 019, 020, 021 (reproducibilidad).
 

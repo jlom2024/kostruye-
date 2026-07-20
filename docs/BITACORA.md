@@ -28,6 +28,37 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-07-20 — Antu (Claude) — HSE: edición/eliminación web + auditoría con project_id
+
+### Cambios
+
+**Dashboard Web — HSE (`app/(dashboard)/proyectos/[id]/campo/hse/`)**
+- `hse-client.tsx`: agregados botones de editar y eliminar en cada incidente; modal reutilizado para crear y editar.
+- `page.tsx`: acción `deleteIncident` que borra el registro vía Supabase server action.
+
+**Backend (BD)**
+- Migración `047_hse_incidents_audit_trigger.sql`: trigger `trg_audit_hse_incidents` AFTER INSERT/UPDATE/DELETE ejecutando `fn_audit()`.
+- Migración `048_fn_audit_generic_project_resolution.sql`: `fn_audit()` ahora resuelve `project_id` y `organization_id` de forma genérica para cualquier tabla con columna `project_id` (incluye `hse_incidents`), no solo para presupuesto. Se restringió `search_path` y permisos consistentes con migraciones 016–017.
+- Backfill: el evento DELETE del incidente "Falla del sistema" quedó con `project_id` y `organization_id` nulos; se actualizó para que aparezca en la bitácora de auditoría del proyecto.
+
+**Verificación**
+- Trigger testeado en transacción rollback: INSERT/UPDATE/DELETE sobre `hse_incidents` generan logs con `project_id` y `organization_id` correctos.
+
+**Repos**
+- `kostruye-`: migraciones 047 y 048 agregadas; pendiente push/deploy.
+
+### Estado al cerrar
+- ✅ Editar/eliminar incidentes HSE disponible en web.
+- ✅ Auditoría registra creación, edición y eliminación de incidentes HSE.
+- ✅ Logs de auditoría filtran correctamente por proyecto (project_id no nulo).
+- ✅ Incidente "Falla del sistema" eliminado ahora visible en `/proyectos/[id]/auditoria`.
+
+### ⚠️ Cuidado para el siguiente agente
+- `fn_audit()` ahora depende de que las tablas auditadas tengan columna `project_id` o `budget_id`. Si se audita una tabla sin estas columnas, el log quedará sin `project_id` y no aparecerá en la bitácora del proyecto.
+- Las migraciones 047 y 048 deben aplicarse en producción antes de que los usuarios confíen en la auditoría HSE.
+
+---
+
 ## 2026-07-18/19 — Antu (Claude) — Fix App Móvil: sync offline, lista de proyectos, fotos en todas las pantallas
 
 ### Cambios
