@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { ShieldCheck, ShieldAlert, FileCheck2, UserCheck, AlertTriangle, Plus, CheckCircle, XCircle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, FileCheck2, UserCheck, AlertTriangle, Plus, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react";
 
 interface Checklist {
   id: string;
@@ -72,8 +72,9 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
   const [newType, setNewType] = useState("EPP_basico");
   const [checklistItems, setChecklistItems] = useState<Record<string, { status: "pass" | "fail" | "na"; notes: string }>>({});
 
-  // Estados para nuevo incidente
+  // Estados para nuevo/editar incidente
   const [showNewIncidentModal, setShowNewIncidentModal] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
   const [incDescription, setIncDescription] = useState("");
   const [incSeverity, setIncSeverity] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [incLocation, setIncLocation] = useState("");
@@ -135,7 +136,34 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
     }
   };
 
-  const handleCreateIncident = async () => {
+  const resetIncidentForm = () => {
+    setEditingIncident(null);
+    setIncDescription("");
+    setIncSeverity("medium");
+    setIncLocation("");
+    setIncActionRequired("");
+  };
+
+  const openNewIncidentModal = () => {
+    resetIncidentForm();
+    setShowNewIncidentModal(true);
+  };
+
+  const openEditIncidentModal = (incident: Incident) => {
+    setEditingIncident(incident);
+    setIncDescription(incident.description);
+    setIncSeverity(incident.severity);
+    setIncLocation(incident.location);
+    setIncActionRequired(incident.action_required || "");
+    setShowNewIncidentModal(true);
+  };
+
+  const closeIncidentModal = () => {
+    setShowNewIncidentModal(false);
+    resetIncidentForm();
+  };
+
+  const handleSaveIncident = async () => {
     if (!incDescription.trim() || !incLocation.trim()) {
       toast.error("Descripción y Ubicación son campos obligatorios.");
       return;
@@ -145,27 +173,66 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      const { data: incident, error: incErr } = await (supabase
+      if (editingIncident) {
+        const { data: incident, error: incErr } = await (supabase
+          .from("hse_incidents") as any)
+          .update({
+            description: incDescription,
+            severity: incSeverity,
+            location: incLocation,
+            action_required: incActionRequired,
+          } as any)
+          .eq("id", editingIncident.id)
+          .select("*")
+          .single();
+
+        if (incErr) throw new Error(incErr.message);
+
+        setIncidents(incidents.map(i => i.id === incident.id ? incident : i));
+        toast.success("Incidente actualizado");
+      } else {
+        const { data: incident, error: incErr } = await (supabase
+          .from("hse_incidents") as any)
+          .insert({
+            project_id: projectId,
+            description: incDescription,
+            severity: incSeverity,
+            location: incLocation,
+            action_required: incActionRequired,
+            status: "open"
+          } as any)
+          .select("*")
+          .single();
+
+        if (incErr) throw new Error(incErr.message);
+
+        setIncidents([incident, ...incidents]);
+        toast.success("Incidente de seguridad reportado");
+      }
+
+      closeIncidentModal();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteIncident = async (incidentId: string) => {
+    if (!confirm("¿Estás seguro de eliminar este incidente? Esta acción se registrará en auditoría.")) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await (supabase
         .from("hse_incidents") as any)
-        .insert({
-          project_id: projectId,
-          description: incDescription,
-          severity: incSeverity,
-          location: incLocation,
-          action_required: incActionRequired,
-          status: "open"
-        } as any)
-        .select("*")
-        .single();
+        .delete()
+        .eq("id", incidentId);
 
-      if (incErr) throw new Error(incErr.message);
+      if (error) throw new Error(error.message);
 
-      setIncidents([incident, ...incidents]);
-      setShowNewIncidentModal(false);
-      setIncDescription("");
-      setIncLocation("");
-      setIncActionRequired("");
-      toast.success("Incidente de seguridad reportado");
+      setIncidents(incidents.filter(i => i.id !== incidentId));
+      toast.success("Incidente eliminado");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -201,7 +268,7 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => activeTab === "checklists" ? setShowNewChecklistModal(true) : setShowNewIncidentModal(true)}
+            onClick={() => activeTab === "checklists" ? setShowNewChecklistModal(true) : openNewIncidentModal()}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
@@ -306,18 +373,34 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
                       </div>
                       <p className="text-slate-800 font-medium mt-2">{inc.description}</p>
                     </div>
-                    {inc.status === "open" ? (
+                    <div className="flex items-center gap-2">
+                      {inc.status === "open" ? (
+                        <button
+                          onClick={() => handleResolveIncident(inc.id)}
+                          className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                        >
+                          Marcar Resuelto
+                        </button>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                          <ShieldCheck className="h-4 w-4" /> Resuelto
+                        </span>
+                      )}
                       <button
-                        onClick={() => handleResolveIncident(inc.id)}
-                        className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                        onClick={() => openEditIncidentModal(inc)}
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar incidente"
                       >
-                        Marcar Resuelto
+                        <Pencil className="h-4 w-4" />
                       </button>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                        <ShieldCheck className="h-4 w-4" /> Resuelto
-                      </span>
-                    )}
+                      <button
+                        onClick={() => handleDeleteIncident(inc.id)}
+                        className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar incidente"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   {inc.photo_url && (
                     <div className="rounded-lg overflow-hidden border border-slate-200">
@@ -421,8 +504,10 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900 font-sans">Reportar Incidente de Seguridad</h3>
-              <button onClick={() => setShowNewIncidentModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <h3 className="font-semibold text-slate-900 font-sans">
+                {editingIncident ? "Editar Incidente de Seguridad" : "Reportar Incidente de Seguridad"}
+              </h3>
+              <button onClick={closeIncidentModal} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
             <div className="p-4 space-y-4">
               <div>
@@ -466,16 +551,16 @@ export function HSEClient({ projectId, projectName, initialChecklists, initialIn
             </div>
             <div className="p-4 border-t border-slate-200 flex items-center justify-end gap-3 bg-slate-50 rounded-b-xl">
               <button
-                onClick={() => setShowNewIncidentModal(false)}
+                onClick={closeIncidentModal}
                 className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleCreateIncident} disabled={loading}
+                onClick={handleSaveIncident} disabled={loading}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                Guardar Reporte
+                {editingIncident ? "Guardar Cambios" : "Guardar Reporte"}
               </button>
             </div>
           </div>
