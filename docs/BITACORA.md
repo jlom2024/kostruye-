@@ -28,13 +28,17 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
-## 2026-07-20 — Antu (Claude) — HSE: edición/eliminación web + auditoría con project_id
+## 2026-07-20 — Antu (Claude) — HSE: edición/eliminación web + auditoría con project_id + fix subida de fotos móvil
 
 ### Cambios
 
 **Dashboard Web — HSE (`app/(dashboard)/proyectos/[id]/campo/hse/`)**
 - `hse-client.tsx`: agregados botones de editar y eliminar en cada incidente; modal reutilizado para crear y editar.
 - `page.tsx`: acción `deleteIncident` que borra el registro vía Supabase server action.
+
+**App Móvil — Fix subida de fotos (HTTP 415 invalid_mime_type)**
+- `src/lib/offline-sync.ts`: `uploadImage()` enviaba fotos con `FileSystemUploadType.BINARY_CONTENT` sin header `Content-Type`, por lo que Supabase Storage recibía `application/octet-stream` y respondía `415 invalid_mime_type`. Se agregó el header `Content-Type` con el MIME real según la extensión del archivo (`image/jpeg`, `image/png` o `image/webp`). Corrige la subida en HSE, Caja Chica y Avance Físico.
+- `kostruye-movil/CLAUDE.md`: actualizado con el fix.
 
 **Backend (BD)**
 - Migración `047_hse_incidents_audit_trigger.sql`: trigger `trg_audit_hse_incidents` AFTER INSERT/UPDATE/DELETE ejecutando `fn_audit()`.
@@ -43,19 +47,23 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 **Verificación**
 - Trigger testeado en transacción rollback: INSERT/UPDATE/DELETE sobre `hse_incidents` generan logs con `project_id` y `organization_id` correctos.
+- `npx tsc --noEmit` pasa en `kostruye-movil`.
 
 **Repos**
-- `kostruye-`: migraciones 047 y 048 agregadas; pendiente push/deploy.
+- `kostruye-`: migraciones 047 y 048 agregadas; commit `742d08b`; push y deploy en VPS.
+- `kostruye-movil`: commit `b401893`; push a `master`.
 
 ### Estado al cerrar
 - ✅ Editar/eliminar incidentes HSE disponible en web.
 - ✅ Auditoría registra creación, edición y eliminación de incidentes HSE.
 - ✅ Logs de auditoría filtran correctamente por proyecto (project_id no nulo).
 - ✅ Incidente "Falla del sistema" eliminado ahora visible en `/proyectos/[id]/auditoria`.
+- ✅ Subida de fotos desde la app móvil ya no da error 415.
 
 ### ⚠️ Cuidado para el siguiente agente
 - `fn_audit()` ahora depende de que las tablas auditadas tengan columna `project_id` o `budget_id`. Si se audita una tabla sin estas columnas, el log quedará sin `project_id` y no aparecerá en la bitácora del proyecto.
 - Las migraciones 047 y 048 deben aplicarse en producción antes de que los usuarios confíen en la auditoría HSE.
+- `uploadImage()` usa `expo-file-system/legacy`; si se actualiza Expo, revisar que `FileSystemUploadType` siga disponible en ese submódulo.
 
 ---
 
