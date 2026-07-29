@@ -27,8 +27,8 @@ async function getSunatJwt(apiKey: string, apiSecret: string): Promise<string> {
   return token;
 }
 
-function serverClient() {
-  const cookieStore = cookies();
+async function serverClient() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -51,7 +51,7 @@ async function getContext(supabase: ReturnType<typeof serverClient>) {
 
 // GET /api/invoices?project_id=xxx
 export async function GET(req: Request) {
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const ctx = await getContext(supabase);
   if (!ctx) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
 
 // POST /api/invoices — emit invoice via KREO-SUNAT
 export async function POST(req: Request) {
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const ctx = await getContext(supabase);
   if (!ctx) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 

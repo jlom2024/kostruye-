@@ -64,6 +64,19 @@ export async function POST(request: NextRequest) {
 
   const orgId = membership.organization_id;
 
+  // Validar que el proyecto pertenezca a la organización del usuario
+  if (project_id) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("organization_id")
+      .eq("id", project_id)
+      .single();
+
+    if (!project || (project as any).organization_id !== orgId) {
+      return NextResponse.json({ error: "El proyecto no pertenece a tu organización" }, { status: 400 });
+    }
+  }
+
   // Insertar en la tabla de jobs
   const { data: job, error } = await supabase
     .from("background_jobs")

@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 
 const SUNAT_URL = process.env.KREO_SUNAT_URL ?? "http://2.24.72.21:3020";
 
-function serverClient() {
-  const cookieStore = cookies();
+async function serverClient() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -28,7 +28,7 @@ async function getOrgId(supabase: ReturnType<typeof serverClient>) {
 // GET /api/invoices/[id] — refresh status from KREO-SUNAT
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -96,7 +96,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 // DELETE /api/invoices/[id] — anular comprobante
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = serverClient();
+  const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 

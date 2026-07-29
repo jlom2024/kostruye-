@@ -21,14 +21,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
   }
 
-  // Verificar que el solicitante es admin del proyecto
-  const { data: membership } = await supabase
-    .from("project_members")
-    .select("role")
-    .eq("project_id", projectId)
-    .eq("user_id", user.id)
+  // Validar que el proyecto pertenezca a la organización
+  const { data: project } = await supabase
+    .from("projects")
+    .select("organization_id")
+    .eq("id", projectId)
     .single();
 
+  if (!project || (project as any).organization_id !== organizationId) {
+    return NextResponse.json({ error: "El proyecto no pertenece a la organización indicada" }, { status: 400 });
+  }
+
+  // Verificar que el solicitante es admin de la organización
   const { data: orgMembership } = await supabase
     .from("organization_members")
     .select("role")
@@ -36,11 +40,7 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .single();
 
-  const isAdmin =
-    (membership as any)?.role === "admin" ||
-    (orgMembership as any)?.role === "admin";
-
-  if (!isAdmin) {
+  if ((orgMembership as any)?.role !== "admin") {
     return NextResponse.json({ error: "Solo admins pueden invitar usuarios" }, { status: 403 });
   }
 

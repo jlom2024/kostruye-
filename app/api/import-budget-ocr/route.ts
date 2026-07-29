@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export const maxDuration = 600; // permite extracciones largas (PDFs grandes)
 export const dynamic = "force-dynamic";
@@ -243,11 +244,33 @@ async function ocrChunk(base64Pdf: string, apiKey: string, idx: number, chapterM
   console.log(`OCR chunk ${idx} procesado (stop=${data.stop_reason})`);
 }
 
+// ── Auth helper: verify user belongs to budget's project ─────────────────
+async function authorizeBudgetAccess(budgetId: string) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado", status: 401 };
+
+  const { data: budget } = await supabase
+    .from("budgets").select("project_id").eq("id", budgetId).single();
+  if (!budget) return { error: "Presupuesto no encontrado", status: 404 };
+
+  const { data: member } = await supabase
+    .from("project_members").select("role")
+    .eq("project_id", (budget as any).project_id).eq("user_id", user.id).single();
+  if (!member) return { error: "No autorizado para este proyecto", status: 403 };
+
+  return { ok: true, user, supabase };
+}
+
 // ── Recalculate budget total (server-side) ────────────────────────────────
 export async function PATCH(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const budgetId = searchParams.get("budget_id");
   if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+
+  const auth = await authorizeBudgetAccess(budgetId);
+  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const sb = adminClient();
   // Paginar: .limit() no garantiza traer todo (PostgREST capa la respuesta).
   const PAGE = 1000;
@@ -275,6 +298,10 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const budgetId = searchParams.get("budget_id");
   if (!budgetId) return NextResponse.json({ error: "budget_id requerido" }, { status: 400 });
+
+  const auth = await authorizeBudgetAccess(budgetId);
+  if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const sb = adminClient();
   await sb.from("budget_items").delete().eq("budget_id", budgetId);
   await sb.from("budget_chapters").delete().eq("budget_id", budgetId);

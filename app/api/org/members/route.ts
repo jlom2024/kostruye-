@@ -138,9 +138,16 @@ export async function PATCH(req: NextRequest) {
     .eq("user_id", user_id)
     .eq("organization_id", membership.organization_id);
 
-  await svc.from("project_members")
-    .update({ role })
-    .eq("user_id", user_id);
+  const { data: orgProjects } = await svc.from("projects")
+    .select("id")
+    .eq("organization_id", membership.organization_id);
+  if (orgProjects?.length) {
+    const projectIds = orgProjects.map((p) => p.id);
+    await svc.from("project_members")
+      .update({ role })
+      .eq("user_id", user_id)
+      .in("project_id", projectIds);
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -160,7 +167,13 @@ export async function DELETE(req: NextRequest) {
   if (user_id === user.id) return NextResponse.json({ error: "No puedes eliminarte a ti mismo" }, { status: 400 });
 
   const svc = sb();
-  await svc.from("project_members").delete().eq("user_id", user_id);
+  const { data: orgProjects } = await svc.from("projects")
+    .select("id")
+    .eq("organization_id", membership.organization_id);
+  if (orgProjects?.length) {
+    const projectIds = orgProjects.map((p) => p.id);
+    await svc.from("project_members").delete().eq("user_id", user_id).in("project_id", projectIds);
+  }
   await svc.from("organization_members")
     .delete()
     .eq("user_id", user_id)

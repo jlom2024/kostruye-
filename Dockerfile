@@ -1,8 +1,8 @@
 # ── Etapa 1: dependencias (se cachea si package.json no cambia) ───────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
 
 # ── Etapa 2: build ────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
