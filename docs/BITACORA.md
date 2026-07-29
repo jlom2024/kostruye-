@@ -28,6 +28,61 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+---
+
+## 2026-07-20 (noche) — Antu (Claude) — Hardening de seguridad post-auditoría
+
+### Cambios
+
+**Migración 050 — Hardening RPCs y RLS**
+- `fn_generate_valorization`: agregado check `auth.uid()` contra `project_members`. 
+- `fn_generate_payroll_from_tareo`: agregado check `auth.uid()` contra `project_members`.
+- `fn_confirm_purchase_receipt`: agregado check de idempotencia (`status != 'confirmed'`) + `auth.uid()`.
+- `fn_user_can` y `fn_user_can_project`: removido `EXECUTE format()` con SQL injection vía `p_action` → reemplazado por `CASE` switch.
+- **REVOKE EXECUTE FROM PUBLIC, anon** en las 5 funciones SECURITY DEFINER.
+- `audit_logs`: reemplazada política "cualquier autenticado lee todo" por filtro por `organization_id`/`project_id`.
+- `hse_checklists`, `hse_checklist_items`, `hse_incidents`: políticas `FOR ALL` divididas en SELECT/INSERT/UPDATE/DELETE separadas.
+- `vw_executive_dashboard` y `vw_curva_s`: agregado `WITH (security_invoker = true)`.
+- Storage: buckets `photos` y `reports` cambiados a **privados**; políticas reemplazadas por acceso autenticado con owner-scope.
+- Trigger `trg_audit_hse_checklists` agregado.
+
+**API Routes — Cierre de vulnerabilidades IDOR**
+- `team/invite/route.ts`: validado que `projectId` pertenece a `organizationId`; solo admin de org puede invitar.
+- `org/members/route.ts`: PATCH/DELETE limitados a proyectos de la organización del admin.
+- `import-budget-ocr/route.ts`: PATCH y DELETE ahora verifican autenticación y membresía del proyecto antes de usar `service_role`.
+- `jobs/route.ts`: validado que `project_id` pertenece a la organización del usuario.
+- `invoices/route.ts` y `invoices/[id]/route.ts`: corregido `cookies()` sin await en Next.js 16.
+
+**Infraestructura**
+- **Next.js**: actualizado de `16.2.4` → `16.2.12` (cierra bypasses de middleware, SSRF y DoS).
+- **Docker**: agregado `.dockerignore`; cambiado `npm install` → `npm ci` + `package-lock.json`.
+
+**App Móvil**
+- `auth-context.tsx`: `signOut()` ahora limpia `clearAllQueues()`, `AsyncStorage` de proyecto y org.
+- `offline-sync.ts`: exportada `clearAllQueues()`.
+
+**Repos**
+- `kostruye-`: commit `15fc2d3`.
+- `kostruye-movil`: commit `1589a00`.
+
+### Estado al cerrar
+- ✅ RPCs SECURITY DEFINER con check de `auth.uid()` + REVOKE PUBLIC.
+- ✅ API routes sin IDOR entre tenants (invite, members, budget, jobs).
+- ✅ SUNAT invoices con `await cookies()` corregido.
+- ✅ Next.js 16.2.12.
+- ✅ .dockerignore + npm ci.
+- ✅ Storage privado con políticas de acceso autenticado.
+- ✅ RLS dividido por operación en HSE.
+- ✅ Mobile limpia colas y proyecto al cerrar sesión.
+- ✅ Views con `security_invoker`.
+- ✅ Recepciones idempotentes.
+
+### ⚠️ Cuidado para el siguiente agente
+- Las fotos de la app móvil ahora requieren sesión activa para verse (bucket privado). Si la app móvil carga fotos por URL pública, hay que cambiarlo a signed URLs.
+- Los reportes exportados también son privados ahora; `lib/jobs/processor.ts` debe generar signed URLs.
+- `fn_user_can` y `fn_user_can_project` ya no usan `EXECUTE format()`; si se agregan módulos/acciones, el `CASE` switch debe actualizarse.
+- La idempotencia de la cola móvil (evitar doble inserción) requiere cambios de schema (columna `client_operation_id`) — queda pendiente.
+
 ## 2026-07-20 — Antu (Claude) — HSE: edición/eliminación web + auditoría con project_id + fix subida de fotos móvil
 
 ### Cambios
