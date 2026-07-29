@@ -3,10 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "***REDACTED***";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Rutas públicas — no requieren auth
   const isPublicRoute =
     pathname === "/" ||
     pathname === "/robots.txt" ||
@@ -24,7 +23,6 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicRoute) return NextResponse.next();
 
-  // 2. Rutas admin
   if (
     (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) &&
     pathname !== "/admin/login"
@@ -45,7 +43,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Rutas de cliente (Supabase)
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

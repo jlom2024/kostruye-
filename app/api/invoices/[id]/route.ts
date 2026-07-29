@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { userCan } from "@/lib/permissions";
 
 const SUNAT_URL = process.env.KREO_SUNAT_URL ?? "http://2.24.72.21:3020";
 
@@ -31,6 +32,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!(await userCan(supabase, orgId, "contabilidad", "view"))) {
+    return NextResponse.json({ error: "Requiere permisos de contabilidad" }, { status: 403 });
+  }
 
   const { data: invoice } = await supabase
     .from("electronic_invoices")
@@ -99,6 +103,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const supabase = await serverClient();
   const orgId = await getOrgId(supabase);
   if (!orgId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!(await userCan(supabase, orgId, "contabilidad", "edit"))) {
+    return NextResponse.json({ error: "Requiere permisos de contabilidad para anular facturas" }, { status: 403 });
+  }
 
   const { data: invoice } = await supabase
     .from("electronic_invoices")
@@ -130,13 +137,16 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         });
         const { token } = await loginRes.json();
 
-        await fetch(`${SUNAT_URL}/api/emisiones/${invoice.sunat_comprobante_id}/anular`, {
+        const sunatRes = await fetch(`${SUNAT_URL}/api/emisiones/${invoice.sunat_comprobante_id}/anular`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           signal: AbortSignal.timeout(10_000),
         });
+        if (!sunatRes.ok) {
+          return NextResponse.json({ error: "SUNAT rechazó la anulación" }, { status: 422 });
+        }
       } catch {
-        // Continue with local annulment even if SUNAT call fails
+        return NextResponse.json({ error: "No se pudo contactar a SUNAT para anular" }, { status: 502 });
       }
     }
   }

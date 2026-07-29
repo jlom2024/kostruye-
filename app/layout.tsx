@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { QueryProvider } from "@/components/providers/query-provider";
 import { Inter, Playfair_Display } from "next/font/google";
 
 const inter = Inter({
@@ -93,10 +92,8 @@ export default function RootLayout({
   return (
     <html lang="es" className={`h-full ${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="h-full antialiased font-sans">
-        <QueryProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </QueryProvider>
+        {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

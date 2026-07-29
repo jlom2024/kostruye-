@@ -1461,6 +1461,14 @@ export default function Landing() {
                   <p>Los jefes y gerentes autorizan órdenes de compra, contratos de servicios y liberaciones de fideicomiso al instante. Visualización de curvas S y KPIs financieros (CPI/SPI) consolidados.</p>
                 </div>
               </div>
+
+              <div className="bullet-point-editorial">
+                <div className="bullet-number">04</div>
+                <div className="bullet-text">
+                  <strong>Evidencias Fotográficas y Sincronización Inteligente Offline</strong>
+                  <p>Toma fotos nativas para sustentar incidentes de calidad/seguridad (HSE), subir boletas de caja chica o registrar avances físicos. La app detecta la falta de cobertura y permite encolar y sincronizar todo en lote con un solo clic.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { userCan } from "@/lib/permissions";
 
 const SUNAT_URL = process.env.KREO_SUNAT_URL ?? "http://2.24.72.21:3020";
 
@@ -54,6 +55,9 @@ export async function GET(req: Request) {
   const supabase = await serverClient();
   const ctx = await getContext(supabase);
   if (!ctx) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!(await userCan(supabase, ctx.orgId, "contabilidad", "view"))) {
+    return NextResponse.json({ error: "Requiere permisos de contabilidad" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("project_id");
@@ -76,6 +80,9 @@ export async function POST(req: Request) {
   const supabase = await serverClient();
   const ctx = await getContext(supabase);
   if (!ctx) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!(await userCan(supabase, ctx.orgId, "contabilidad", "edit"))) {
+    return NextResponse.json({ error: "Requiere permisos de contabilidad para emitir facturas" }, { status: 403 });
+  }
 
   const { data: org } = await supabase
     .from("organizations")
