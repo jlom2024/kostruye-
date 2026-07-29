@@ -109,8 +109,8 @@ export async function processJobInBackground(jobId: string) {
         throw new Error("No se pudo subir a Storage (asegúrate de correr la migración 025).");
       }
 
-      const { data: publicUrlData } = sb.storage.from("reports").getPublicUrl(fileName);
-      resultUrl = publicUrlData.publicUrl;
+      const { data: signedUrlData } = await sb.storage.from("reports").createSignedUrl(fileName, 604800);
+      resultUrl = signedUrlData?.signedUrl || '';
       await sb.from("background_jobs").update({ progress: 90 }).eq("id", jobId);
 
     } else if (job_type === "export_budget_pdf") {
