@@ -45,43 +45,55 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 - `vw_executive_dashboard` y `vw_curva_s`: agregado `WITH (security_invoker = true)`.
 - Storage: buckets `photos` y `reports` cambiados a **privados**; políticas reemplazadas por acceso autenticado con owner-scope.
 - Trigger `trg_audit_hse_checklists` agregado.
+- Migración `051_photos_bucket_public_read.sql`: revertida sobre-privatización de fotos (público lectura, autenticado upload).
+- Migraciones `041_photos_bucket.sql` y `042_gps_coordinates.sql` commitadas al repo (estaban huérfanas).
 
 **API Routes — Cierre de vulnerabilidades IDOR**
 - `team/invite/route.ts`: validado que `projectId` pertenece a `organizationId`; solo admin de org puede invitar.
 - `org/members/route.ts`: PATCH/DELETE limitados a proyectos de la organización del admin.
 - `import-budget-ocr/route.ts`: PATCH y DELETE ahora verifican autenticación y membresía del proyecto antes de usar `service_role`.
 - `jobs/route.ts`: validado que `project_id` pertenece a la organización del usuario.
-- `invoices/route.ts` y `invoices/[id]/route.ts`: corregido `cookies()` sin await en Next.js 16.
+- `invoices/route.ts` y `invoices/[id]/route.ts`: corregido `cookies()` sin await en Next.js 16. Agregado check de permiso `contabilidad` (view/edit). Anulación SUNAT ya no marca local si servidor falla.
+- `lib/jobs/processor.ts`: cambiado `getPublicUrl` → `createSignedUrl` para reports bucket privado.
 
 **Infraestructura**
 - **Next.js**: actualizado de `16.2.4` → `16.2.12` (cierra bypasses de middleware, SSRF y DoS).
 - **Docker**: agregado `.dockerignore`; cambiado `npm install` → `npm ci` + `package-lock.json`.
+- **middleware.ts → proxy.ts**: migrado a la nueva convención de Next.js 16.
+- **React Query**: movido de root layout a dashboard layout (ya no se carga en landing/páginas públicas).
 
 **App Móvil**
 - `auth-context.tsx`: `signOut()` ahora limpia `clearAllQueues()`, `AsyncStorage` de proyecto y org.
-- `offline-sync.ts`: exportada `clearAllQueues()`.
+- `offline-sync.ts`: exportada `clearAllQueues()`. 
+- `offline-sync.ts`: idempotencia vía client-generated UUIDs + `upsert`/`onConflict:'id'` en sync de incidentes, checklists y caja chica.
+- `src/app/(app)/hse.tsx`: `handleSaveIncident` genera ID antes del save, usa `upsert`.
+- `src/app/(app)/caja-chica.tsx`: ídem, `upsert` con `onConflict:'id'`.
 
 **Repos**
-- `kostruye-`: commit `15fc2d3`.
-- `kostruye-movil`: commit `1589a00`.
+- `kostruye-`: commits `15fc2d3`, `8915893`, `bf4c181`, `225dbb3`.
+- `kostruye-movil`: commits `1589a00`, `06d7bef`.
 
 ### Estado al cerrar
 - ✅ RPCs SECURITY DEFINER con check de `auth.uid()` + REVOKE PUBLIC.
 - ✅ API routes sin IDOR entre tenants (invite, members, budget, jobs).
-- ✅ SUNAT invoices con `await cookies()` corregido.
-- ✅ Next.js 16.2.12.
-- ✅ .dockerignore + npm ci.
-- ✅ Storage privado con políticas de acceso autenticado.
-- ✅ RLS dividido por operación en HSE.
-- ✅ Mobile limpia colas y proyecto al cerrar sesión.
+- ✅ SUNAT invoices requieren permiso `contabilidad` + `await cookies()`.
+- ✅ Next.js 16.2.12 + proxy.ts + .dockerignore + npm ci.
+- ✅ Storage: fotos público-lectura, reportes privado con signed URLs.
+- ✅ RLS dividido por operación en HSE + audit_logs filtrado por tenant.
+- ✅ Mobile limpia colas al cerrar sesión + idempotencia vía upsert.
 - ✅ Views con `security_invoker`.
-- ✅ Recepciones idempotentes.
+- ✅ Recepciones idempotentes (no duplican stock).
+- ✅ React Query scoped a dashboard.
+- ✅ Web desplegado en VPS.
 
 ### ⚠️ Cuidado para el siguiente agente
-- Las fotos de la app móvil ahora requieren sesión activa para verse (bucket privado). Si la app móvil carga fotos por URL pública, hay que cambiarlo a signed URLs.
-- Los reportes exportados también son privados ahora; `lib/jobs/processor.ts` debe generar signed URLs.
 - `fn_user_can` y `fn_user_can_project` ya no usan `EXECUTE format()`; si se agregan módulos/acciones, el `CASE` switch debe actualizarse.
-- La idempotencia de la cola móvil (evitar doble inserción) requiere cambios de schema (columna `client_operation_id`) — queda pendiente.
+- El bucket `reports` es privado: `lib/jobs/processor.ts` ya genera signed URLs (7 días).
+- La app móvil necesita rebuild/reload para tomar los cambios de idempotencia y logout.
+- Quedan 285 problemas ESLint y `ignoreBuildErrors: true` — no bloquean producción.
+- `xlsx@0.18.5` tiene prototype pollution sin fix en npm. Riesgo bajo (solo admins suben archivos).
+- Pendiente: regenerar tipos Supabase para eliminar errores TS (requiere CLI local).
+- Pendiente: tests automatizados multi-tenant.
 
 ## 2026-07-20 — Antu (Claude) — HSE: edición/eliminación web + auditoría con project_id + fix subida de fotos móvil
 
