@@ -30,6 +30,55 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-08-23 (noche) — Antu (Claude) — Modelo RBAC empresarial: aislamiento por obra + visibilidad transversal por rol
+
+### Contexto
+
+Tras la migración 052 (aislamiento estricto con `project_members` puro), el usuario aclaró el modelo de negocio real (empresa constructora tipo Seatek): **cada obra tiene su propio personal, pero el gerente (admin org) ve todo y el contador (org) ve los módulos financieros de TODAS las obras** sin estar asignado a cada proyecto.
+
+La auditoría reveló además el **bloqueo inverso**: `payroll_periods/entries`, `purchase_orders`, `valorizaciones`, `petty_cash_*` ya usaban `project_members` puro → un contador org-level NO veía nóminas ni compras de ninguna obra.
+
+### Cambios
+
+**Migración 053 — `053_seatek_rbac_project_isolation.sql`** (reemplaza al draft `053_project_isolation_remaining_modules.sql`, nunca aplicado ni commiteado):
+
+1. **Matriz de permisos completada** (`role_module_permissions`):
+   - CHECK constraint ampliado con 10 módulos nuevos: `tareo`, `equipos`, `avance`, `hse`, `lean`, `gastos`, `caja_chica`, `contabilidad`, `servicios`, `fideicomiso`.
+   - Sembrados roles `contador` y `user` en los 8 módulos existentes (antes no existían → `fn_user_can_project` les devolvía false).
+   - Contador: edit/approve en presupuesto, apu, compras, valorizaciones, nominas, gastos, caja_chica, contabilidad, servicios, fideicomiso; solo lectura en tareo/equipos/avance (insumos de nómina/valorización); sin acceso a hse/lean.
+   - User (personal de obra): edit en tareo, equipos, avance, hse, lean, gastos, caja_chica, almacen; solo lectura en presupuesto/apu/reportes.
+   - Ajustes que preservan capacidades vigentes: `purchasing.almacen.can_edit=true` (era requester de salidas), `warehouse.almacen.can_approve=true` y `project_manager.almacen.can_approve=true` (eran approvers de salidas).
+   - `can_delete` reservado a admin, consistente con la matriz pre-existente.
+
+2. **RLS unificado en 44 tablas project-scoped** → todas usan `public.fn_user_can_project(auth.uid(), project_id, modulo, accion)` (precedencia: `project_members` > `organization_members`; admin siempre true):
+   - Campo: `workers`, `tareos`, `tareo_entries`, `equipments`, `equipment_logs`, `equipment_log_entries`, `daily_progress_logs`, `daily_progress_entries`, `hse_checklists`, `hse_checklist_items`, `hse_incidents`, `lean_constraints`, `lean_tasks`, `lean_weeks`, `site_diary_entries`.
+   - Finanzas: `expenses`, `petty_cash_boxes`, `petty_cash_transactions`, `stock_items`, `stock_entries`, `stock_withdrawals`, `stock_withdrawal_requests`, `budgets`, `budget_chapters`, `budget_items`, `apu_lines`, `change_orders`, `purchase_orders`, `purchase_order_items`, `purchase_receipts`, `purchase_receipt_items`, `service_orders`, `service_order_advances`, `electronic_invoices`, `valorizaciones`, `valorizacion_items`, `reajuste_formulas`, `reajuste_monomios`, `payroll_periods`, `payroll_entries`, `fideicomiso_requests`, `fideicomiso_request_items`.
+   - Tablero: `project_alerts`, `project_daily_snapshots` (módulo `reportes`).
+   - Tablas hijas resuelven `project_id` vía subconsulta correlacionada al padre.
+   - Semánticas de negocio preservadas: `site_diary_entries` solo edita/elimina entradas con `status='Abierto'`; `stock_withdrawal_requests` insert exige `requested_by = auth.uid()` y update exige `almacen.approve`.
+   - Implementación con función helper temporal `_tmp_rbac_rewrite()` (DROP de todas las políticas previas por tabla + 4 nuevas), eliminada al final.
+
+3. **Verificación en producción**:
+   - Dump de `pg_policies`: ninguna tabla project-scoped queda con patrón `ORG_MEMBERS` ni `PROJECT_MEMBERS` crudo — solo `organizations` mantiene org-level (correcto por definición).
+   - Matriz verificada: contador (17 módulos) y user (17 módulos) correctamente sembrados.
+
+### Estado al cerrar
+- ✅ Residente/ingeniero de obra: ve y opera SOLO su obra (rol en `project_members`).
+- ✅ Gerente (admin org): ve TODO sin estar en `project_members` (fn → admin = true).
+- ✅ Contador (org): ve finanzas de TODAS las obras sin estar en `project_members`.
+- ✅ HR ve tareo/personal transversalmente; purchasing gestiona compras/servicios; warehouse aprueba salidas.
+- ✅ `service_role` (server-side) sigue bypaseando RLS.
+- ✅ Migración 053 aplicada en producción vía `run-migrations.mjs` (commit `7011322`).
+
+### ⚠️ Cuidado para el siguiente agente
+- **Cualquier política RLS nueva** en tabla project-scoped debe usar `fn_user_can_project(auth.uid(), project_id, '<modulo>', '<accion>')` — NO `project_members` crudo (bloquea a contador/gerente) ni `organization_members` crudo (fuga cross-proyecto).
+- **Módulos válidos** en la matriz (CHECK constraint): presupuesto, apu, compras, almacen, valorizaciones, nominas, reportes, configuracion, tareo, equipos, avance, hse, lean, gastos, caja_chica, contabilidad, servicios, fideicomiso. Agregar uno nuevo requiere ampliar el CHECK + sembrar las 9 filas de roles.
+- La precedencia `project_members > organization_members` significa que si un admin org se agrega a un proyecto con rol `user`, ese rol limitado GANA sobre su admin org dentro de ese proyecto (comportamiento heredado de migración 019, intencional).
+- `readonly` tiene can_view en casi todos los módulos incluido `contabilidad` — rol pensado para auditores externos.
+- App móvil sigue pendiente de rebuild EAS (cambios de tareo/offline-sync de la migración 052).
+
+---
+
 ## 2026-08-23 — Antu (Claude) — Fix: aislamiento de tareos y datos de campo por proyecto
 
 ### Cambios
