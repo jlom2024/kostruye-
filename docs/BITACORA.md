@@ -30,6 +30,40 @@ El objetivo es que cualquier agente que tome el proyecto sepa exactamente en qu�
 
 ---
 
+## 2026-08-23 — Antu (Claude) — Fix: aislamiento de tareos y datos de campo por proyecto
+
+### Cambios
+
+**Bug crítico reportado:** "los tareos en un proyecto aparecen en todos". Se encontró que el aislamiento de datos de campo estaba a nivel de organización en lugar de proyecto.
+
+**Migración 052 — `052_project_isolation_field_modules.sql`**
+- Reemplazadas políticas RLS de `tareos` y `tareo_entries` para usar `project_members` en lugar de `organization_members`.
+- Reemplazadas políticas RLS de `equipments`, `equipment_logs` y `equipment_log_entries` para usar `project_members`.
+- Reemplazadas políticas RLS de `daily_progress_logs` y `daily_progress_entries` para usar `project_members`.
+- Habilitado RLS en `workers` y creadas políticas SELECT/INSERT/UPDATE/DELETE aisladas por proyecto.
+- Recreada `vw_productivity_kpi` con `security_invoker = on` para respetar las RLS corregidas de las tablas subyacentes.
+
+**Cliente Web (`kostruye-plus`)**
+- `app/(dashboard)/proyectos/[id]/campo/tareo/page.tsx`: la carga de obreros ahora filtra por `.eq("project_id", id)`, evitando que aparezcan trabajadores de otros proyectos.
+
+**App Móvil (`kostruye-movil`)**
+- `src/app/(app)/tareo.tsx`: consulta de obreros ahora filtra por `.eq('project_id', selectedProject.id)`.
+- `src/lib/offline-sync.ts`: cache de obreros offline ahora filtra por `.eq('project_id', projectId)`.
+
+### Estado al cerrar
+- ✅ Los tareos solo son visibles/editables por miembros del proyecto correspondiente.
+- ✅ Los obreros solo son visibles dentro del proyecto al que pertenecen.
+- ✅ Equipos, partes de equipos y avance diario aislados a nivel de proyecto.
+- ✅ Vista de productividad respeta RLS por proyecto.
+- ✅ Web y móvil consultan workers con filtro de proyecto.
+
+### ⚠️ Cuidado para el siguiente agente
+- Esta migración cambia el comportamiento de RLS: los administradores de organización que NO estén en `project_members` de un proyecto dejarán de ver sus datos de campo/workers. Para darles acceso, agregarlos como miembros del proyecto (consistente con migraciones 030–040 y 050).
+- Aplicar la migración 052 en Supabase antes de deployar el código web/móvil, o los usuarios podrían ver errores de permisos si el frontend aún consulta sin filtro.
+- Rebuild de la app móvil requerida para tomar los cambios de `tareo.tsx` y `offline-sync.ts`.
+
+---
+
 ## 2026-07-20 (noche) — Antu (Claude) — Hardening de seguridad post-auditoría
 
 ### Cambios

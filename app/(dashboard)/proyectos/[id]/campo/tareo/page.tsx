@@ -16,7 +16,7 @@ export default async function TareoPage({ params }: Props) {
     { data: activeBudget }
   ] = await Promise.all([
     supabase.from("projects").select("id, name, organization_id").eq("id", id).single(),
-    supabase.from("workers").select("id, full_name, category").eq("is_active", true).order("full_name"),
+    supabase.from("workers").select("id, full_name, category").eq("project_id", id).eq("is_active", true).order("full_name"),
     supabase.from("budgets").select("id").eq("project_id", id).eq("budget_type", "venta").eq("is_active", true).single()
   ]);
 
