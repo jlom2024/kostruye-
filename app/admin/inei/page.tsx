@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // Gestión de índices unificados INEI (data nacional curada por KREO).
 // Alimenta el cálculo del factor K de reajuste polinómico (fn_calc_factor_k).
@@ -183,27 +183,38 @@ export default function IneiAdminPage() {
   }
 
   // ── Excel import ────────────────────────────────────────────────
-  function downloadTemplate() {
-    const ws = XLSX.utils.aoa_to_sheet([
+  async function downloadTemplate() {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("INEI");
+    ws.addRows([
       ["codigo", "nombre", "anio", "mes", "valor"],
       ["29", "Mano de Obra (MO)", 2025, 1, 100.00],
       ["21", "Cemento Portland Tipo I", 2025, 1, 102.50],
     ]);
-    ws["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 6 }, { wch: 5 }, { wch: 10 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "INEI");
-    XLSX.writeFile(wb, "plantilla_inei.xlsx");
+    ws.columns = [{ width: 8 }, { width: 35 }, { width: 6 }, { width: 5 }, { width: 10 }];
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plantilla_inei.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
-        const wb = XLSX.read(ev.target?.result, { type: "binary" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(ev.target?.result as ArrayBuffer);
+        const ws = wb.worksheets[0];
+        if (!ws) throw new Error("Hoja no encontrada");
+        const values = ws.getSheetValues().slice(1) as unknown[][];
+        const headers = (values.shift() ?? []).map((h) => String(h ?? "").trim());
+        const raw: Record<string, unknown>[] = values.map((row) => Object.fromEntries(headers.map((h, i) => [h, row[i + 1] ?? ""])));
 
         const rows: ImportRow[] = raw.map((r) => {
           // Acepta variantes de nombre de columna
@@ -227,7 +238,7 @@ export default function IneiAdminPage() {
         alert("No se pudo leer el archivo. Verifica que sea un .xlsx o .xls válido.");
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
     e.target.value = "";
   }
 

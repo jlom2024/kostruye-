@@ -699,3 +699,13 @@ Cuando termines una sesión de trabajo en este proyecto, **agrega una entrada aq
 4. ⚠️ Advertencias para quien siga
 
 Esto evita que un agente deshaga el trabajo de otro o pierda contexto.
+
+## 2026-09-04 — Seguridad de dependencias y healthcheck
+
+- Sustituida la dependencia vulnerable xlsx por exceljs en importación S10, INEI y exportación de presupuestos.
+- Actualizado package-lock.json y validado build de producción con Next.js 16.3.4.
+- Añadido endpoint público /api/health y healthcheck Docker.
+- Eliminado el atributo version obsoleto del compose.
+- npm audit: 0 vulnerabilidades High; quedan 2 Moderate transitorias.
+- Estado: desplegado y verificado en producción.
+

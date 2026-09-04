@@ -16,6 +16,7 @@
     "@tanstack/react-table": "^8.20.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "lucide-react": "^0.468.0",
     "next": "^16.2.12",
     "openai": "^4.98.0",
@@ -27,7 +28,6 @@
     "recharts": "^2.14.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

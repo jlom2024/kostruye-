@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type S10Resource = {
@@ -118,21 +118,28 @@ function findHeader(rows: unknown[][]): { hIdx: number; col: ColMap } {
 }
 
 // ── Parser principal ─────────────────────────────────────────────────────────
-function parseS10Excel(buffer: Buffer): S10Budget {
-  const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
+function worksheetRows(ws: ExcelJS.Worksheet): unknown[][] {
+  const rows: unknown[][] = [];
+  ws.eachRow({ includeEmpty: false }, (row) => {
+    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+    rows.push(values as unknown[]);
+  });
+  return rows;
+}
+
+async function parseS10Excel(buffer: Buffer): Promise<S10Budget> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
 
   // Intentar hoja "Presupuesto" primero, luego la primera hoja
   const sheetName =
-    wb.SheetNames.find((n) =>
+    wb.worksheets.map((ws) => ws.name).find((n) =>
       /presupuesto|budget|partidas/i.test(n)
     ) ?? wb.SheetNames[0];
 
-  const ws = wb.Sheets[sheetName];
-  const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
-    header: 1,
-    defval: "",
-    blankrows: false,
-  }) as unknown[][];
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) throw new Error("No se encontró la hoja de presupuesto");
+  const rows = worksheetRows(ws);
 
   const chapters: S10Chapter[] = [];
   const resourceMap = new Map<string, S10Resource>(); // dedup por código
@@ -234,14 +241,11 @@ function parseS10Excel(buffer: Buffer): S10Budget {
   }
 
   // Intentar también hoja APU dedicada (algunos S10 exportan APU en hoja separada)
-  const apuSheetName = wb.SheetNames.find((n) => /apu|analisis/i.test(n));
+  const apuSheetName = wb.worksheets.map((ws) => ws.name).find((n) => /apu|analisis/i.test(n));
   if (apuSheetName && apuSheetName !== sheetName) {
-    const apuWs = wb.Sheets[apuSheetName];
-    const apuRows: unknown[][] = XLSX.utils.sheet_to_json(apuWs, {
-      header: 1,
-      defval: "",
-      blankrows: false,
-    }) as unknown[][];
+    const apuWs = wb.getWorksheet(apuSheetName);
+    if (!apuWs) throw new Error("No se encontró la hoja APU");
+    const apuRows = worksheetRows(apuWs);
 
     let targetItem: S10Item | null = null;
     let apuSec = "";
@@ -322,7 +326,7 @@ export async function POST(req: NextRequest) {
     }
 
     const buf = Buffer.from(await file.arrayBuffer());
-    const data = parseS10Excel(buf);
+    const data = await parseS10Excel(buf);
 
     if (data.chapters.length === 0) {
       return NextResponse.json(

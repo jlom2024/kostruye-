@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
 
 function getAdminClient() {
   return createClient(
@@ -86,10 +86,10 @@ export async function processJobInBackground(jobId: string) {
 
       rows.push(["", "TOTAL PRESUPUESTO", "", "", "", grandTotal]);
 
-      const ws = xlsx.utils.aoa_to_sheet(rows);
-      const wb = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(wb, ws, "Presupuesto");
-      const excelBuffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Presupuesto");
+      ws.addRows(rows);
+      const excelBuffer = Buffer.from(await wb.xlsx.writeBuffer());
       
       await sb.from("background_jobs").update({ progress: 70 }).eq("id", jobId);
 

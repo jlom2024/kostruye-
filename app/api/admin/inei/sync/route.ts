@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // Sync automático de Índices Unificados INEI (Base Dic 2025 = 100).
 // Descarga el Excel más reciente del INEI y hace upsert en inei_indices.
@@ -30,16 +30,17 @@ function ineiUrl(year: number, month: number): string {
   return `https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/n07_indices_unificados_de_precios_de_la_construccion_${mon}${yy}.xlsx`;
 }
 
-function parseExcel(buffer: ArrayBuffer): { index_code: string; index_name: string; period_year: number; period_month: number; index_value: number }[] {
-  const wb = XLSX.read(buffer, { type: "array" });
+async function parseExcel(buffer: ArrayBuffer): Promise<{ index_code: string; index_name: string; period_year: number; period_month: number; index_value: number }[]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
 
   // Leer nombres desde hoja Relación
-  const relSheet = wb.Sheets["Relación índices Base dic 2025"];
+  const relSheet = wb.getWorksheet("Relación índices Base dic 2025");
   const names: Record<string, string> = {};
   if (relSheet) {
     const cleanName = (n: unknown) => n ? String(n).replace(/ \([abc]\)$/i, "").trim() : "";
-    XLSX.utils.sheet_to_json<unknown[]>(relSheet, { header: 1 }).forEach((row: unknown) => {
-      const r = row as unknown[];
+    relSheet.eachRow({ includeEmpty: false }, (row) => {
+      const r = (Array.isArray(row.values) ? row.values.slice(1) : []) as unknown[];
       [[r[0], r[1]], [r[2], r[3]]].forEach(([code, name]) => {
         const c = String(code ?? "").trim();
         if (/^\d+(-\d+)?$/.test(c) && typeof name === "string") {
@@ -50,7 +51,7 @@ function parseExcel(buffer: ArrayBuffer): { index_code: string; index_name: stri
   }
 
   // Sheets mensuales disponibles (Ene_2026, Feb_2026, …)
-  const monthSheets = wb.SheetNames.filter(s => /^[A-Za-z]{3}_\d{4}$/.test(s));
+  const monthSheets = wb.worksheets.map((ws) => ws.name).filter(s => /^[A-Za-z]{3}_\d{4}$/.test(s));
   const records: ReturnType<typeof parseExcel> = [];
 
   monthSheets.forEach(sheetName => {
@@ -59,8 +60,12 @@ function parseExcel(buffer: ArrayBuffer): { index_code: string; index_name: stri
     const month = MONTHS_ES.findIndex(m => m.toLowerCase() === monAbbr.toLowerCase()) + 1;
     if (!month) return;
 
-    const ws = wb.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 });
+    const ws = wb.getWorksheet(sheetName);
+    if (!ws) return;
+    const data: unknown[][] = [];
+    ws.eachRow({ includeEmpty: false }, (row) => {
+      data.push((Array.isArray(row.values) ? row.values.slice(1) : []) as unknown[]);
+    });
     const hi = data.findIndex((r: unknown) => (r as unknown[])[0] === "Cód.");
     if (hi < 0) return;
 
@@ -130,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   let records: ReturnType<typeof parseExcel>;
   try {
-    records = parseExcel(buffer);
+    records = await parseExcel(buffer);
   } catch (e) {
     return NextResponse.json({ error: `Error al parsear Excel: ${e}` }, { status: 500 });
   }
