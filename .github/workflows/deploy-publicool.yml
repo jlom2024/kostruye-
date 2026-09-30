@@ -1,0 +1,42 @@
+name: Deploy KREO-PubliCool
+
+# Auto-deploy: cada push a la rama que toque kreo-publicool/** redespliega
+# en el VPS por SSH. También se puede lanzar a mano (workflow_dispatch).
+on:
+  push:
+    branches:
+      - claude/kreo-publicool-local-setup-80h91y
+    paths:
+      - 'kreo-publicool/**'
+      - '.github/workflows/deploy-publicool.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: VPS_PASSWORD
+    steps:
+      - name: Redeploy en el VPS vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 2.24.72.21
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          timeout: 60s
+          command_timeout: 20m
+          script: |
+            set -e
+            REPO_DIR=/opt/kreo-publicool
+            BRANCH=claude/kreo-publicool-local-setup-80h91y
+
+            echo "== Fetch + reset =="
+            cd "$REPO_DIR"
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            git log --oneline -1
+
+            echo "== Rebuild =="
+            cd "$REPO_DIR/kreo-publicool"
+            docker compose up -d --build
+
+            echo "== OK → http://2.24.72.21:3005 =="
