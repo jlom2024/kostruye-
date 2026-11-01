@@ -709,3 +709,26 @@ Esto evita que un agente deshaga el trabajo de otro o pierda contexto.
 - npm audit: 0 vulnerabilidades High; quedan 2 Moderate transitorias.
 - Estado: desplegado y verificado en producción.
 
+
+## 2026-11-01 — Codex — Sincronización de revisión desde fuente del VPS
+
+### Cambios
+- Se reconcilió la fuente disponible de `/opt/kostruye-plus` con `origin/master` (`06c2af1f22e460335bee352ee77a5615c9d3d54f`) en la rama revisable `codex/issue2-kostruye-sync-20261101`.
+- Se preservó el historial previo de esta bitácora y se añadió esta entrada.
+- Se corrigió `next.config.ts` para resolver la raíz de Turbopack desde el checkout actual (`process.cwd()`), en lugar de fijarla a una ruta de otra computadora.
+- Se excluyó `public/Manual-Kostruye-Plus.pdf`; no se necesita para compilar y su contenido binario no se incluyó en la revisión. No se tocaron bases, contenedores ni configuración del VPS.
+
+### Verificación local
+- `npm ci --no-audit --no-fund`: aprobado; 556 paquetes instalados. La política local omitió el postinstall de `unrs-resolver`.
+- `npm run build`: primero falló por la raíz absoluta fija de Turbopack; tras corregirla, el backend Turbopack terminó con un fallo interno creando un worker.
+- `npm run build -- --webpack`: código de salida 0; compiló 28 páginas. Emitió una advertencia ENOENT al copiar un archivo de trazado de standalone. Este resultado no acredita una ejecución real del artefacto desplegable.
+- `npm run lint`: bloqueado por 234 errores y 52 warnings distribuidos en el checkout.
+- `package.json` no declara script `test`; no hay suite npm invocable.
+- Se verificará aparte la presencia de `.next/standalone/server.js` antes del commit.
+
+### Estado y límites
+- Esta rama y cualquier PR son solo para revisión; no hubo merge ni deploy. El estado productivo no se infiere del origen de esta fuente.
+- Revisión automatizada de texto no encontró credenciales conocidas ni literales nuevos de correo/teléfono respecto de los archivos actuales del repo; esto no sustituye revisión completa de privacidad.
+- Siguiente acción: revisar el diff de la rama antes de aceptar cualquier cambio; resolver por separado los errores de lint y validar el artefacto standalone en Linux antes de considerar despliegue.
+
+- Commit de código preparado para revisión: `115c6be4fe7c8a40928afbcc47ba64210e0f3d96`; rama de destino `codex/issue2-kostruye-sync-20261101` (falta verificación remota).

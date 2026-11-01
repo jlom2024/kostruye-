@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type S10Resource = {
@@ -18,12 +18,16 @@ export type S10Item = {
   unit: string;
   quantity: number;
   unit_price: number;
+  total?: number;
   apu_lines: S10Resource[];
 };
 
 export type S10Chapter = {
   code: string;
   name: string;
+  level: number;
+  parent_code?: string | null;
+  total?: number;
   items: S10Item[];
 };
 
@@ -80,7 +84,7 @@ function isChapter(code: string, desc: string): boolean {
  * Ej: "01.01.01", "02.03"
  */
 function isItem(code: string): boolean {
-  return /^\d{2}[.\d]+$/.test(code) && code.includes(".");
+  return /^\d{1,2}[.\d]+$/.test(code) && code.includes(".");
 }
 
 /**
@@ -101,45 +105,44 @@ function mapHeader(row: unknown[]): ColMap {
     if (!h) return;
     if (col.code == null && /^item$|^c[oó]digo$|^partida$/.test(h)) col.code = i;
     else if (col.desc == null && /descrip/.test(h)) col.desc = i;
-    else if (col.unit == null && /^und|unidad/.test(h)) col.unit = i;
+    else if (col.unit == null && /^u(nd|nid|nidad)/.test(h)) col.unit = i;
     else if (col.qty == null && /metrado|cantidad|^cant/.test(h)) col.qty = i;
     else if (col.parcial == null && /parcial|importe|^total/.test(h)) col.parcial = i;
-    else if (col.pu == null && /precio/.test(h)) col.pu = i;
+    else if (col.pu == null && /precio|p\.?u\.?/.test(h)) col.pu = i;
   });
   return col;
 }
 function findHeader(rows: unknown[][]): { hIdx: number; col: ColMap } {
   for (let i = 0; i < Math.min(rows.length, 25); i++) {
     const c = mapHeader(rows[i]);
-    if (c.desc != null && c.qty != null && (c.pu != null || c.parcial != null)) return { hIdx: i, col: c };
+    if (c.desc != null && (c.qty != null || c.unit != null) && (c.pu != null || c.parcial != null)) {
+      return { hIdx: i, col: c };
+    }
   }
   // Fallback al layout posicional clásico de S10 venta
   return { hIdx: -1, col: { code: 0, desc: 1, unit: 2, qty: 3, pu: 4, parcial: 5 } };
 }
 
 // ── Parser principal ─────────────────────────────────────────────────────────
-function worksheetRows(ws: ExcelJS.Worksheet): unknown[][] {
-  const rows: unknown[][] = [];
-  ws.eachRow({ includeEmpty: false }, (row) => {
-    const values = Array.isArray(row.values) ? row.values.slice(1) : [];
-    rows.push(values as unknown[]);
-  });
-  return rows;
-}
-
-async function parseS10Excel(buffer: Buffer): Promise<S10Budget> {
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buffer);
+function parseS10Excel(buffer: Buffer): S10Budget {
+  const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
 
   // Intentar hoja "Presupuesto" primero, luego la primera hoja
   const sheetName =
-    wb.worksheets.map((ws) => ws.name).find((n) =>
+    wb.SheetNames.find((n) =>
       /presupuesto|budget|partidas/i.test(n)
     ) ?? wb.SheetNames[0];
 
-  const ws = wb.getWorksheet(sheetName);
-  if (!ws) throw new Error("No se encontró la hoja de presupuesto");
-  const rows = worksheetRows(ws);
+  const ws = wb.Sheets[sheetName];
+  if (!ws) {
+    throw new Error("No se pudo leer ninguna hoja del archivo Excel.");
+  }
+
+  const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    defval: "",
+    blankrows: false,
+  }) as unknown[][];
 
   const chapters: S10Chapter[] = [];
   const resourceMap = new Map<string, S10Resource>(); // dedup por código
@@ -160,56 +163,24 @@ async function parseS10Excel(buffer: Buffer): Promise<S10Budget> {
     const colCode  = str(row[col.code ?? 0]);
     const colDesc  = str(row[col.desc ?? 1]);
     const colUnit  = col.unit != null ? str(row[col.unit]) : "";
+    const colQty   = col.qty != null ? num(row[col.qty]) : 0;
+    const colPu    = col.pu != null ? num(row[col.pu]) : 0;
+    const colParcial = col.parcial != null ? num(row[col.parcial]) : 0;
     const colC3    = num(row[3]); // (APU posicional: cuadrilla)
     const colC4    = num(row[4]); // (APU posicional: rendimiento/cantidad)
     const colC5    = num(row[5]); // (APU posicional: P.U.)
     const colC6    = num(row[6]); // (APU posicional: parcial)
 
-    // ── Capítulo ──────────────────────────────────────────────────
-    if (isChapter(colCode, colDesc)) {
-      inApu = false;
-      apuSection = "";
-      currentItem = null;
-      currentChapter = {
-        code: colCode,
-        name: colDesc.toUpperCase(),
-        items: [],
-      };
-      chapters.push(currentChapter);
-      continue;
-    }
+    if (!colCode && !colDesc) continue;
 
-    // ── Partida ───────────────────────────────────────────────────
-    if (isItem(colCode) && colDesc.length > 0 && colUnit.length > 0) {
-      inApu = false;
-      apuSection = "";
-      const qty = col.qty != null ? num(row[col.qty]) : 0;
-      const pu  = col.pu != null ? num(row[col.pu]) : 0;
-      currentItem = {
-        item_code:   colCode,
-        description: colDesc,
-        unit:        colUnit,
-        quantity:    qty,
-        unit_price:  pu,
-        apu_lines:   [],
-      };
-      if (!currentChapter) {
-        // Si no hay capítulo aún, creamos uno genérico
-        currentChapter = { code: "01", name: "PRESUPUESTO", items: [] };
-        chapters.push(currentChapter);
-      }
-      currentChapter.items.push(currentItem);
-      continue;
-    }
-
-    // ── Sección APU ("Mano de Obra", "Materiales", etc.) ──────────
+    // ── 1. Sección APU ("Mano de Obra", "Materiales", etc.) ──────────
     if (isApuSection(colDesc) && colCode === "") {
       apuSection = colDesc;
       inApu = true;
       continue;
     }
 
-    // ── Línea de recurso APU ───────────────────────────────────────
+    // ── 2. Línea de recurso APU ───────────────────────────────────────
     if (inApu && currentItem && colCode !== "" && colDesc.length > 0) {
       const rtype = detectResourceType(colCode, apuSection);
 
@@ -238,14 +209,62 @@ async function parseS10Excel(buffer: Buffer): Promise<S10Budget> {
       }
       continue;
     }
+
+    // ── 3. Partida ───────────────────────────────────────────────────
+    // En S10 una partida tiene descripción y unidad (ej: und, m2, m3, glb),
+    // o metrado/precio y código de partida con puntos
+    const isPartida =
+      colDesc.length > 0 &&
+      (colUnit.length > 0 || (isItem(colCode) && (colQty > 0 || colPu > 0)));
+
+    if (isPartida) {
+      inApu = false;
+      apuSection = "";
+      currentItem = {
+        item_code:   colCode,
+        description: colDesc,
+        unit:        colUnit || "und",
+        quantity:    colQty,
+        unit_price:  colPu,
+        total:       colParcial > 0 ? colParcial : Number((colQty * colPu).toFixed(2)),
+        apu_lines:   [],
+      };
+      if (!currentChapter) {
+        currentChapter = { code: "01", name: "PRESUPUESTO GENERAL", level: 1, total: 0, items: [] };
+        chapters.push(currentChapter);
+      }
+      currentChapter.items.push(currentItem);
+      continue;
+    }
+
+    // ── 4. Capítulo / Título / Subcapítulo / Proceso ───────────────
+    // Fila sin unidad, con descripción, no siendo cabecera de sección APU
+    if (colDesc.length > 0 && colUnit.length === 0 && !isApuSection(colDesc)) {
+      inApu = false;
+      apuSection = "";
+      currentItem = null;
+      const dots = (colCode.match(/\./g) || []).length;
+      currentChapter = {
+        code: colCode || `0${chapters.length + 1}`,
+        name: colDesc.toUpperCase(),
+        level: dots + 1,
+        total: colParcial,
+        items: [],
+      };
+      chapters.push(currentChapter);
+      continue;
+    }
   }
 
   // Intentar también hoja APU dedicada (algunos S10 exportan APU en hoja separada)
-  const apuSheetName = wb.worksheets.map((ws) => ws.name).find((n) => /apu|analisis/i.test(n));
+  const apuSheetName = wb.SheetNames.find((n) => /apu|analisis/i.test(n));
   if (apuSheetName && apuSheetName !== sheetName) {
-    const apuWs = wb.getWorksheet(apuSheetName);
-    if (!apuWs) throw new Error("No se encontró la hoja APU");
-    const apuRows = worksheetRows(apuWs);
+    const apuWs = wb.Sheets[apuSheetName];
+    const apuRows: unknown[][] = XLSX.utils.sheet_to_json(apuWs, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+    }) as unknown[][];
 
     let targetItem: S10Item | null = null;
     let apuSec = "";
@@ -294,8 +313,18 @@ async function parseS10Excel(buffer: Buffer): Promise<S10Budget> {
     }
   }
 
+  // Algoritmo de pila para determinar la jerarquía parent_code de títulos y procesos
+  const stack: S10Chapter[] = [];
+  for (const ch of chapters) {
+    while (stack.length > 0 && stack[stack.length - 1].level >= ch.level) {
+      stack.pop();
+    }
+    ch.parent_code = stack.length > 0 ? stack[stack.length - 1].code : null;
+    stack.push(ch);
+  }
+
   return {
-    chapters: chapters.filter((ch) => ch.items.length > 0),
+    chapters,
     resources: Array.from(resourceMap.values()),
   };
 }
@@ -326,7 +355,7 @@ export async function POST(req: NextRequest) {
     }
 
     const buf = Buffer.from(await file.arrayBuffer());
-    const data = await parseS10Excel(buf);
+    const data = parseS10Excel(buf);
 
     if (data.chapters.length === 0) {
       return NextResponse.json(
@@ -356,8 +385,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     console.error("[import-budget-s10]", err);
+    const msg = err instanceof Error ? err.message : "Error al parsear el archivo. ¿Es un Excel válido de S10?";
     return NextResponse.json(
-      { ok: false, error: "Error al parsear el archivo. ¿Es un Excel válido de S10?" },
+      { ok: false, error: msg },
       { status: 500 }
     );
   }

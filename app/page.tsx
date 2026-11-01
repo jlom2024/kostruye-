@@ -70,8 +70,8 @@ export default function Landing() {
         :root {
           --color-navy: #0A3D5C;
           --color-navy-dark: #072B41;
-          --color-copper: #B8733D;
-          --color-copper-light: #C9844E;
+          --color-copper: #965522;
+          --color-copper-light: #B06B33;
           --color-bg-light: #FFFFFF;
           --color-bg-sand: #F5F3EF;
           --color-text-dark: #1A1A1A;
@@ -272,6 +272,80 @@ export default function Landing() {
           background: var(--color-copper-light);
           border-color: var(--color-copper-light);
           transform: translateY(-1px);
+        }
+
+        /* ── MOBILE TRIGGER & DRAWER (TRES MARES RESPONSIVE) ── */
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .nav-mobile-trigger {
+          display: none;
+          flex-direction: column;
+          justify-content: space-between;
+          width: 28px;
+          height: 20px;
+          cursor: pointer;
+          padding: 2px 0;
+          z-index: 1002;
+        }
+        .hamburger-line {
+          display: block;
+          width: 100%;
+          height: 2px;
+          background-color: var(--color-navy);
+          border-radius: 2px;
+          transition: all 0.3s ease;
+        }
+        .nav-mobile-checkbox {
+          display: none;
+        }
+        .nav-mobile-drawer {
+          position: fixed;
+          top: 70px;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(25px);
+          border-bottom: 2px solid var(--color-border);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+          padding: 24px 20px 32px;
+          z-index: 999;
+          transform: translateY(-120%);
+          opacity: 0;
+          pointer-events: none;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+        .nav-mobile-checkbox:checked ~ .nav-mobile-drawer {
+          transform: translateY(0);
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .nav-mobile-links {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .mobile-nav-link {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--color-navy);
+          text-decoration: none;
+          padding: 8px 0;
+          border-bottom: 1px solid rgba(229, 225, 219, 0.6);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .mobile-nav-login {
+          color: var(--color-copper);
+        }
+        .mobile-nav-cta {
+          margin-top: 10px;
+          text-align: center;
+          justify-content: center;
+          padding: 12px;
+          font-size: 13px;
         }
 
         /* ── HERO CON PARALLAX & CURSOR FOLLOW ── */
@@ -947,16 +1021,26 @@ export default function Landing() {
         }
 
         @media (max-width: 640px) {
-          .header-nav { padding: 0 20px; }
-          .nav-menu { display: none; }
-          .hero-section { padding: 120px 20px 60px; }
+          .header-nav { padding: 0 16px; height: 70px; }
+          .nav-logo-link img, .logo-image { height: 30px !important; max-width: 85px !important; }
+          .nav-menu { display: none !important; }
+          .nav-btn-manual { display: none !important; }
+          .nav-actions { display: flex !important; align-items: center !important; gap: 8px !important; }
+          .nav-mobile-trigger { display: flex !important; }
+          .btn-action-solid.nav-btn-demo {
+            padding: 8px 12px !important;
+            font-size: 11px !important;
+            letter-spacing: 0.03em !important;
+            white-space: nowrap !important;
+          }
+          .hero-section { padding: 95px 16px 50px; }
           .metrics-container { grid-template-columns: 1fr; }
           .metric-card { border-left: none; padding-left: 0; border-bottom: 1px solid var(--color-border); padding-bottom: 20px; }
           .metric-card:last-child { border-bottom: none; padding-bottom: 0; }
-          .editorial-section { padding: 80px 20px; }
+          .editorial-section { padding: 60px 16px; }
           .modules-grid { grid-template-columns: 1fr; }
           .steps-editorial-row { grid-template-columns: 1fr; }
-          .final-cta-box-ed { padding: 80px 20px; }
+          .final-cta-box-ed { padding: 60px 16px; }
           .footer-bottom-ed { flex-direction: column; gap: 16px; text-align: center; }
         }
       `}</style>
@@ -1081,7 +1165,7 @@ export default function Landing() {
       {/* ═══════════════ NAV BAR (TRES MARES STYLE) ═══════════════ */}
       <nav className="header-nav">
         <a href="/" className="nav-logo-link">
-          <img src="/logo-brand.png" alt="Kostruye+" className="logo-image" />
+          <picture><source type="image/webp" srcSet="/logo-brand.webp" /><img src="/logo-brand.png" alt="Kostruye+" className="logo-image" /></picture>
         </a>
         <ul className="nav-menu">
           <li><a href="#features">Módulos</a></li>
@@ -1089,11 +1173,30 @@ export default function Landing() {
           <li><a href="#pricing">Precios</a></li>
           <li><a href="#contact">Contacto</a></li>
         </ul>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="btn-action-outline">Manual PDF</a>
-          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid">Solicitar demo</a>
+        <div className="nav-actions">
+          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="btn-action-outline nav-btn-manual">Manual PDF</a>
+          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid nav-btn-demo">Solicitar demo</a>
+          <label htmlFor="nav-mobile-toggle" className="nav-mobile-trigger" aria-label="Abrir menú de navegación">
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+          </label>
         </div>
       </nav>
+
+      {/* ═══════════════ DRAWER DE NAVEGACIÓN MÓVIL (ACCESIBLE Y ULTRA-LIGERO) ═══════════════ */}
+      <input type="checkbox" id="nav-mobile-toggle" className="nav-mobile-checkbox" aria-hidden="true" />
+      <div className="nav-mobile-drawer">
+        <div className="nav-mobile-links">
+          <a href="#features" className="mobile-nav-link">Módulos</a>
+          <a href="#dashboard" className="mobile-nav-link">Dashboard Gerencial</a>
+          <a href="#pricing" className="mobile-nav-link">Tarifas y Planes</a>
+          <a href="#contact" className="mobile-nav-link">Contacto Directo</a>
+          <a href="/Manual-Kostruye-Plus.pdf" download="Manual-Kostruye-Plus.pdf" className="mobile-nav-link">📄 Manual Kostruye+ (PDF)</a>
+          <a href="/login" className="mobile-nav-link mobile-nav-login">🔐 Iniciar Sesión (Clientes)</a>
+          <a href="https://wa.me/51907130225?text=Hola%2C%20me%20interesa%20una%20demo%20de%20Kostruye%2B" className="btn-action-solid mobile-nav-cta">Solicitar Demo Gratuita</a>
+        </div>
+      </div>
 
       {/* ═══════════════ HERO SECTION (PARALLAX + EDITORIAL) ═══════════════ */}
       <section className="hero-section">
@@ -1119,7 +1222,7 @@ export default function Landing() {
           
           <div className="hero-right-visual reveal-scale d2">
             <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
-              <img src="/construction-detail.png" alt="Estructura e Ingeniería" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <picture style={{ width: '100%', height: '100%' }}><source type="image/webp" srcSet="/construction-detail.webp" /><img src="/construction-detail.png" alt="Estructura e Ingeniería" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></picture>
             </div>
           </div>
         </div>
@@ -1414,7 +1517,7 @@ export default function Landing() {
 
             <div className="dashboard-img-container reveal-scale d2">
               <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
-                <img src="/dashboard-preview.png" alt="Dashboard Gerencial Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <picture style={{ width: '100%', height: '100%' }}><source type="image/webp" srcSet="/dashboard-preview.webp" /><img src="/dashboard-preview.png" alt="Dashboard Gerencial Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /></picture>
               </div>
             </div>
           </div>
@@ -1427,7 +1530,7 @@ export default function Landing() {
           <div className="dashboard-preview-wrapper" style={{ gridTemplateColumns: "0.9fr 1.1fr" }}>
             <div className="dashboard-img-container reveal-scale">
               <div className="img-mask-reveal" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src="/app-mockup.png" alt="App Móvil Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '20px' }} />
+                <picture style={{ width: '100%', height: '100%' }}><source type="image/webp" srcSet="/app-mockup.webp" /><img src="/app-mockup.png" alt="App Móvil Kostruye+" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '20px' }} loading="lazy" /></picture>
               </div>
             </div>
 
@@ -1523,7 +1626,7 @@ export default function Landing() {
           <div className="kia-editorial-grid">
             <div className="dashboard-img-container reveal-scale">
               <div className="img-mask-reveal" style={{ width: '100%', height: '100%' }}>
-                <img src="/construction-team.png" alt="Ingenieros usando Inteligencia Artificial" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <picture style={{ width: '100%', height: '100%' }}><source type="image/webp" srcSet="/construction-team.webp" /><img src="/construction-team.png" alt="Ingenieros usando Inteligencia Artificial" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" /></picture>
               </div>
             </div>
 
@@ -1655,7 +1758,7 @@ export default function Landing() {
       <footer className="footer-editorial">
         <div className="footer-columns-ed">
           <div className="footer-info-brand">
-            <img src="/logo-brand.png" alt="Kostruye+" className="footer-brand-logo" />
+            <picture><source type="image/webp" srcSet="/logo-brand.webp" /><img src="/logo-brand.png" alt="Kostruye+" className="footer-brand-logo" /></picture>
             <p className="footer-brand-desc">
               Plataforma y ERP de gestión operativa v2.5 para constructoras del Perú. Optimización de presupuestos, almacén, compras, fideicomisos CORFID, cajas chicas y nóminas de personal.
             </p>

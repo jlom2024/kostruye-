@@ -2,12 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   // TODO: fix TS errors en clientes-client.tsx y otros antes de activar strict mode
   typescript: { ignoreBuildErrors: true },
   turbopack: process.platform === "win32" ? {
-    root: "d:\\Empresas\\KREO Studio\\Kostruye+\\kostruye-plus",
+    root: process.cwd(),
   } : undefined,
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",
@@ -15,7 +17,47 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.konstruye.site",
+          },
+        ],
+        destination: "https://konstruye.site/:path*",
+        permanent: true,
+      },
+    ];
+  },
   headers: async () => [
+    {
+      source: "/:path*",
+      headers: [
+        {
+          key: "X-Frame-Options",
+          value: "SAMEORIGIN",
+        },
+        {
+          key: "X-Content-Type-Options",
+          value: "nosniff",
+        },
+        {
+          key: "Referrer-Policy",
+          value: "strict-origin-when-cross-origin",
+        },
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains; preload",
+        },
+        {
+          key: "Permissions-Policy",
+          value: "camera=(), microphone=(), geolocation=()",
+        },
+      ],
+    },
     {
       source: "/static/(.*)",
       headers: [

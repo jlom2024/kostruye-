@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import PasswordInput from "./password-input";
 
 function serviceClient() {
@@ -27,7 +27,7 @@ export default async function TenantPage({
     .single();
 
   if (!client || !client.active) {
-    redirect("/");
+    notFound();
   }
 
   return (
