@@ -730,3 +730,5 @@ Esto evita que un agente deshaga el trabajo de otro o pierda contexto.
 - Esta rama y cualquier PR son solo para revisión; no hubo merge ni deploy. El estado productivo no se infiere del origen de esta fuente.
 - Revisión automatizada de texto no encontró credenciales conocidas ni literales nuevos de correo/teléfono respecto de los archivos actuales del repo; esto no sustituye revisión completa de privacidad.
 - Siguiente acción: revisar el diff de la rama antes de aceptar cualquier cambio; resolver por separado los errores de lint y validar el artefacto standalone en Linux antes de considerar despliegue.
+
+- Commit de código preparado para revisión: `115c6be4fe7c8a40928afbcc47ba64210e0f3d96`; rama de destino `codex/issue2-kostruye-sync-20261101` (falta verificación remota).
