@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "***REDACTED***";
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "admin-secret-token";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,6 +20,7 @@ export async function proxy(request: NextRequest) {
     pathname.includes(".svg") ||
     pathname.includes(".png") ||
     pathname.includes(".jpg") ||
+    pathname.includes(".webp") ||
     pathname.includes(".pdf");
 
   if (isPublicRoute) return NextResponse.next();
@@ -74,10 +75,25 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.includes("/auth");
 
-  if (!user && !isAuthRoute && !pathname.startsWith("/admin")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const isExplicitProtectedRoute =
+    pathname.startsWith("/proyectos") ||
+    pathname.startsWith("/clientes") ||
+    pathname.startsWith("/proveedores") ||
+    pathname.startsWith("/configuracion") ||
+    pathname === "/app" ||
+    pathname.startsWith("/app/");
+
+  if (!user) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isExplicitProtectedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    // Unknown public route: permit Next.js to render not-found.tsx (404)
+    return supabaseResponse;
   }
 
   if (user && isAuthRoute) {

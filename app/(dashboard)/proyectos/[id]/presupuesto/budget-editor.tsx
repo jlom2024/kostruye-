@@ -47,6 +47,7 @@ interface Chapter {
   code: string;
   name: string;
   level: number;
+  parent_id?: string | null;
   sort_order: number;
   total: number;
   items: BudgetItem[];
@@ -422,8 +423,33 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
   // ── Toggle chapter ─────────────────────────────────────────────────────────
   const toggleChapter = (chapterId: string) => {
     setChapters((prev) =>
-      prev.map((c) => c.id === chapterId ? { ...c, expanded: !c.expanded } : c)
+      prev.map((c) => (c.id === chapterId ? { ...c, expanded: !c.expanded } : c))
     );
+  };
+
+  const expandAll = () => {
+    setChapters((prev) => prev.map((c) => ({ ...c, expanded: true })));
+  };
+
+  const collapseToProcesses = () => {
+    // Mantener abiertos los procesos principales (<= 3), colapsar subcapítulos
+    setChapters((prev) =>
+      prev.map((c) => ({
+        ...c,
+        expanded: (c.level ?? 1) <= 3,
+      }))
+    );
+  };
+
+  const isChapterHidden = (ch: Chapter): boolean => {
+    for (const c of chapters) {
+      if (!c.expanded && ch.id !== c.id) {
+        if (ch.parent_id && ch.parent_id === c.id) return true;
+        if (c.code && ch.code.startsWith(c.code + ".")) return true;
+        if (c.code === "1" && ch.code.startsWith("1.")) return true;
+      }
+    }
+    return false;
   };
 
   // ── Computed values ────────────────────────────────────────────────────────
@@ -457,6 +483,21 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
             <span className="text-slate-300">|</span>
           </>
         )}
+        <button
+          onClick={expandAll}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          title="Expandir todos los capítulos y partidas"
+        >
+          Expandir todo
+        </button>
+        <button
+          onClick={collapseToProcesses}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          title="Ver solo procesos principales (Módulos / Componentes)"
+        >
+          Ver solo procesos
+        </button>
+        <span className="text-slate-300">|</span>
         <button
           onClick={async () => {
             try {
@@ -537,42 +578,52 @@ export function BudgetEditor({ budgetId, currency, onTotalChange, canEdit = true
             <p className="text-xs text-slate-300 mt-1">Agrega un capítulo para empezar</p>
           </div>
         ) : (
-          chapters.map((chapter) => (
-            <ChapterSection
-              key={chapter.id}
-              chapter={chapter}
-              currency={currency}
-              selectedItemId={selectedItemId}
-              onToggle={() => toggleChapter(chapter.id)}
-              onUpdateChapter={(field, value) => updateChapter(chapter.id, field, value)}
-              onSaveChapter={() => saveChapter(chapter)}
-              onDeleteChapter={() => deleteChapter(chapter.id)}
-              onAddItem={() => addItem(chapter.id)}
-              onSelectItem={selectItem}
-              onUpdateItem={(itemId, field, value) => updateItem(chapter.id, itemId, field, value)}
-              onSaveItem={(item) => saveItem(item)}
-              onDeleteItem={(itemId) => deleteItem(chapter.id, itemId)}
-              newItemId={newItemId}
-              onNewItemFocused={() => setNewItemId(null)}
-              // APU panel (rendered inside the row)
-              apuPanel={
-                selectedItemId && chapter.items.some((i) => i.id === selectedItemId) ? (
-                  <ApuPanel
-                    item={selectedItem!}
-                    lines={apuLines}
-                    loading={loadingApu}
-                    currency={currency}
-                    apuTotal={apuTotal}
-                    onAddLine={addApuLine}
-                    onUpdateLine={updateApuLine}
-                    onSaveLine={saveApuLine}
-                    onDeleteLine={deleteApuLine}
-                    onClose={() => { setSelectedItemId(null); setApuLines([]); }}
-                  />
-                ) : null
-              }
-            />
-          ))
+          chapters
+            .filter((ch) => !isChapterHidden(ch))
+            .map((chapter) => {
+              const hasChildren = chapters.some(
+                (c) =>
+                  c.id !== chapter.id &&
+                  (c.parent_id === chapter.id || (chapter.code && c.code.startsWith(chapter.code + ".")))
+              );
+              return (
+                <ChapterSection
+                  key={chapter.id}
+                  chapter={chapter}
+                  currency={currency}
+                  selectedItemId={selectedItemId}
+                  onToggle={() => toggleChapter(chapter.id)}
+                  onUpdateChapter={(field, value) => updateChapter(chapter.id, field, value)}
+                  onSaveChapter={() => saveChapter(chapter)}
+                  onDeleteChapter={() => deleteChapter(chapter.id)}
+                  onAddItem={() => addItem(chapter.id)}
+                  onSelectItem={selectItem}
+                  onUpdateItem={(itemId, field, value) => updateItem(chapter.id, itemId, field, value)}
+                  onSaveItem={(item) => saveItem(item)}
+                  onDeleteItem={(itemId) => deleteItem(chapter.id, itemId)}
+                  newItemId={newItemId}
+                  onNewItemFocused={() => setNewItemId(null)}
+                  hasChildren={hasChildren}
+                  // APU panel (rendered inside the row)
+                  apuPanel={
+                    selectedItemId && chapter.items.some((i) => i.id === selectedItemId) ? (
+                      <ApuPanel
+                        item={selectedItem!}
+                        lines={apuLines}
+                        loading={loadingApu}
+                        currency={currency}
+                        apuTotal={apuTotal}
+                        onAddLine={addApuLine}
+                        onUpdateLine={updateApuLine}
+                        onSaveLine={saveApuLine}
+                        onDeleteLine={deleteApuLine}
+                        onClose={() => { setSelectedItemId(null); setApuLines([]); }}
+                      />
+                    ) : null
+                  }
+                />
+              );
+            })
         )}
 
         {/* Footer total */}
@@ -613,6 +664,7 @@ function ChapterSection({
   apuPanel,
   newItemId,
   onNewItemFocused,
+  hasChildren,
 }: {
   chapter: Chapter;
   currency: string;
@@ -629,28 +681,82 @@ function ChapterSection({
   apuPanel: React.ReactNode;
   newItemId: string | null;
   onNewItemFocused: () => void;
+  hasChildren?: boolean;
 }) {
-  const chapterTotal = chapter.items.reduce((s, i) => s + Number(i.total ?? 0), 0);
+  const chapterTotal = chapter.items.length > 0
+    ? chapter.items.reduce((s, i) => s + Number(i.total ?? 0), 0)
+    : Number(chapter.total ?? 0);
+
+  const level = chapter.level ?? 1;
+
+  let rowBg = "bg-slate-50/70 hover:bg-slate-50 border-b border-slate-100";
+  let codeClass = "text-xs font-mono font-bold text-slate-600";
+  let nameClass = "text-sm font-semibold text-slate-700";
+  let totalClass = "text-sm font-semibold text-slate-700";
+  let indentPx = 4;
+
+  if (level <= 2) {
+    rowBg = "bg-slate-800 hover:bg-slate-700 text-white border-b border-slate-700 py-2";
+    codeClass = "text-xs font-mono font-bold text-blue-300";
+    nameClass = "text-xs font-bold uppercase tracking-wider text-slate-100";
+    totalClass = "text-xs font-bold text-emerald-400";
+    indentPx = 4;
+  } else if (level === 3) {
+    rowBg = "bg-blue-50/90 hover:bg-blue-100/80 border-t border-b-2 border-blue-200 text-blue-950 py-2";
+    codeClass = "text-xs font-mono font-bold text-blue-900 bg-blue-200/60 px-1.5 py-0.5 rounded";
+    nameClass = "text-sm font-bold text-blue-950 uppercase tracking-wide";
+    totalClass = "text-sm font-bold text-blue-900";
+    indentPx = 10;
+  } else if (level === 4) {
+    rowBg = "bg-slate-100/90 hover:bg-slate-200/60 border-b border-slate-200 text-slate-800 py-1.5";
+    codeClass = "text-xs font-mono font-semibold text-slate-700";
+    nameClass = "text-xs font-bold text-slate-800 uppercase";
+    totalClass = "text-xs font-bold text-slate-800";
+    indentPx = 20;
+  } else if (level === 5) {
+    rowBg = "bg-slate-50/80 hover:bg-slate-100/60 border-b border-slate-200 text-slate-700 py-1.5";
+    codeClass = "text-xs font-mono font-medium text-slate-600";
+    nameClass = "text-xs font-semibold text-slate-700 uppercase";
+    totalClass = "text-xs font-semibold text-slate-700";
+    indentPx = 30;
+  } else {
+    rowBg = "bg-white hover:bg-slate-50 border-b border-slate-100 text-slate-600 py-1.5";
+    codeClass = "text-xs font-mono text-slate-500";
+    nameClass = "text-xs font-medium text-slate-700 uppercase";
+    totalClass = "text-xs font-medium text-slate-700";
+    indentPx = 38;
+  }
 
   return (
     <div>
       {/* Chapter header row */}
-      <div className="group grid grid-cols-[2rem_6rem_1fr_5rem_7rem_7rem_7rem_2.5rem] gap-0 border-b border-slate-100 bg-slate-50/70 px-3 py-2 items-center hover:bg-slate-50">
-        <button onClick={onToggle} className="text-slate-400 hover:text-slate-700">
-          {chapter.expanded
-            ? <ChevronDown className="h-4 w-4" />
-            : <ChevronRight className="h-4 w-4" />}
+      <div className={cn("group grid grid-cols-[2rem_6rem_1fr_5rem_7rem_7rem_7rem_2.5rem] gap-0 px-3 items-center", rowBg)}>
+        <button
+          onClick={onToggle}
+          className={cn(
+            "text-slate-400 hover:text-slate-700 transition-transform",
+            level <= 2 && "text-slate-300 hover:text-white",
+            level === 3 && "text-blue-600 hover:text-blue-900"
+          )}
+        >
+          {chapter.expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </button>
+        <div style={{ paddingLeft: `${indentPx}px` }}>
+          <input
+            className={cn("bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-0.5 w-full", codeClass)}
+            value={chapter.code}
+            onChange={(e) => onUpdateChapter("code", e.target.value)}
+            onBlur={onSaveChapter}
+            placeholder="00"
+            readOnly={chapter.id === "__uncategorized__"}
+          />
+        </div>
         <input
-          className="text-xs font-mono font-bold text-slate-600 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-0.5 w-full"
-          value={chapter.code}
-          onChange={(e) => onUpdateChapter("code", e.target.value)}
-          onBlur={onSaveChapter}
-          placeholder="00"
-          readOnly={chapter.id === "__uncategorized__"}
-        />
-        <input
-          className="text-sm font-semibold text-slate-700 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-0.5 w-full"
+          className={cn("bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-0.5 w-full", nameClass)}
           value={chapter.name}
           onChange={(e) => onUpdateChapter("name", e.target.value)}
           onBlur={onSaveChapter}
@@ -660,10 +766,10 @@ function ChapterSection({
         <div />
         <div />
         <div />
-        <div className="text-right text-sm font-semibold text-slate-700">
+        <div className={cn("text-right pr-1", totalClass)}>
           {formatCurrency(chapterTotal, currency as "PEN" | "USD")}
         </div>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 justify-end">
           <button
             onClick={onDeleteChapter}
             className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50"
@@ -695,16 +801,19 @@ function ChapterSection({
               )}
             </div>
           ))}
-          {/* Add item row */}
-          <div className="border-b border-dashed border-slate-100">
-            <button
-              onClick={onAddItem}
-              className="flex w-full items-center gap-1.5 px-10 py-2 text-xs text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Agregar partida
-            </button>
-          </div>
+          {/* Add item row (only for leaf chapters without sub-chapters) */}
+          {!hasChildren && (
+            <div className="border-b border-dashed border-slate-100">
+              <button
+                onClick={onAddItem}
+                className="flex w-full items-center gap-1.5 py-1.5 text-xs text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 transition-colors"
+                style={{ paddingLeft: `${Math.min(indentPx + 24, 80)}px` }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Agregar partida
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
